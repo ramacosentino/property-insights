@@ -389,7 +389,33 @@ const MapView = () => {
                     <p className="text-[11px] text-muted-foreground">Sin oportunidades en esta localidad.</p>
                   )}
                   {selectedDeals.map((p) => (
-                    <div key={p.id} className="rounded-xl border border-border/50 p-3 hover:border-primary/30 transition-colors">
+                    <div
+                      key={p.id}
+                      className="rounded-xl border border-border/50 p-3 hover:border-primary/30 transition-colors"
+                      onMouseEnter={() => {
+                        const hl = highlightLayerRef.current;
+                        if (!hl) return;
+                        hl.clearLayers();
+                        const coords = getCoord(p);
+                        L.circleMarker(coords, {
+                          radius: 18,
+                          color: "hsl(190,90%,50%)",
+                          fillColor: "hsl(190,90%,50%)",
+                          fillOpacity: 0.35,
+                          weight: 2,
+                          interactive: false,
+                        }).addTo(hl);
+                        L.circleMarker(coords, {
+                          radius: 6,
+                          color: "white",
+                          fillColor: "hsl(190,90%,70%)",
+                          fillOpacity: 0.9,
+                          weight: 1.5,
+                          interactive: false,
+                        }).addTo(hl);
+                      }}
+                      onMouseLeave={() => highlightLayerRef.current?.clearLayers()}
+                    >
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <span className="text-[11px] text-foreground leading-tight line-clamp-2">{p.location}</span>
                         <a
