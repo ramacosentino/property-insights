@@ -162,7 +162,7 @@ const BASE_RADIUS = 36;
 function getRadiusForZoom(zoom: number): number {
   const scale = Math.pow(2, zoom - 12);
   const raw = BASE_RADIUS * scale * 0.5;
-  return Math.max(BASE_RADIUS, Math.min(raw, 80));
+  return Math.min(raw, 80);
 }
 
 const MapView = () => {
