@@ -305,8 +305,7 @@ const MapView = () => {
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const map = L.map(mapRef.current, { center: [-34.45, -58.55], zoom: 12, zoomControl: false });
-    L.control.zoom({ position: "bottomright" }).addTo(map);
+    const map = L.map(mapRef.current, { center: [-34.45, -58.55], zoom: 12 });
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
     }).addTo(map);
