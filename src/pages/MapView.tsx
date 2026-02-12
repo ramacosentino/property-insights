@@ -157,7 +157,7 @@ const MapFilterRow = ({ title, keys, state, onChange }: {
 };
 
 const LAYERS_PER_PROPERTY = 1;
-const CIRCLE_RADIUS_METERS = 300; // radius in meters — scales naturally with map zoom
+const CIRCLE_RADIUS_METERS = 800; // radius in meters — scales naturally with map zoom
 
 
 const MapView = () => {
