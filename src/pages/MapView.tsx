@@ -119,6 +119,43 @@ function getPropertyColor(pricePerSqm: number, min: number, max: number): string
   }
 }
 
+const MapFilterRow = ({ title, keys, state, onChange }: {
+  title: string;
+  keys: string[];
+  state: FilterState;
+  onChange: (s: FilterState) => void;
+}) => {
+  const handleClick = (value: string) => {
+    const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
+    if (next.included.has(value)) { next.included.delete(value); next.excluded.add(value); }
+    else if (next.excluded.has(value)) { next.excluded.delete(value); }
+    else { next.included.add(value); }
+    onChange(next);
+  };
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] font-medium text-muted-foreground w-16 shrink-0">{title}</span>
+      <div className="flex flex-wrap gap-1">
+        {keys.map((k) => {
+          const isIn = state.included.has(k);
+          const isEx = state.excluded.has(k);
+          return (
+            <button key={k} onClick={() => handleClick(k)}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border ${
+                isIn ? "bg-primary/20 text-primary border-primary/30"
+                : isEx ? "bg-destructive/10 text-destructive border-destructive/30 line-through"
+                : "bg-secondary/50 text-muted-foreground border-border/50 hover:text-foreground"
+              }`}
+            >
+              {isEx && "✕ "}{k}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const LAYERS_PER_PROPERTY = 5;
 
 const MapView = () => {
