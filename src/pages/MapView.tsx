@@ -372,12 +372,13 @@ const MapView = () => {
 
       for (let i = 0; i < LAYERS_PER_PROPERTY; i++) {
         const t = i / (LAYERS_PER_PROPERTY - 1);
-        const radiusFactor = 1 - t * 0.35;
+        // Outer ring at 60% of radius, inner at 30% — tighter, less halo
+        const radiusFactor = 0.6 - t * 0.3;
         const marker = L.circleMarker(coords, {
           radius: radius * radiusFactor,
           color: "transparent",
           fillColor: color,
-          fillOpacity: 0.006 + t * 0.012,
+          fillOpacity: 0.008 + t * 0.02,
           weight: 0,
           interactive: false,
         });
