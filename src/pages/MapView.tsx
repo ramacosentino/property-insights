@@ -248,12 +248,12 @@ const MapView = () => {
     });
   }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice]);
 
-  // Geocode handler
+  // Seed all addresses & trigger geocoding
   const handleGeocode = useCallback(async () => {
     setIsGeocoding(true);
-    setGeocodeStatus("Geocodificando...");
+    setGeocodeStatus("Enviando direcciones...");
 
-    // Send all properties that don't have coords yet
+    // Send ALL property addresses so they get inserted into geocoded_addresses table
     const uncached = properties.filter((p) => !geocodedCoords.has(p.location));
     if (uncached.length === 0) {
       setGeocodeStatus("✓ Todas las propiedades geocodificadas");
@@ -261,39 +261,51 @@ const MapView = () => {
       return;
     }
 
-    let totalGeocoded = 0;
-    let remaining = uncached.length;
-
-    // Process in batches of 20 (edge function limit per call)
-    while (remaining > 0) {
-      const batch = uncached.slice(totalGeocoded, totalGeocoded + 20);
-      if (batch.length === 0) break;
-
-      const result = await geocodeBatch(batch);
-      totalGeocoded += result.geocoded;
-      remaining = remaining - 20;
-
-      setGeocodeStatus(`Geocodificadas: ${totalGeocoded} / ${uncached.length}...`);
-
-      // Refresh coords from cache
-      const updated = await fetchCachedCoordinates();
-      setGeocodedCoords(updated);
-
-      if (result.geocoded === 0) break; // nothing more to do
+    // Send in big batches just to seed the DB — the cron will do the actual geocoding
+    const batchSize = 200;
+    for (let i = 0; i < uncached.length; i += batchSize) {
+      const batch = uncached.slice(i, i + batchSize);
+      await geocodeBatch(batch);
+      setGeocodeStatus(`Enviadas ${Math.min(i + batchSize, uncached.length)} / ${uncached.length} direcciones...`);
     }
 
     const finalCoords = await fetchCachedCoordinates();
     setGeocodedCoords(finalCoords);
-    setGeocodeStatus(`✓ ${finalCoords.size} propiedades con coordenadas reales`);
+    setGeocodeStatus(`✓ ${finalCoords.size} geocodificadas. El cron sigue procesando automáticamente.`);
     setIsGeocoding(false);
-  }, [mappedProperties, geocodedCoords]);
+  }, [properties, geocodedCoords]);
+
+  // Auto-refresh geocoded coords every 30s
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const updated = await fetchCachedCoordinates();
+      setGeocodedCoords(updated);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Compute province-level stats
+  const provinceStats = useMemo(() => {
+    const map = new Map<string, { prices: number[]; count: number }>();
+    for (const p of properties) {
+      const prov = p.province || "Sin provincia";
+      if (!map.has(prov)) map.set(prov, { prices: [], count: 0 });
+      const entry = map.get(prov)!;
+      entry.prices.push(p.pricePerSqm);
+      entry.count++;
+    }
+    const result: { name: string; medianPricePerSqm: number; count: number }[] = [];
+    for (const [name, { prices, count }] of map) {
+      const sorted = [...prices].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      result.push({ name, medianPricePerSqm: Math.round(median), count });
+    }
+    return result.sort((a, b) => b.count - a.count);
+  }, [properties]);
 
   const minMedian = mappedNeighborhoods.length ? Math.min(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
   const maxMedian = mappedNeighborhoods.length ? Math.max(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
-
-  const topCheap = [...mappedNeighborhoods]
-    .sort((a, b) => a.medianPricePerSqm - b.medianPricePerSqm)
-    .slice(0, 5);
 
   return (
     <Layout>
