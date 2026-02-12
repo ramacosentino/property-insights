@@ -123,9 +123,13 @@ Deno.serve(async (req) => {
         );
       }
 
-      const toGeocode = addresses.filter(
-        (a: any) => !cachedMap.has(a.address) || !cachedMap.get(a.address)?.lat
-      );
+      // Deduplicate toGeocode by address
+      const geocodeSeen = new Set<string>();
+      const toGeocode = addresses.filter((a: any) => {
+        if (geocodeSeen.has(a.address)) return false;
+        geocodeSeen.add(a.address);
+        return !cachedMap.has(a.address) || !cachedMap.get(a.address)?.lat;
+      });
 
       if (toGeocode.length === 0) {
         return new Response(
