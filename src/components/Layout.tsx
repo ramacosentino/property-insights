@@ -1,7 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Map, List, BarChart3 } from "lucide-react";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+interface LayoutProps {
+  children: React.ReactNode;
+  headerContent?: React.ReactNode;
+}
+
+const Layout = ({ children, headerContent }: LayoutProps) => {
   const location = useLocation();
 
   const navItems = [
@@ -12,13 +17,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border glass-card sticky top-0 z-50">
-        <div className="container flex items-center justify-between h-16 px-6">
+        <div className="container flex items-center justify-between h-14 px-6">
           <div className="flex items-center gap-3">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-bold tracking-tight">
               <span className="text-gradient-opportunity">PropAnalytics</span>
             </h1>
           </div>
+          {headerContent && (
+            <div className="flex-1 flex items-center justify-center px-4">
+              {headerContent}
+            </div>
+          )}
           <nav className="flex items-center gap-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
@@ -26,7 +36,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                     isActive
                       ? "bg-primary/15 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
