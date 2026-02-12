@@ -2,6 +2,7 @@ import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { loadProperties } from "@/lib/propertyData";
 import { fetchCachedCoordinates, geocodeBatch, CachedGeoData } from "@/lib/geocoding";
+import { ArrowLeft, ExternalLink, TrendingDown } from "lucide-react";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
