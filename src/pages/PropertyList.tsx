@@ -211,6 +211,18 @@ const PropertyList = () => {
                 <SelectItem value="700K+">700K+</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={parkingFilter} onValueChange={setParkingFilter}>
+              <SelectTrigger className="w-auto bg-secondary border-border text-xs h-8">
+                <SelectValue placeholder="Cocheras" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Cocheras</SelectItem>
+                <SelectItem value="0">Sin cochera</SelectItem>
+                <SelectItem value="1">1 cochera</SelectItem>
+                <SelectItem value="2">2 cocheras</SelectItem>
+                <SelectItem value="3+">3+ cocheras</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
