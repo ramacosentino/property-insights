@@ -327,11 +327,15 @@ const MapView = () => {
 
     map.on("zoomend", () => {
       const zoom = map.getZoom();
-      const scale = Math.max(0.15, Math.min(1, 11 / zoom));
+      const radius = getRadiusForZoom(zoom);
+      const opacityScale = Math.max(0.15, Math.min(1, 11 / zoom));
       diffuseLayerRef.current?.eachLayer((layer) => {
         if (layer instanceof L.CircleMarker) {
-          const base = layer.options.fillOpacity ?? 0.01;
-          layer.setStyle({ fillOpacity: base * scale });
+          const baseOpacity = (layer as any)._baseOpacity ?? layer.options.fillOpacity ?? 0.01;
+          (layer as any)._baseOpacity = baseOpacity;
+          const baseRadiusFactor = (layer as any)._baseRadiusFactor ?? 1;
+          layer.setRadius(radius * baseRadiusFactor);
+          layer.setStyle({ fillOpacity: baseOpacity * opacityScale });
         }
       });
     });
