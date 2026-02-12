@@ -11,7 +11,6 @@ import MultiFilter, {
   createFilterState,
   applyFilter,
   FilterState,
-  FilterOption,
 } from "@/components/MultiFilter";
 import {
   Select,
