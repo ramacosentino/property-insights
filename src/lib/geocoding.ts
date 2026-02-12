@@ -7,22 +7,37 @@ export interface GeocodedProperty {
   lng: number;
 }
 
-// Fetch cached geocoded coordinates from DB
-export async function fetchCachedCoordinates(): Promise<Map<string, { lat: number; lng: number }>> {
+export interface CachedGeoData {
+  lat: number;
+  lng: number;
+  norm_neighborhood?: string | null;
+  norm_locality?: string | null;
+  norm_province?: string | null;
+}
+
+// Fetch cached geocoded coordinates + normalized geo from DB
+export async function fetchCachedCoordinates(): Promise<Map<string, CachedGeoData>> {
   const { data, error } = await supabase
     .from("geocoded_addresses")
-    .select("address, lat, lng")
-    .not("lat", "is", null);
+    .select("address, lat, lng, norm_neighborhood, norm_locality, norm_province")
+    .not("lat", "is", null)
+    .neq("lat", 0);
 
   if (error) {
     console.error("Error fetching cached coordinates:", error);
     return new Map();
   }
 
-  const map = new Map<string, { lat: number; lng: number }>();
+  const map = new Map<string, CachedGeoData>();
   for (const row of data || []) {
     if (row.lat && row.lng) {
-      map.set(row.address, { lat: row.lat, lng: row.lng });
+      map.set(row.address, {
+        lat: row.lat,
+        lng: row.lng,
+        norm_neighborhood: row.norm_neighborhood,
+        norm_locality: row.norm_locality,
+        norm_province: row.norm_province,
+      });
     }
   }
   return map;

@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { loadProperties } from "@/lib/propertyData";
-import { fetchCachedCoordinates, geocodeBatch } from "@/lib/geocoding";
+import { fetchCachedCoordinates, geocodeBatch, CachedGeoData } from "@/lib/geocoding";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -114,7 +114,7 @@ const MapView = () => {
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
 
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
-  const [geocodedCoords, setGeocodedCoords] = useState<Map<string, { lat: number; lng: number }>>(new Map());
+  const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [geocodeStatus, setGeocodeStatus] = useState<string>("");
   const [isGeocoding, setIsGeocoding] = useState(false);
 

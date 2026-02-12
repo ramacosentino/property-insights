@@ -22,7 +22,11 @@ export type Database = {
           lat: number | null
           lng: number | null
           neighborhood: string | null
+          norm_locality: string | null
+          norm_neighborhood: string | null
+          norm_province: string | null
           province: string | null
+          raw_address_details: Json | null
           source: string | null
         }
         Insert: {
@@ -32,7 +36,11 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           neighborhood?: string | null
+          norm_locality?: string | null
+          norm_neighborhood?: string | null
+          norm_province?: string | null
           province?: string | null
+          raw_address_details?: Json | null
           source?: string | null
         }
         Update: {
@@ -42,7 +50,11 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           neighborhood?: string | null
+          norm_locality?: string | null
+          norm_neighborhood?: string | null
+          norm_province?: string | null
           province?: string | null
+          raw_address_details?: Json | null
           source?: string | null
         }
         Relationships: []
