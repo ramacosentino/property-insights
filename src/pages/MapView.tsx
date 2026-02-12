@@ -122,9 +122,10 @@ const MapView = () => {
   const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
   const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
+  // Show properties that have geocoded coords OR a neighborhood fallback
   const mappedProperties = useMemo(
-    () => properties.filter((p) => NEIGHBORHOOD_COORDS[p.neighborhood]),
-    [properties]
+    () => properties.filter((p) => geocodedCoords.has(p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
+    [properties, geocodedCoords]
   );
 
   const dealProperties = useMemo(
