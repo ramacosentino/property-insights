@@ -1,10 +1,23 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
-import { loadProperties } from "@/lib/propertyData";
+import { loadProperties, getSizeRange, getPriceRange, getRoomsLabel } from "@/lib/propertyData";
 import { fetchCachedCoordinates, geocodeBatch, CachedGeoData } from "@/lib/geocoding";
-import { ArrowLeft, ExternalLink, TrendingDown } from "lucide-react";
+import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X } from "lucide-react";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+function getParkingLabel(parking: number | null): string {
+  if (!parking || parking === 0) return "Sin cochera";
+  if (parking === 1) return "1 cochera";
+  if (parking === 2) return "2 cocheras";
+  return "3+ cocheras";
+}
+
+const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
+const SIZE_KEYS = ["< 100 m²", "100-200 m²", "200-400 m²", "400-700 m²", "700+ m²"];
+const PRICE_KEYS = ["< 100K", "100K-200K", "200K-400K", "400K-700K", "700K+"];
+const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
 
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "Benavidez": [-34.42, -58.68],
