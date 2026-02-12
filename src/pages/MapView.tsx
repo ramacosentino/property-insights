@@ -157,7 +157,7 @@ const MapFilterRow = ({ title, keys, state, onChange }: {
 };
 
 const LAYERS_PER_PROPERTY = 5;
-const BASE_RADIUS = 18;
+const BASE_RADIUS = 24;
 
 function getRadiusForZoom(zoom: number): number {
   // At zoom 12 (neighborhood level): base size. At zoom 16+: bigger to cover blocks
