@@ -141,7 +141,7 @@ const PropertyList = () => {
                 <SelectValue placeholder="Barrio" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los barrios</SelectItem>
+                <SelectItem value="all">Barrio</SelectItem>
                 {neighborhoods.map((n) => (
                   <SelectItem key={n.name} value={n.name}>
                     {n.name} ({n.count})
