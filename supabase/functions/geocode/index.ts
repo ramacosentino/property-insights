@@ -24,39 +24,107 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { addresses } = await req.json();
+    let addresses: any[] = [];
+    let autonomousMode = false;
 
-    if (!addresses || !Array.isArray(addresses)) {
-      return new Response(JSON.stringify({ error: "addresses array required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Check which are already cached
-    const { data: cached } = await supabase
-      .from("geocoded_addresses")
-      .select("address, lat, lng")
-      .in("address", addresses.map((a: any) => a.address));
-
-    const cachedMap = new Map(
-      (cached || []).map((c: any) => [c.address, { lat: c.lat, lng: c.lng }])
-    );
-
-    const toGeocode = addresses.filter((a: any) => !cachedMap.has(a.address));
-    const results: any[] = [];
-
-    // Return cached immediately
-    for (const a of addresses) {
-      if (cachedMap.has(a.address)) {
-        results.push({ ...a, ...cachedMap.get(a.address), source: "cache" });
+    // If body has addresses, use them. Otherwise, fetch uncached from DB (autonomous/cron mode).
+    try {
+      const body = await req.json();
+      if (body?.addresses && Array.isArray(body.addresses) && body.addresses.length > 0) {
+        addresses = body.addresses;
       }
+    } catch {
+      // No body or invalid JSON — autonomous mode
     }
 
-    // Geocode missing ones (batch with rate limit)
-    const batchSize = Math.min(toGeocode.length, 20); // max 20 per call
+    if (addresses.length === 0) {
+      autonomousMode = true;
+      // Fetch rows with null lat from the DB
+      const { data: uncached, error } = await supabase
+        .from("geocoded_addresses")
+        .select("address, neighborhood, province")
+        .is("lat", null)
+        .limit(50);
+
+      if (error) {
+        console.error("Error fetching uncached addresses:", error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!uncached || uncached.length === 0) {
+        return new Response(
+          JSON.stringify({ message: "All addresses geocoded", geocoded: 0, remaining: 0 }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      addresses = uncached.map((row: any) => ({
+        address: row.address,
+        neighborhood: row.neighborhood,
+        province: row.province,
+      }));
+    }
+
+    // In client mode, check which are already cached & insert missing ones
+    if (!autonomousMode) {
+      const { data: cached } = await supabase
+        .from("geocoded_addresses")
+        .select("address, lat, lng")
+        .in("address", addresses.map((a: any) => a.address));
+
+      const cachedMap = new Map(
+        (cached || []).map((c: any) => [c.address, { lat: c.lat, lng: c.lng }])
+      );
+
+      // Insert any addresses not yet in the table (with null coords)
+      const newAddresses = addresses.filter((a: any) => !cachedMap.has(a.address));
+      if (newAddresses.length > 0) {
+        await supabase.from("geocoded_addresses").upsert(
+          newAddresses.map((a: any) => ({
+            address: a.address,
+            neighborhood: a.neighborhood,
+            province: a.province,
+            lat: null,
+            lng: null,
+          })),
+          { onConflict: "address" }
+        );
+      }
+
+      // Filter to only those needing geocoding
+      const toGeocode = addresses.filter(
+        (a: any) => !cachedMap.has(a.address) || !cachedMap.get(a.address)?.lat
+      );
+
+      if (toGeocode.length === 0) {
+        return new Response(
+          JSON.stringify({
+            results: addresses.map((a: any) => ({
+              ...a,
+              ...(cachedMap.get(a.address) || {}),
+              source: "cache",
+            })),
+            remaining: 0,
+            total: addresses.length,
+            cached: cachedMap.size,
+            geocoded: 0,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      addresses = toGeocode;
+    }
+
+    // Geocode batch — up to 45 per call (max ~50s of work at 1.1s each)
+    const results: any[] = [];
+    const batchSize = Math.min(addresses.length, 45);
+
     for (let i = 0; i < batchSize; i++) {
-      const item = toGeocode[i];
+      const item = addresses[i];
       const query = `${item.address}, ${item.neighborhood || ""}, ${item.province || ""}, Argentina`;
 
       try {
@@ -70,7 +138,6 @@ serve(async (req) => {
           const lat = parseFloat(data[0].lat);
           const lng = parseFloat(data[0].lon);
 
-          // Cache in DB
           await supabase.from("geocoded_addresses").upsert({
             address: item.address,
             neighborhood: item.neighborhood,
@@ -81,6 +148,16 @@ serve(async (req) => {
 
           results.push({ ...item, lat, lng, source: "nominatim" });
         } else {
+          // Mark as attempted with special coords to avoid retrying
+          await supabase.from("geocoded_addresses").upsert({
+            address: item.address,
+            neighborhood: item.neighborhood,
+            province: item.province,
+            lat: 0,
+            lng: 0,
+            source: "not_found",
+          }, { onConflict: "address" });
+
           results.push({ ...item, lat: null, lng: null, source: "not_found" });
         }
       } catch (e) {
@@ -91,15 +168,15 @@ serve(async (req) => {
       if (i < batchSize - 1) await sleep(DELAY_MS);
     }
 
-    const remaining = toGeocode.length - batchSize;
+    const remaining = addresses.length - batchSize;
 
     return new Response(
       JSON.stringify({
         results,
         remaining,
         total: addresses.length,
-        cached: cached?.length || 0,
         geocoded: batchSize,
+        autonomous: autonomousMode,
       }),
       {
         status: 200,
