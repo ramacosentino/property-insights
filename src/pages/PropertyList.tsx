@@ -3,11 +3,15 @@ import Layout from "@/components/Layout";
 import PropertyCard from "@/components/PropertyCard";
 import {
   loadProperties,
-  Property,
   getSizeRange,
   getPriceRange,
   getRoomsLabel,
 } from "@/lib/propertyData";
+import MultiFilter, {
+  createFilterState,
+  applyFilter,
+  FilterState,
+} from "@/components/MultiFilter";
 import {
   Select,
   SelectContent,
@@ -16,18 +20,54 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Search, SlidersHorizontal, TrendingDown, Star } from "lucide-react";
+
+function getParkingLabel(parking: number | null): string {
+  if (!parking || parking === 0) return "Sin cochera";
+  if (parking === 1) return "1 cochera";
+  if (parking === 2) return "2 cocheras";
+  return "3+ cocheras";
+}
+
+const ROOMS_OPTIONS = [
+  { value: "1-2 amb", label: "1-2 amb" },
+  { value: "3 amb", label: "3 amb" },
+  { value: "4 amb", label: "4 amb" },
+  { value: "5+ amb", label: "5+ amb" },
+];
+
+const SIZE_OPTIONS = [
+  { value: "< 100 m²", label: "< 100 m²" },
+  { value: "100-200 m²", label: "100-200 m²" },
+  { value: "200-400 m²", label: "200-400 m²" },
+  { value: "400-700 m²", label: "400-700 m²" },
+  { value: "700+ m²", label: "700+ m²" },
+];
+
+const PRICE_OPTIONS = [
+  { value: "< 100K", label: "< 100K" },
+  { value: "100K-200K", label: "100-200K" },
+  { value: "200K-400K", label: "200-400K" },
+  { value: "400K-700K", label: "400-700K" },
+  { value: "700K+", label: "700K+" },
+];
+
+const PARKING_OPTIONS = [
+  { value: "Sin cochera", label: "Sin cochera" },
+  { value: "1 cochera", label: "1 cochera" },
+  { value: "2 cocheras", label: "2 cocheras" },
+  { value: "3+ cocheras", label: "3+ cocheras" },
+];
 
 const PropertyList = () => {
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
 
   const [search, setSearch] = useState("");
-  const [neighborhoodFilter, setNeighborhoodFilter] = useState("all");
-  const [roomsFilter, setRoomsFilter] = useState("all");
-  const [sizeFilter, setSizeFilter] = useState("all");
-  const [priceFilter, setPriceFilter] = useState("all");
-  const [parkingFilter, setParkingFilter] = useState("all");
+  const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
+  const [sizeFilter, setSizeFilter] = useState<FilterState>(createFilterState());
+  const [priceFilter, setPriceFilter] = useState<FilterState>(createFilterState());
+  const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
 
@@ -35,6 +75,13 @@ const PropertyList = () => {
     return Array.from(neighborhoodStats.values())
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [neighborhoodStats]);
+
+  const neighborhoodOptions = useMemo(() => {
+    return neighborhoods.map((n) => ({
+      value: n.name,
+      label: `${n.name} (${n.count})`,
+    }));
+  }, [neighborhoods]);
 
   const filtered = useMemo(() => {
     let result = properties;
@@ -49,26 +96,20 @@ const PropertyList = () => {
       );
     }
 
-    if (neighborhoodFilter !== "all") {
-      result = result.filter((p) => p.neighborhood === neighborhoodFilter);
+    if (neighborhoodFilter.included.size > 0 || neighborhoodFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(p.neighborhood, neighborhoodFilter));
     }
-    if (roomsFilter !== "all") {
-      result = result.filter((p) => getRoomsLabel(p.rooms) === roomsFilter);
+    if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     }
-    if (sizeFilter !== "all") {
-      result = result.filter((p) => getSizeRange(p.totalArea) === sizeFilter);
+    if (sizeFilter.included.size > 0 || sizeFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(getSizeRange(p.totalArea), sizeFilter));
     }
-    if (priceFilter !== "all") {
-      result = result.filter((p) => getPriceRange(p.price) === priceFilter);
+    if (priceFilter.included.size > 0 || priceFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(getPriceRange(p.price), priceFilter));
     }
-    if (parkingFilter !== "all") {
-      if (parkingFilter === "0") {
-        result = result.filter((p) => !p.parking || p.parking === 0);
-      } else if (parkingFilter === "3+") {
-        result = result.filter((p) => p.parking && p.parking >= 3);
-      } else {
-        result = result.filter((p) => p.parking === Number(parkingFilter));
-      }
+    if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
     }
     if (showOnlyDeals) {
       result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
@@ -87,7 +128,6 @@ const PropertyList = () => {
     return result;
   }, [properties, search, neighborhoodFilter, roomsFilter, sizeFilter, priceFilter, parkingFilter, sortBy, showOnlyDeals]);
 
-  // Segment stats
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
     return {
@@ -105,19 +145,9 @@ const PropertyList = () => {
         {/* Header stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard label="Total propiedades" value={segmentStats.total.toLocaleString()} />
-          <StatCard
-            label="Oportunidades"
-            value={segmentStats.deals.toLocaleString()}
-            highlight
-          />
-          <StatCard
-            label="Prom. USD/m²"
-            value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`}
-          />
-          <StatCard
-            label="Barrios"
-            value={neighborhoods.length.toLocaleString()}
-          />
+          <StatCard label="Oportunidades" value={segmentStats.deals.toLocaleString()} highlight />
+          <StatCard label="Prom. USD/m²" value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
+          <StatCard label="Barrios" value={neighborhoods.length.toLocaleString()} />
         </div>
 
         {/* Filters */}
@@ -125,9 +155,12 @@ const PropertyList = () => {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <SlidersHorizontal className="h-4 w-4" />
             Filtros
+            <span className="text-xs ml-auto">click = incluir · 2do click = excluir · 3ro = limpiar</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-            <div className="relative lg:col-span-2">
+
+          {/* Search + sort row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar dirección, barrio..."
@@ -136,93 +169,41 @@ const PropertyList = () => {
                 className="pl-9 bg-secondary border-border"
               />
             </div>
-            <Select value={neighborhoodFilter} onValueChange={setNeighborhoodFilter}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Barrio" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Barrio</SelectItem>
-                {neighborhoods.map((n) => (
-                  <SelectItem key={n.name} value={n.name}>
-                    {n.name} ({n.count})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={roomsFilter} onValueChange={setRoomsFilter}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Ambientes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Ambientes</SelectItem>
-                <SelectItem value="1-2 amb">1-2 amb</SelectItem>
-                <SelectItem value="3 amb">3 amb</SelectItem>
-                <SelectItem value="4 amb">4 amb</SelectItem>
-                <SelectItem value="5+ amb">5+ amb</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sizeFilter} onValueChange={setSizeFilter}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Superficie" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Superficie</SelectItem>
-                <SelectItem value="< 100 m²">&lt; 100 m²</SelectItem>
-                <SelectItem value="100-200 m²">100-200 m²</SelectItem>
-                <SelectItem value="200-400 m²">200-400 m²</SelectItem>
-                <SelectItem value="400-700 m²">400-700 m²</SelectItem>
-                <SelectItem value="700+ m²">700+ m²</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pricePerSqm">USD/m² ↑</SelectItem>
-                <SelectItem value="price">Precio ↑</SelectItem>
-                <SelectItem value="opportunity">Oportunidad ↓</SelectItem>
-                <SelectItem value="area">Superficie ↓</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowOnlyDeals(!showOnlyDeals)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors border whitespace-nowrap ${
+                  showOnlyDeals
+                    ? "bg-primary/20 text-primary border-primary/30"
+                    : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                }`}
+              >
+                <Star className="h-3 w-3" />
+                Oportunidades
+              </button>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[140px] bg-secondary border-border text-xs h-9">
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pricePerSqm">USD/m² ↑</SelectItem>
+                  <SelectItem value="price">Precio ↑</SelectItem>
+                  <SelectItem value="opportunity">Oportunidad ↓</SelectItem>
+                  <SelectItem value="area">Superficie ↓</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowOnlyDeals(!showOnlyDeals)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                showOnlyDeals
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-secondary text-muted-foreground border border-border hover:text-foreground"
-              }`}
-            >
-              <Star className="h-3 w-3" />
-              Solo oportunidades
-            </button>
-            <Select value={priceFilter} onValueChange={setPriceFilter}>
-              <SelectTrigger className="w-auto bg-secondary border-border text-xs h-8">
-                <SelectValue placeholder="Rango precio" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Precio</SelectItem>
-                <SelectItem value="< 100K">&lt; 100K</SelectItem>
-                <SelectItem value="100K-200K">100K-200K</SelectItem>
-                <SelectItem value="200K-400K">200K-400K</SelectItem>
-                <SelectItem value="400K-700K">400K-700K</SelectItem>
-                <SelectItem value="700K+">700K+</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={parkingFilter} onValueChange={setParkingFilter}>
-              <SelectTrigger className="w-auto bg-secondary border-border text-xs h-8">
-                <SelectValue placeholder="Cocheras" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Cocheras</SelectItem>
-                <SelectItem value="0">Sin cochera</SelectItem>
-                <SelectItem value="1">1 cochera</SelectItem>
-                <SelectItem value="2">2 cocheras</SelectItem>
-                <SelectItem value="3+">3+ cocheras</SelectItem>
-              </SelectContent>
-            </Select>
+
+          {/* Chip filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <MultiFilter title="Precio USD" options={PRICE_OPTIONS} state={priceFilter} onChange={setPriceFilter} />
+            <MultiFilter title="Ambientes" options={ROOMS_OPTIONS} state={roomsFilter} onChange={setRoomsFilter} />
+            <MultiFilter title="Superficie" options={SIZE_OPTIONS} state={sizeFilter} onChange={setSizeFilter} />
+            <MultiFilter title="Cocheras" options={PARKING_OPTIONS} state={parkingFilter} onChange={setParkingFilter} />
+            <div className="lg:col-span-2">
+              <MultiFilter title="Barrio" options={neighborhoodOptions} state={neighborhoodFilter} onChange={setNeighborhoodFilter} />
+            </div>
           </div>
         </div>
 
@@ -248,20 +229,10 @@ const PropertyList = () => {
   );
 };
 
-const StatCard = ({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) => (
+const StatCard = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
   <div className="glass-card rounded-lg p-4">
     <p className="text-xs text-muted-foreground mb-1">{label}</p>
-    <p className={`text-2xl font-mono font-bold ${highlight ? "text-primary" : ""}`}>
-      {value}
-    </p>
+    <p className={`text-2xl font-mono font-bold ${highlight ? "text-primary" : ""}`}>{value}</p>
   </div>
 );
 
