@@ -205,7 +205,21 @@ const MapView = () => {
       .map((s) => ({ ...s, coords: NEIGHBORHOOD_COORDS[s.name] }));
   }, [neighborhoodStats]);
 
-  // Initialize map once
+  // Zoom map to selected province bounds
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    if (selectedProvince) {
+      const coords = mappedProperties.map((p) => getCoord(p));
+      if (coords.length > 0) {
+        map.fitBounds(coords as L.LatLngBoundsExpression, { padding: [40, 40], maxZoom: 14 });
+      }
+    } else {
+      const bounds: [number, number][] = mappedNeighborhoods.map((n) => n.coords);
+      if (bounds.length > 0) map.fitBounds(bounds, { padding: [30, 30] });
+    }
+  }, [selectedProvince, mappedProperties, getCoord, mappedNeighborhoods]);
+
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
