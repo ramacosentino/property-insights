@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const DELAY_MS = 1100;
+const DELAY_MS = 1500; // Increased to avoid rate limiting
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
