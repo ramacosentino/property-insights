@@ -372,7 +372,7 @@ const MapView = () => {
 
       for (let i = 0; i < LAYERS_PER_PROPERTY; i++) {
         const t = i / (LAYERS_PER_PROPERTY - 1);
-        const radiusFactor = 1 - t * 0.6;
+        const radiusFactor = 1 - t * 0.35;
         const marker = L.circleMarker(coords, {
           radius: radius * radiusFactor,
           color: "transparent",
