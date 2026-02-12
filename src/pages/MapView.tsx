@@ -254,7 +254,7 @@ const MapView = () => {
     setGeocodeStatus("Geocodificando...");
 
     // Send all properties that don't have coords yet
-    const uncached = mappedProperties.filter((p) => !geocodedCoords.has(p.location));
+    const uncached = properties.filter((p) => !geocodedCoords.has(p.location));
     if (uncached.length === 0) {
       setGeocodeStatus("✓ Todas las propiedades geocodificadas");
       setIsGeocoding(false);
