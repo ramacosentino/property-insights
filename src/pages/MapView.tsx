@@ -122,9 +122,10 @@ const MapView = () => {
   const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
   const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
+  // Show properties that have geocoded coords OR a neighborhood fallback
   const mappedProperties = useMemo(
-    () => properties.filter((p) => NEIGHBORHOOD_COORDS[p.neighborhood]),
-    [properties]
+    () => properties.filter((p) => geocodedCoords.has(p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
+    [properties, geocodedCoords]
   );
 
   const dealProperties = useMemo(
@@ -253,7 +254,7 @@ const MapView = () => {
     setGeocodeStatus("Geocodificando...");
 
     // Send all properties that don't have coords yet
-    const uncached = mappedProperties.filter((p) => !geocodedCoords.has(p.location));
+    const uncached = properties.filter((p) => !geocodedCoords.has(p.location));
     if (uncached.length === 0) {
       setGeocodeStatus("✓ Todas las propiedades geocodificadas");
       setIsGeocoding(false);
