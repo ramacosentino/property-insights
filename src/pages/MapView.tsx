@@ -389,8 +389,44 @@ const MapView = () => {
 
   return (
     <Layout>
-      <div className="relative h-[calc(100vh-4rem)]">
-        <div ref={mapRef} className="h-full w-full" />
+      <div className="relative h-[calc(100vh-4rem)] flex flex-col">
+        {/* Compact filter bar */}
+        <div className="absolute top-3 left-3 z-[1000] flex items-center gap-1.5">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all border glass-card ${
+              activeFilterCount > 0 ? "border-primary/30 text-primary" : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SlidersHorizontal className="h-3 w-3" />
+            Filtros{activeFilterCount > 0 && ` (${activeFilterCount})`}
+          </button>
+          <button
+            onClick={() => setShowOnlyDeals(!showOnlyDeals)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all border glass-card ${
+              showOnlyDeals ? "bg-primary/20 text-primary border-primary/30" : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Star className="h-3 w-3" />
+            Oportunidades
+          </button>
+          {activeFilterCount > 0 && (
+            <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[11px] text-muted-foreground hover:text-foreground glass-card border border-border">
+              <X className="h-3 w-3" /> Limpiar
+            </button>
+          )}
+        </div>
+
+        {showFilters && (
+          <div className="absolute top-12 left-3 z-[1000] glass-card rounded-2xl p-3 w-[420px] space-y-2">
+            <MapFilterRow title="Precio" keys={PRICE_KEYS} state={priceFilter} onChange={setPriceFilter} />
+            <MapFilterRow title="Ambientes" keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+            <MapFilterRow title="Superficie" keys={SIZE_KEYS} state={sizeFilter} onChange={setSizeFilter} />
+            <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+          </div>
+        )}
+
+        <div ref={mapRef} className="h-full w-full flex-1" />
 
         {/* Legend */}
         <div className="absolute bottom-6 left-6 glass-card rounded-2xl p-4 z-[1000]">
