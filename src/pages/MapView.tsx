@@ -127,15 +127,43 @@ const MapView = () => {
   const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
   const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
-  const mappedProperties = useMemo(
+  const allMappedProperties = useMemo(
     () => properties.filter((p) => geocodedCoords.has(p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
     [properties, geocodedCoords]
+  );
+
+  const mappedProperties = useMemo(
+    () => selectedProvince ? allMappedProperties.filter((p) => p.province === selectedProvince) : allMappedProperties,
+    [allMappedProperties, selectedProvince]
   );
 
   const dealProperties = useMemo(
     () => mappedProperties.filter((p) => p.isNeighborhoodDeal),
     [mappedProperties]
   );
+
+  const selectedDeals = useMemo(
+    () => selectedProvince
+      ? allMappedProperties.filter((p) => p.province === selectedProvince && p.isNeighborhoodDeal)
+          .sort((a, b) => b.opportunityScore - a.opportunityScore)
+      : [],
+    [allMappedProperties, selectedProvince]
+  );
+
+  // Zoom map to selected province bounds
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    if (selectedProvince) {
+      const coords = mappedProperties.map((p) => getCoord(p));
+      if (coords.length > 0) {
+        map.fitBounds(coords as L.LatLngBoundsExpression, { padding: [40, 40], maxZoom: 14 });
+      }
+    } else {
+      const bounds: [number, number][] = mappedNeighborhoods.map((n) => n.coords);
+      if (bounds.length > 0) map.fitBounds(bounds, { padding: [30, 30] });
+    }
+  }, [selectedProvince, mappedProperties, getCoord, mappedNeighborhoods]);
 
   // Load cached coordinates on mount
   useEffect(() => {
