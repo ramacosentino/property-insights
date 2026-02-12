@@ -363,16 +363,23 @@ const MapView = () => {
       const coords = getCoord(p);
       const color = getPropertyColor(p.pricePerSqm, minPrice, maxPrice);
 
+      const currentZoom = mapInstanceRef.current?.getZoom() ?? 12;
+      const radius = getRadiusForZoom(currentZoom);
+
       for (let i = 0; i < LAYERS_PER_PROPERTY; i++) {
         const t = i / (LAYERS_PER_PROPERTY - 1);
-        L.circleMarker(coords, {
-          radius: 18 * (1 - t * 0.6),
+        const radiusFactor = 1 - t * 0.6;
+        const marker = L.circleMarker(coords, {
+          radius: radius * radiusFactor,
           color: "transparent",
           fillColor: color,
           fillOpacity: 0.006 + t * 0.012,
           weight: 0,
           interactive: false,
-        }).addTo(diffuse);
+        });
+        (marker as any)._baseRadiusFactor = radiusFactor;
+        (marker as any)._baseOpacity = 0.006 + t * 0.012;
+        marker.addTo(diffuse);
       }
     });
 
