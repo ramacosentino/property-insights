@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { loadProperties } from "@/lib/propertyData";
-import { fetchCachedCoordinates, geocodeBatch } from "@/lib/geocoding";
+import { fetchCachedCoordinates, geocodeBatch, CachedGeoData } from "@/lib/geocoding";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
