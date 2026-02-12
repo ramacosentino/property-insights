@@ -154,7 +154,7 @@ const PropertyList = () => {
                 <SelectValue placeholder="Ambientes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Ambientes</SelectItem>
                 <SelectItem value="1-2 amb">1-2 amb</SelectItem>
                 <SelectItem value="3 amb">3 amb</SelectItem>
                 <SelectItem value="4 amb">4 amb</SelectItem>
