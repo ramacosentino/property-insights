@@ -189,10 +189,10 @@ const MapView = () => {
 
   const selectedDeals = useMemo(
     () => selectedProvince
-      ? allMappedProperties.filter((p) => p.province === selectedProvince && p.isNeighborhoodDeal)
+      ? filteredProperties.filter((p) => p.province === selectedProvince && p.isNeighborhoodDeal)
           .sort((a, b) => b.opportunityScore - a.opportunityScore)
       : [],
-    [allMappedProperties, selectedProvince]
+    [filteredProperties, selectedProvince]
   );
 
 
