@@ -469,24 +469,21 @@ const MapView = () => {
 
         <div ref={mapRef} className="h-full w-full flex-1" />
 
-        {/* Legend */}
-        <div className="absolute bottom-6 left-6 glass-card rounded-2xl p-4 z-[1000]">
-          <p className="text-xs font-medium text-foreground mb-3">USD/m² por propiedad</p>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-primary font-mono">${minMedian.toLocaleString()}</span>
+        {/* Legend - bottom left, compact like geocoding block */}
+        <div className="absolute bottom-4 left-4 glass-card rounded-2xl p-4 z-[1000] w-[250px]">
+          <p className="text-xs font-medium text-foreground mb-2">USD/m² por propiedad</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
             <div
-              className="h-3 w-32 rounded-full"
+              className="h-1.5 flex-1 rounded-full"
               style={{ background: "linear-gradient(to right, hsl(210,80%,45%), hsl(160,65%,50%), hsl(140,65%,65%))" }}
             />
-            <span className="text-xs text-expensive font-mono">${maxMedian.toLocaleString()}</span>
+            <span className="text-[11px] text-expensive font-mono">${maxMedian.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-2 mt-3">
-            <div className="w-3 h-3 rounded-full" style={{ background: "rgba(220,235,245,0.7)" }} />
-            <span className="text-xs text-muted-foreground">Oportunidad (&gt;40% bajo mediana)</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "rgba(220,235,245,0.7)" }} />
+            <span className="text-[11px] text-muted-foreground">{dealProperties.length} oportunidades (&gt;40% bajo mediana)</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {dealProperties.length} oportunidades
-          </p>
         </div>
 
         {/* Right sidebar: stats + geocoding */}
