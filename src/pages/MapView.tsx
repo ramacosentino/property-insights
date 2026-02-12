@@ -156,7 +156,7 @@ const MapFilterRow = ({ title, keys, state, onChange }: {
   );
 };
 
-const LAYERS_PER_PROPERTY = 5;
+const LAYERS_PER_PROPERTY = 2;
 const BASE_RADIUS = 24;
 
 function getRadiusForZoom(zoom: number): number {
@@ -317,7 +317,7 @@ const MapView = () => {
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const map = L.map(mapRef.current, { center: [-34.45, -58.55], zoom: 12 });
+    const map = L.map(mapRef.current, { center: [-34.45, -58.55], zoom: 12, preferCanvas: true });
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
     }).addTo(map);
@@ -371,19 +371,19 @@ const MapView = () => {
       const radius = getRadiusForZoom(currentZoom);
 
       for (let i = 0; i < LAYERS_PER_PROPERTY; i++) {
-        const t = i / (LAYERS_PER_PROPERTY - 1);
-        // Outer ring at 60% of radius, inner at 30% — tighter, less halo
-        const radiusFactor = 0.6 - t * 0.3;
+        const t = i / Math.max(LAYERS_PER_PROPERTY - 1, 1);
+        // Outer ring at 55% of radius, inner core at 30%
+        const radiusFactor = 0.55 - t * 0.25;
         const marker = L.circleMarker(coords, {
           radius: radius * radiusFactor,
           color: "transparent",
           fillColor: color,
-          fillOpacity: 0.008 + t * 0.02,
+          fillOpacity: 0.015 + t * 0.04,
           weight: 0,
           interactive: false,
         });
         (marker as any)._baseRadiusFactor = radiusFactor;
-        (marker as any)._baseOpacity = 0.006 + t * 0.012;
+        (marker as any)._baseOpacity = 0.015 + t * 0.04;
         marker.addTo(diffuse);
       }
     });
