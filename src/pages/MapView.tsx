@@ -346,13 +346,13 @@ const MapView = () => {
           )}
         </div>
 
-        {/* Quick stats */}
-        <div className="absolute top-6 right-6 glass-card rounded-lg p-4 z-[1000] max-w-xs">
-          <p className="text-xs font-medium text-foreground mb-2">Top barrios más baratos</p>
-          {topCheap.map((n) => (
-            <div key={n.name} className="flex justify-between text-xs py-1 border-b border-border last:border-0">
-              <span className="text-foreground">{n.name}</span>
-              <span className="font-mono text-primary">${n.medianPricePerSqm.toLocaleString()}/m²</span>
+        {/* Quick stats - Province median prices */}
+        <div className="absolute top-6 right-6 glass-card rounded-lg p-4 z-[1000] max-w-xs max-h-[60vh] overflow-y-auto">
+          <p className="text-xs font-medium text-foreground mb-2">Mediana USD/m² por localidad</p>
+          {provinceStats.map((p) => (
+            <div key={p.name} className="flex justify-between text-xs py-1 border-b border-border last:border-0 gap-4">
+              <span className="text-foreground">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
+              <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
             </div>
           ))}
         </div>
