@@ -8,10 +8,35 @@ const corsHeaders = {
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const DELAY_MS = 1100; // respect 1 req/sec
+const DELAY_MS = 1100;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Extract normalized geographic fields from Nominatim address details.
+ * Priority mapping for Argentina:
+ * - norm_neighborhood: suburb > neighbourhood > city_district
+ * - norm_locality: city > town > municipality > city_district
+ * - norm_province: state
+ */
+function extractNormalizedGeo(address: any): {
+  norm_neighborhood: string | null;
+  norm_locality: string | null;
+  norm_province: string | null;
+} {
+  if (!address) return { norm_neighborhood: null, norm_locality: null, norm_province: null };
+
+  const norm_neighborhood =
+    address.suburb || address.neighbourhood || address.city_district || null;
+
+  const norm_locality =
+    address.city || address.town || address.municipality || address.city_district || null;
+
+  const norm_province = address.state || null;
+
+  return { norm_neighborhood, norm_locality, norm_province };
 }
 
 serve(async (req) => {
@@ -27,23 +52,23 @@ serve(async (req) => {
     let addresses: any[] = [];
     let autonomousMode = false;
 
-    // If body has addresses, use them. Otherwise, fetch uncached from DB (autonomous/cron mode).
     try {
       const body = await req.json();
       if (body?.addresses && Array.isArray(body.addresses) && body.addresses.length > 0) {
         addresses = body.addresses;
       }
     } catch {
-      // No body or invalid JSON — autonomous mode
+      // No body — autonomous mode
     }
 
     if (addresses.length === 0) {
       autonomousMode = true;
-      // Fetch rows with null lat from the DB
+      // Fetch rows with null lat OR null norm_locality (need re-geocoding for normalization)
       const { data: uncached, error } = await supabase
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
-        .is("lat", null)
+        .or("lat.is.null,norm_locality.is.null")
+        .not("lat", "eq", 0) // skip "not_found" entries
         .limit(50);
 
       if (error) {
@@ -56,7 +81,7 @@ serve(async (req) => {
 
       if (!uncached || uncached.length === 0) {
         return new Response(
-          JSON.stringify({ message: "All addresses geocoded", geocoded: 0, remaining: 0 }),
+          JSON.stringify({ message: "All addresses geocoded and normalized", geocoded: 0, remaining: 0 }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -68,7 +93,7 @@ serve(async (req) => {
       }));
     }
 
-    // In client mode, check which are already cached & insert missing ones
+    // In client mode, insert missing addresses into the table
     if (!autonomousMode) {
       const { data: cached } = await supabase
         .from("geocoded_addresses")
@@ -79,7 +104,6 @@ serve(async (req) => {
         (cached || []).map((c: any) => [c.address, { lat: c.lat, lng: c.lng }])
       );
 
-      // Insert any addresses not yet in the table (with null coords)
       const newAddresses = addresses.filter((a: any) => !cachedMap.has(a.address));
       if (newAddresses.length > 0) {
         await supabase.from("geocoded_addresses").upsert(
@@ -94,7 +118,6 @@ serve(async (req) => {
         );
       }
 
-      // Filter to only those needing geocoding
       const toGeocode = addresses.filter(
         (a: any) => !cachedMap.has(a.address) || !cachedMap.get(a.address)?.lat
       );
@@ -119,7 +142,7 @@ serve(async (req) => {
       addresses = toGeocode;
     }
 
-    // Geocode batch — up to 45 per call (max ~50s of work at 1.1s each)
+    // Geocode batch — up to 45 per call
     const results: any[] = [];
     const batchSize = Math.min(addresses.length, 45);
 
@@ -128,7 +151,8 @@ serve(async (req) => {
       const query = `${item.address}, ${item.neighborhood || ""}, ${item.province || ""}, Argentina`;
 
       try {
-        const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=ar`;
+        // Use addressdetails=1 to get structured location data
+        const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=ar&addressdetails=1`;
         const res = await fetch(url, {
           headers: { "User-Agent": "LovableAnalytics/1.0" },
         });
@@ -137,6 +161,8 @@ serve(async (req) => {
         if (data && data.length > 0) {
           const lat = parseFloat(data[0].lat);
           const lng = parseFloat(data[0].lon);
+          const addressDetails = data[0].address || {};
+          const normalized = extractNormalizedGeo(addressDetails);
 
           await supabase.from("geocoded_addresses").upsert({
             address: item.address,
@@ -144,11 +170,15 @@ serve(async (req) => {
             province: item.province,
             lat,
             lng,
+            norm_neighborhood: normalized.norm_neighborhood,
+            norm_locality: normalized.norm_locality,
+            norm_province: normalized.norm_province,
+            raw_address_details: addressDetails,
+            source: "nominatim",
           }, { onConflict: "address" });
 
-          results.push({ ...item, lat, lng, source: "nominatim" });
+          results.push({ ...item, lat, lng, ...normalized, source: "nominatim" });
         } else {
-          // Mark as attempted with special coords to avoid retrying
           await supabase.from("geocoded_addresses").upsert({
             address: item.address,
             neighborhood: item.neighborhood,
