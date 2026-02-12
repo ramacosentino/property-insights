@@ -61,6 +61,15 @@ const PropertyList = () => {
     if (priceFilter !== "all") {
       result = result.filter((p) => getPriceRange(p.price) === priceFilter);
     }
+    if (parkingFilter !== "all") {
+      if (parkingFilter === "0") {
+        result = result.filter((p) => !p.parking || p.parking === 0);
+      } else if (parkingFilter === "3+") {
+        result = result.filter((p) => p.parking && p.parking >= 3);
+      } else {
+        result = result.filter((p) => p.parking === Number(parkingFilter));
+      }
+    }
     if (showOnlyDeals) {
       result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
     }
