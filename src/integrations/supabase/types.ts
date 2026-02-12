@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      geocoded_addresses: {
+        Row: {
+          address: string
+          geocoded_at: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          neighborhood: string | null
+          province: string | null
+          source: string | null
+        }
+        Insert: {
+          address: string
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          neighborhood?: string | null
+          province?: string | null
+          source?: string | null
+        }
+        Update: {
+          address?: string
+          geocoded_at?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          neighborhood?: string | null
+          province?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

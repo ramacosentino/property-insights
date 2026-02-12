@@ -1,6 +1,7 @@
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { loadProperties } from "@/lib/propertyData";
+import { fetchCachedCoordinates, geocodeBatch } from "@/lib/geocoding";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -87,21 +88,20 @@ function hashStr(s: string): number {
 function scatterCoord(base: [number, number], id: string, spread = 0.015): [number, number] {
   const h1 = hashStr(id + "lat");
   const h2 = hashStr(id + "lng");
-  const offsetLat = ((h1 % 1000) / 1000 - 0.5) * spread;
-  const offsetLng = ((h2 % 1000) / 1000 - 0.5) * spread;
-  return [base[0] + offsetLat, base[1] + offsetLng];
+  return [
+    base[0] + ((h1 % 1000) / 1000 - 0.5) * spread,
+    base[1] + ((h2 % 1000) / 1000 - 0.5) * spread,
+  ];
 }
 
 function getPropertyColor(pricePerSqm: number, min: number, max: number): string {
   const ratio = Math.max(0, Math.min(1, (pricePerSqm - min) / (max - min || 1)));
   if (ratio < 0.5) {
     const t = ratio / 0.5;
-    const h = 210 - t * 50;
-    return `hsl(${h}, 80%, ${45 + t * 10}%)`;
+    return `hsl(${210 - t * 50}, 80%, ${45 + t * 10}%)`;
   } else {
     const t = (ratio - 0.5) / 0.5;
-    const h = 160 - t * 20;
-    return `hsl(${h}, 65%, ${50 + t * 15}%)`;
+    return `hsl(${160 - t * 20}, 65%, ${50 + t * 15}%)`;
   }
 }
 
@@ -110,7 +110,13 @@ const LAYERS_PER_PROPERTY = 5;
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const diffuseLayerRef = useRef<L.LayerGroup | null>(null);
+  const dealLayerRef = useRef<L.LayerGroup | null>(null);
+
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
+  const [geocodedCoords, setGeocodedCoords] = useState<Map<string, { lat: number; lng: number }>>(new Map());
+  const [geocodeStatus, setGeocodeStatus] = useState<string>("");
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const allPrices = useMemo(() => properties.map((p) => p.pricePerSqm), [properties]);
   const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
@@ -126,24 +132,35 @@ const MapView = () => {
     [mappedProperties]
   );
 
+  // Load cached coordinates on mount
+  useEffect(() => {
+    fetchCachedCoordinates().then(setGeocodedCoords);
+  }, []);
+
+  // Get coordinate for a property: geocoded > scattered fallback
+  const getCoord = useCallback(
+    (p: { id: string; location: string; neighborhood: string }): [number, number] => {
+      const geo = geocodedCoords.get(p.location);
+      if (geo) return [geo.lat, geo.lng];
+      const base = NEIGHBORHOOD_COORDS[p.neighborhood];
+      if (base) return scatterCoord(base, p.id);
+      return [-34.5, -58.5];
+    },
+    [geocodedCoords]
+  );
+
   const mappedNeighborhoods = useMemo(() => {
     const stats = Array.from(neighborhoodStats.values());
-    const allMedians = stats.map((s) => s.medianPricePerSqm);
-    const sorted = [...new Set(allMedians)].sort((a, b) => a - b);
     return stats
       .filter((s) => NEIGHBORHOOD_COORDS[s.name])
-      .map((s) => {
-        const rank = sorted.indexOf(s.medianPricePerSqm);
-        const ratio = rank / (sorted.length - 1 || 1);
-        return { ...s, coords: NEIGHBORHOOD_COORDS[s.name], ratio };
-      });
+      .map((s) => ({ ...s, coords: NEIGHBORHOOD_COORDS[s.name] }));
   }, [neighborhoodStats]);
 
+  // Initialize map once
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapRef.current, { center: [-34.45, -58.55], zoom: 12 });
-
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
     }).addTo(map);
@@ -151,90 +168,127 @@ const MapView = () => {
     const bounds: [number, number][] = mappedNeighborhoods.map((n) => n.coords);
     if (bounds.length > 0) map.fitBounds(bounds, { padding: [30, 30] });
 
-    // Per-property diffuse coloring: each property gets a few soft layers
-    const diffuseLayer = L.layerGroup().addTo(map);
+    diffuseLayerRef.current = L.layerGroup().addTo(map);
+    dealLayerRef.current = L.layerGroup().addTo(map);
 
-    mappedProperties.forEach((p) => {
-      const base = NEIGHBORHOOD_COORDS[p.neighborhood];
-      if (!base) return;
-      const coords = scatterCoord(base, p.id);
-      const color = getPropertyColor(p.pricePerSqm, minPrice, maxPrice);
-
-      for (let i = 0; i < LAYERS_PER_PROPERTY; i++) {
-        const t = i / (LAYERS_PER_PROPERTY - 1); // 0=outer, 1=inner
-        const radius = 18 * (1 - t * 0.6);
-        const opacity = 0.006 + t * 0.012; // very subtle: 0.006 → 0.018
-
-        L.circleMarker(coords, {
-          radius,
-          color: "transparent",
-          fillColor: color,
-          fillOpacity: opacity,
-          weight: 0,
-          interactive: false,
-        }).addTo(diffuseLayer);
-      }
-    });
-
-    // Deal markers — subtle white dots, no heavy glow
-    const dealIcon = L.divIcon({
-      className: "",
-      html: `<div style="
-        width: 7px; height: 7px;
-        background: rgba(220,235,245,0.7);
-        border: 1px solid rgba(255,255,255,0.3);
-        border-radius: 50%;
-      "></div>`,
-      iconSize: [7, 7],
-      iconAnchor: [3.5, 3.5],
-    });
-
-    dealProperties.forEach((p) => {
-      const base = NEIGHBORHOOD_COORDS[p.neighborhood];
-      if (!base) return;
-      const coords = scatterCoord(base, p.id);
-
-      L.marker(coords, { icon: dealIcon })
-        .bindPopup(
-          `<div style="font-family: Inter, sans-serif; font-size: 12px; color: #111; min-width: 200px;">
-            <div style="background: hsl(190,90%,50%); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 6px;">
-              ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
-            </div><br/>
-            <strong>${p.neighborhood}</strong><br/>
-            <span style="color: #555;">${p.location}</span><br/><br/>
-            <strong>USD/m²:</strong> $${p.pricePerSqm.toLocaleString()}<br/>
-            <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
-            ${p.totalArea ? `<strong>Superficie:</strong> ${p.totalArea} m²<br/>` : ""}
-            ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
-            <a href="${p.url}" target="_blank" style="color: hsl(190,90%,50%); text-decoration: none; font-weight: 600;">Ver publicación →</a>
-          </div>`
-        )
-        .addTo(map);
-    });
-
-    // Zoom-aware opacity scaling
-    const updateOpacity = () => {
+    map.on("zoomend", () => {
       const zoom = map.getZoom();
-      const scale = Math.max(0.2, Math.min(1, 11 / zoom));
-      diffuseLayer.eachLayer((layer) => {
+      const scale = Math.max(0.15, Math.min(1, 11 / zoom));
+      diffuseLayerRef.current?.eachLayer((layer) => {
         if (layer instanceof L.CircleMarker) {
           const base = layer.options.fillOpacity ?? 0.01;
           layer.setStyle({ fillOpacity: base * scale });
         }
       });
-    };
-    map.on("zoomend", updateOpacity);
+    });
 
     mapInstanceRef.current = map;
     return () => {
       map.remove();
       mapInstanceRef.current = null;
+      diffuseLayerRef.current = null;
+      dealLayerRef.current = null;
     };
-  }, [mappedProperties, dealProperties, mappedNeighborhoods, minPrice, maxPrice]);
+  }, [mappedNeighborhoods]);
 
-  const allMedians = mappedNeighborhoods.map((n) => n.medianPricePerSqm * (1 - n.ratio) + n.medianPricePerSqm * n.ratio);
-  const minMedian = mappedNeighborhoods.length ? Math.min(...mappedNeighborhoods.map(n => n.medianPricePerSqm)) : 0;
-  const maxMedian = mappedNeighborhoods.length ? Math.max(...mappedNeighborhoods.map(n => n.medianPricePerSqm)) : 0;
+  // Update markers when coordinates change
+  useEffect(() => {
+    const diffuse = diffuseLayerRef.current;
+    const deals = dealLayerRef.current;
+    if (!diffuse || !deals) return;
+
+    diffuse.clearLayers();
+    deals.clearLayers();
+
+    // Per-property diffuse coloring
+    mappedProperties.forEach((p) => {
+      const coords = getCoord(p);
+      const color = getPropertyColor(p.pricePerSqm, minPrice, maxPrice);
+
+      for (let i = 0; i < LAYERS_PER_PROPERTY; i++) {
+        const t = i / (LAYERS_PER_PROPERTY - 1);
+        L.circleMarker(coords, {
+          radius: 18 * (1 - t * 0.6),
+          color: "transparent",
+          fillColor: color,
+          fillOpacity: 0.006 + t * 0.012,
+          weight: 0,
+          interactive: false,
+        }).addTo(diffuse);
+      }
+    });
+
+    // Deal markers
+    const dealIcon = L.divIcon({
+      className: "",
+      html: `<div style="width:7px;height:7px;background:rgba(220,235,245,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:50%;"></div>`,
+      iconSize: [7, 7],
+      iconAnchor: [3.5, 3.5],
+    });
+
+    dealProperties.forEach((p) => {
+      const coords = getCoord(p);
+      L.marker(coords, { icon: dealIcon })
+        .bindPopup(
+          `<div style="font-family:Inter,sans-serif;font-size:12px;color:#111;min-width:200px;">
+            <div style="background:hsl(190,90%,50%);color:#000;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+              ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
+            </div><br/>
+            <strong>${p.neighborhood}</strong><br/>
+            <span style="color:#555;">${p.location}</span><br/><br/>
+            <strong>USD/m²:</strong> $${p.pricePerSqm.toLocaleString()}<br/>
+            <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
+            ${p.totalArea ? `<strong>Superficie:</strong> ${p.totalArea} m²<br/>` : ""}
+            ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
+            <a href="${p.url}" target="_blank" style="color:hsl(190,90%,50%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+          </div>`
+        )
+        .addTo(deals);
+    });
+  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice]);
+
+  // Geocode handler
+  const handleGeocode = useCallback(async () => {
+    setIsGeocoding(true);
+    setGeocodeStatus("Geocodificando...");
+
+    // Send all properties that don't have coords yet
+    const uncached = mappedProperties.filter((p) => !geocodedCoords.has(p.location));
+    if (uncached.length === 0) {
+      setGeocodeStatus("✓ Todas las propiedades geocodificadas");
+      setIsGeocoding(false);
+      return;
+    }
+
+    let totalGeocoded = 0;
+    let remaining = uncached.length;
+
+    // Process in batches of 20 (edge function limit per call)
+    while (remaining > 0) {
+      const batch = uncached.slice(totalGeocoded, totalGeocoded + 20);
+      if (batch.length === 0) break;
+
+      const result = await geocodeBatch(batch);
+      totalGeocoded += result.geocoded;
+      remaining = remaining - 20;
+
+      setGeocodeStatus(`Geocodificadas: ${totalGeocoded} / ${uncached.length}...`);
+
+      // Refresh coords from cache
+      const updated = await fetchCachedCoordinates();
+      setGeocodedCoords(updated);
+
+      if (result.geocoded === 0) break; // nothing more to do
+    }
+
+    const finalCoords = await fetchCachedCoordinates();
+    setGeocodedCoords(finalCoords);
+    setGeocodeStatus(`✓ ${finalCoords.size} propiedades con coordenadas reales`);
+    setIsGeocoding(false);
+  }, [mappedProperties, geocodedCoords]);
+
+  const minMedian = mappedNeighborhoods.length ? Math.min(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
+  const maxMedian = mappedNeighborhoods.length ? Math.max(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
 
   const topCheap = [...mappedNeighborhoods]
     .sort((a, b) => a.medianPricePerSqm - b.medianPricePerSqm)
@@ -245,6 +299,7 @@ const MapView = () => {
       <div className="relative h-[calc(100vh-3.5rem)]">
         <div ref={mapRef} className="h-full w-full" />
 
+        {/* Legend */}
         <div className="absolute bottom-6 left-6 glass-card rounded-lg p-4 z-[1000]">
           <p className="text-xs font-medium text-foreground mb-3">USD/m² por propiedad</p>
           <div className="flex items-center gap-2">
@@ -260,10 +315,25 @@ const MapView = () => {
             <span className="text-xs text-muted-foreground">Oportunidad (&gt;40% bajo mediana)</span>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {dealProperties.length} oportunidades · {mappedProperties.length} mapeadas
+            {dealProperties.length} oportunidades · {geocodedCoords.size} geocodificadas
           </p>
         </div>
 
+        {/* Geocode button */}
+        <div className="absolute bottom-6 right-6 glass-card rounded-lg p-3 z-[1000]">
+          <button
+            onClick={handleGeocode}
+            disabled={isGeocoding}
+            className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors disabled:opacity-50"
+          >
+            {isGeocoding ? "Geocodificando..." : "📍 Geocodificar propiedades"}
+          </button>
+          {geocodeStatus && (
+            <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">{geocodeStatus}</p>
+          )}
+        </div>
+
+        {/* Quick stats */}
         <div className="absolute top-6 right-6 glass-card rounded-lg p-4 z-[1000] max-w-xs">
           <p className="text-xs font-medium text-foreground mb-2">Top barrios más baratos</p>
           {topCheap.map((n) => (
