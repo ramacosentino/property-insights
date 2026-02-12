@@ -14,7 +14,7 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
     <div
       className={`rounded-lg border p-4 transition-all ${
         isHighlighted
-          ? "border-primary/40 bg-primary/5 opportunity-glow"
+          ? "border-primary/30 bg-card"
           : "border-border bg-card"
       }`}
     >
