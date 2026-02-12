@@ -103,7 +103,13 @@ Deno.serve(async (req) => {
         (cached || []).map((c: any) => [c.address, { lat: c.lat, lng: c.lng }])
       );
 
-      const newAddresses = addresses.filter((a: any) => !cachedMap.has(a.address));
+      // Deduplicate by address to avoid "ON CONFLICT DO UPDATE cannot affect row a second time"
+      const seenAddresses = new Set<string>();
+      const newAddresses = addresses.filter((a: any) => {
+        if (cachedMap.has(a.address) || seenAddresses.has(a.address)) return false;
+        seenAddresses.add(a.address);
+        return true;
+      });
       if (newAddresses.length > 0) {
         await supabase.from("geocoded_addresses").upsert(
           newAddresses.map((a: any) => ({
@@ -117,9 +123,13 @@ Deno.serve(async (req) => {
         );
       }
 
-      const toGeocode = addresses.filter(
-        (a: any) => !cachedMap.has(a.address) || !cachedMap.get(a.address)?.lat
-      );
+      // Deduplicate toGeocode by address
+      const geocodeSeen = new Set<string>();
+      const toGeocode = addresses.filter((a: any) => {
+        if (geocodeSeen.has(a.address)) return false;
+        geocodeSeen.add(a.address);
+        return !cachedMap.has(a.address) || !cachedMap.get(a.address)?.lat;
+      });
 
       if (toGeocode.length === 0) {
         return new Response(
