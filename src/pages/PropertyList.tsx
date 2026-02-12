@@ -27,6 +27,7 @@ const PropertyList = () => {
   const [roomsFilter, setRoomsFilter] = useState("all");
   const [sizeFilter, setSizeFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+  const [parkingFilter, setParkingFilter] = useState("all");
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
 
