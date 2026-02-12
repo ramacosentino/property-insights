@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { loadProperties, NeighborhoodStats } from "@/lib/propertyData";
-import L from "leaflet";
+import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // Approximate coordinates for known neighborhoods
