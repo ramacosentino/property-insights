@@ -85,11 +85,34 @@ const PropertyList = () => {
   const priceOptions = useMemo(() => buildOptionsWithCounts(PRICE_KEYS, counts.prices), [counts.prices]);
   const parkingOptions = useMemo(() => buildOptionsWithCounts(PARKING_KEYS, counts.parking), [counts.parking]);
 
-  const neighborhoodOptions = useMemo(() => {
-    return Array.from(counts.neighborhoods.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([name, count]) => ({ value: name, label: `${name} (${count})` }));
-  }, [counts.neighborhoods]);
+  // Group neighborhoods by province, sorted by total count per province
+  const neighborhoodsByProvince = useMemo(() => {
+    // Build province → neighborhoods map
+    const provMap = new Map<string, { value: string; label: string; count: number }[]>();
+    const provCounts = new Map<string, number>();
+
+    for (const p of properties) {
+      const prov = p.province || "Sin provincia";
+      const hood = p.neighborhood;
+      provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
+    }
+
+    for (const [hood, count] of counts.neighborhoods.entries()) {
+      const sample = properties.find((p) => p.neighborhood === hood);
+      const prov = sample?.province || "Sin provincia";
+      if (!provMap.has(prov)) provMap.set(prov, []);
+      provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
+    }
+
+    // Sort provinces by total count desc, neighborhoods alphabetically within
+    return Array.from(provMap.entries())
+      .map(([prov, hoods]) => ({
+        province: prov,
+        totalCount: provCounts.get(prov) || 0,
+        neighborhoods: hoods.sort((a, b) => a.value.localeCompare(b.value)),
+      }))
+      .sort((a, b) => b.totalCount - a.totalCount);
+  }, [properties, counts.neighborhoods]);
 
   const neighborhoods = useMemo(() => {
     return Array.from(neighborhoodStats.values())
