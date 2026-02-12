@@ -141,9 +141,9 @@ Deno.serve(async (req) => {
       addresses = toGeocode;
     }
 
-    // Geocode batch — up to 45 per call
+    // Geocode batch — up to 20 per call (reduced to avoid Nominatim rate limits)
     const results: any[] = [];
-    const batchSize = Math.min(addresses.length, 45);
+    const batchSize = Math.min(addresses.length, 20);
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
@@ -155,6 +155,20 @@ Deno.serve(async (req) => {
         const res = await fetch(url, {
           headers: { "User-Agent": "LovableAnalytics/1.0" },
         });
+
+        // Handle rate limiting — stop batch early, don't crash
+        if (res.status === 429) {
+          console.warn(`Rate limited at item ${i}/${batchSize}. Stopping batch early.`);
+          break;
+        }
+
+        if (!res.ok) {
+          console.warn(`HTTP ${res.status} for: ${item.address}. Skipping.`);
+          results.push({ ...item, lat: null, lng: null, source: "error" });
+          await sleep(DELAY_MS);
+          continue;
+        }
+
         const data = await res.json();
 
         if (data && data.length > 0) {
