@@ -113,6 +113,7 @@ const MapView = () => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const diffuseLayerRef = useRef<L.LayerGroup | null>(null);
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
+  const highlightLayerRef = useRef<L.LayerGroup | null>(null);
 
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
