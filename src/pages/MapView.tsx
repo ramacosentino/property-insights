@@ -334,40 +334,45 @@ const MapView = () => {
           </p>
         </div>
 
-        {/* Geocoding progress indicator */}
-        <div className="absolute bottom-6 right-6 glass-card rounded-2xl p-4 z-[1000] min-w-[200px]">
-          <p className="text-xs font-medium text-foreground mb-2">📍 Geocodificación</p>
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
+        {/* Right sidebar: stats + geocoding */}
+        <div className="absolute top-4 right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[280px]">
+          {/* Quick stats - Province median prices */}
+          <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
+            <p className="text-xs font-medium text-foreground mb-3 shrink-0">Mediana USD/m² por localidad</p>
+            <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
+              {provinceStats.map((p) => (
+                <div key={p.name} className="flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3">
+                  <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
+                  <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
+                </div>
+              ))}
             </div>
-            <span className="text-xs font-mono text-primary">{progressPct}%</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {geocodedCount.toLocaleString()} / {totalProperties.toLocaleString()} propiedades
-          </p>
-          {progressPct < 100 && (
-            <p className="text-xs text-muted-foreground mt-1 opacity-60">
-              Procesando automáticamente...
-            </p>
-          )}
-          {progressPct === 100 && (
-            <p className="text-xs text-primary mt-1">✓ Completo</p>
-          )}
-        </div>
 
-        {/* Quick stats - Province median prices */}
-        <div className="absolute top-6 right-6 glass-card rounded-2xl p-4 z-[1000] max-w-xs max-h-[calc(100%-10rem)] overflow-y-auto">
-          <p className="text-xs font-medium text-foreground mb-2">Mediana USD/m² por localidad</p>
-          {provinceStats.map((p) => (
-            <div key={p.name} className="flex justify-between text-xs py-1 border-b border-border last:border-0 gap-4">
-              <span className="text-foreground">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
-              <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
+          {/* Geocoding progress indicator */}
+          <div className="glass-card rounded-2xl p-4 shrink-0">
+            <p className="text-xs font-medium text-foreground mb-2">📍 Geocodificación</p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <span className="text-[11px] font-mono text-primary">{progressPct}%</span>
             </div>
-          ))}
+            <p className="text-[11px] text-muted-foreground">
+              {geocodedCount.toLocaleString()} / {totalProperties.toLocaleString()} propiedades
+            </p>
+            {progressPct < 100 && (
+              <p className="text-[11px] text-muted-foreground mt-1 opacity-60">
+                Procesando automáticamente...
+              </p>
+            )}
+            {progressPct === 100 && (
+              <p className="text-[11px] text-primary mt-1">✓ Completo</p>
+            )}
+          </div>
         </div>
       </div>
     </Layout>
