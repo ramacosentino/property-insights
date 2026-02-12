@@ -241,7 +241,7 @@ const PropertyList = () => {
 
           {/* Barrio dropdown multi-select */}
           <NeighborhoodDropdown
-            options={neighborhoodOptions}
+            groups={neighborhoodsByProvince}
             state={neighborhoodFilter}
             onChange={setNeighborhoodFilter}
           />
