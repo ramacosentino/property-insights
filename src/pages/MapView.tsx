@@ -1,10 +1,23 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
-import { loadProperties } from "@/lib/propertyData";
+import { loadProperties, getSizeRange, getPriceRange, getRoomsLabel } from "@/lib/propertyData";
 import { fetchCachedCoordinates, geocodeBatch, CachedGeoData } from "@/lib/geocoding";
-import { ArrowLeft, ExternalLink, TrendingDown } from "lucide-react";
+import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X } from "lucide-react";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+function getParkingLabel(parking: number | null): string {
+  if (!parking || parking === 0) return "Sin cochera";
+  if (parking === 1) return "1 cochera";
+  if (parking === 2) return "2 cocheras";
+  return "3+ cocheras";
+}
+
+const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
+const SIZE_KEYS = ["< 100 m²", "100-200 m²", "200-400 m²", "400-700 m²", "700+ m²"];
+const PRICE_KEYS = ["< 100K", "100K-200K", "200K-400K", "400K-700K", "700K+"];
+const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
 
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "Benavidez": [-34.42, -58.68],
@@ -106,6 +119,43 @@ function getPropertyColor(pricePerSqm: number, min: number, max: number): string
   }
 }
 
+const MapFilterRow = ({ title, keys, state, onChange }: {
+  title: string;
+  keys: string[];
+  state: FilterState;
+  onChange: (s: FilterState) => void;
+}) => {
+  const handleClick = (value: string) => {
+    const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
+    if (next.included.has(value)) { next.included.delete(value); next.excluded.add(value); }
+    else if (next.excluded.has(value)) { next.excluded.delete(value); }
+    else { next.included.add(value); }
+    onChange(next);
+  };
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] font-medium text-muted-foreground w-16 shrink-0">{title}</span>
+      <div className="flex flex-wrap gap-1">
+        {keys.map((k) => {
+          const isIn = state.included.has(k);
+          const isEx = state.excluded.has(k);
+          return (
+            <button key={k} onClick={() => handleClick(k)}
+              className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border ${
+                isIn ? "bg-primary/20 text-primary border-primary/30"
+                : isEx ? "bg-destructive/10 text-destructive border-destructive/30 line-through"
+                : "bg-secondary/50 text-muted-foreground border-border/50 hover:text-foreground"
+              }`}
+            >
+              {isEx && "✕ "}{k}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const LAYERS_PER_PROPERTY = 5;
 
 const MapView = () => {
@@ -119,6 +169,24 @@ const MapView = () => {
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [seedingDone, setSeedingDone] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
+  const [sizeFilter, setSizeFilter] = useState<FilterState>(createFilterState());
+  const [priceFilter, setPriceFilter] = useState<FilterState>(createFilterState());
+  const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
+  const [showOnlyDeals, setShowOnlyDeals] = useState(false);
+
+  const activeFilterCount = [roomsFilter, sizeFilter, priceFilter, parkingFilter].reduce(
+    (acc, f) => acc + f.included.size + f.excluded.size, 0
+  ) + (showOnlyDeals ? 1 : 0);
+
+  const clearAllFilters = () => {
+    setRoomsFilter(createFilterState());
+    setSizeFilter(createFilterState());
+    setPriceFilter(createFilterState());
+    setParkingFilter(createFilterState());
+    setShowOnlyDeals(false);
+  };
 
   const totalProperties = properties.length;
   const geocodedCount = geocodedCoords.size;
@@ -133,10 +201,23 @@ const MapView = () => {
     [properties, geocodedCoords]
   );
 
-  const mappedProperties = useMemo(
-    () => selectedProvince ? allMappedProperties.filter((p) => p.province === selectedProvince) : allMappedProperties,
-    [allMappedProperties, selectedProvince]
-  );
+  // Apply filters to allMappedProperties
+  const filteredProperties = useMemo(() => {
+    let result = allMappedProperties;
+    if (selectedProvince) result = result.filter((p) => p.province === selectedProvince);
+    if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
+    if (sizeFilter.included.size > 0 || sizeFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getSizeRange(p.totalArea), sizeFilter));
+    if (priceFilter.included.size > 0 || priceFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getPriceRange(p.price), priceFilter));
+    if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
+    if (showOnlyDeals) result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
+    return result;
+  }, [allMappedProperties, selectedProvince, roomsFilter, sizeFilter, priceFilter, parkingFilter, showOnlyDeals]);
+
+  const mappedProperties = filteredProperties;
 
   const dealProperties = useMemo(
     () => mappedProperties.filter((p) => p.isNeighborhoodDeal),
@@ -145,10 +226,10 @@ const MapView = () => {
 
   const selectedDeals = useMemo(
     () => selectedProvince
-      ? allMappedProperties.filter((p) => p.province === selectedProvince && p.isNeighborhoodDeal)
+      ? filteredProperties.filter((p) => p.province === selectedProvince && p.isNeighborhoodDeal)
           .sort((a, b) => b.opportunityScore - a.opportunityScore)
       : [],
-    [allMappedProperties, selectedProvince]
+    [filteredProperties, selectedProvince]
   );
 
 
@@ -345,8 +426,44 @@ const MapView = () => {
 
   return (
     <Layout>
-      <div className="relative h-[calc(100vh-4rem)]">
-        <div ref={mapRef} className="h-full w-full" />
+      <div className="relative h-[calc(100vh-4rem)] flex flex-col">
+        {/* Compact filter bar */}
+        <div className="absolute top-3 left-3 z-[1000] flex items-center gap-1.5">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all border glass-card ${
+              activeFilterCount > 0 ? "border-primary/30 text-primary" : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SlidersHorizontal className="h-3 w-3" />
+            Filtros{activeFilterCount > 0 && ` (${activeFilterCount})`}
+          </button>
+          <button
+            onClick={() => setShowOnlyDeals(!showOnlyDeals)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all border glass-card ${
+              showOnlyDeals ? "bg-primary/20 text-primary border-primary/30" : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Star className="h-3 w-3" />
+            Oportunidades
+          </button>
+          {activeFilterCount > 0 && (
+            <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[11px] text-muted-foreground hover:text-foreground glass-card border border-border">
+              <X className="h-3 w-3" /> Limpiar
+            </button>
+          )}
+        </div>
+
+        {showFilters && (
+          <div className="absolute top-12 left-3 z-[1000] glass-card rounded-2xl p-3 w-[420px] space-y-2">
+            <MapFilterRow title="Precio" keys={PRICE_KEYS} state={priceFilter} onChange={setPriceFilter} />
+            <MapFilterRow title="Ambientes" keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+            <MapFilterRow title="Superficie" keys={SIZE_KEYS} state={sizeFilter} onChange={setSizeFilter} />
+            <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+          </div>
+        )}
+
+        <div ref={mapRef} className="h-full w-full flex-1" />
 
         {/* Legend */}
         <div className="absolute bottom-6 left-6 glass-card rounded-2xl p-4 z-[1000]">
