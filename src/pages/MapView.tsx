@@ -114,7 +114,7 @@ const MapView = () => {
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
 
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
-  const [geocodedCoords, setGeocodedCoords] = useState<Map<string, { lat: number; lng: number }>>(new Map());
+  const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [geocodeStatus, setGeocodeStatus] = useState<string>("");
   const [isGeocoding, setIsGeocoding] = useState(false);
 
