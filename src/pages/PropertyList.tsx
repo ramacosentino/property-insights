@@ -6,6 +6,7 @@ import {
   getSizeRange,
   getPriceRange,
   getRoomsLabel,
+  Property,
 } from "@/lib/propertyData";
 import MultiFilter, {
   createFilterState,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal, TrendingDown, Star, X, ChevronDown } from "lucide-react";
+import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 
 function getParkingLabel(parking: number | null): string {
   if (!parking || parking === 0) return "Sin cochera";
@@ -45,8 +47,34 @@ function buildOptionsWithCounts(
   }));
 }
 
+/** Merge normalized geo data into properties */
+function enrichProperties(
+  properties: Property[],
+  geoData: Map<string, CachedGeoData>
+): Property[] {
+  return properties.map((p) => {
+    const geo = geoData.get(p.location);
+    if (!geo) return p;
+    return {
+      ...p,
+      neighborhood: geo.norm_neighborhood || p.neighborhood,
+      province: geo.norm_locality || geo.norm_province || p.province,
+    };
+  });
+}
+
 const PropertyList = () => {
-  const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
+  const { properties: rawProperties, neighborhoodStats } = useMemo(() => loadProperties(), []);
+  const [geoData, setGeoData] = useState<Map<string, CachedGeoData>>(new Map());
+
+  useEffect(() => {
+    fetchCachedCoordinates().then(setGeoData);
+  }, []);
+
+  const properties = useMemo(
+    () => enrichProperties(rawProperties, geoData),
+    [rawProperties, geoData]
+  );
 
   const [search, setSearch] = useState("");
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
@@ -85,15 +113,13 @@ const PropertyList = () => {
   const priceOptions = useMemo(() => buildOptionsWithCounts(PRICE_KEYS, counts.prices), [counts.prices]);
   const parkingOptions = useMemo(() => buildOptionsWithCounts(PARKING_KEYS, counts.parking), [counts.parking]);
 
-  // Group neighborhoods by province, sorted by total count per province
+  // Group neighborhoods by province (now using normalized data when available)
   const neighborhoodsByProvince = useMemo(() => {
-    // Build province → neighborhoods map
     const provMap = new Map<string, { value: string; label: string; count: number }[]>();
     const provCounts = new Map<string, number>();
 
     for (const p of properties) {
       const prov = p.province || "Sin provincia";
-      const hood = p.neighborhood;
       provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
     }
 
@@ -104,7 +130,6 @@ const PropertyList = () => {
       provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
     }
 
-    // Sort provinces by total count desc, neighborhoods alphabetically within
     return Array.from(provMap.entries())
       .map(([prov, hoods]) => ({
         province: prov,
@@ -177,9 +202,15 @@ const PropertyList = () => {
 
   return (
     <Layout>
-      <div className="container px-4 py-6">
+      <div className="container px-6 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold tracking-tight mb-1">Propiedades</h2>
+          <p className="text-muted-foreground">Explorá y filtrá el mercado inmobiliario</p>
+        </div>
+
         {/* Header stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
           <StatCard label="Total propiedades" value={segmentStats.total.toLocaleString()} />
           <StatCard label="Oportunidades" value={segmentStats.deals.toLocaleString()} highlight />
           <StatCard label="Prom. USD/m²" value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
@@ -187,10 +218,10 @@ const PropertyList = () => {
         </div>
 
         {/* Filters */}
-        <div className="glass-card rounded-lg p-4 mb-6 space-y-4">
+        <div className="glass-card rounded-2xl p-5 mb-8 space-y-5">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <SlidersHorizontal className="h-4 w-4" />
-            Filtros
+            <span className="font-medium">Filtros</span>
             <span className="text-xs ml-auto opacity-60">click = incluir · 2do = excluir · 3ro = limpiar</span>
           </div>
 
@@ -202,13 +233,13 @@ const PropertyList = () => {
                 placeholder="Buscar dirección, barrio..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-secondary border-border"
+                className="pl-9 bg-secondary border-border rounded-full h-11"
               />
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowOnlyDeals(!showOnlyDeals)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors border whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
                   showOnlyDeals
                     ? "bg-primary/20 text-primary border-primary/30"
                     : "bg-secondary text-muted-foreground border-border hover:text-foreground"
@@ -218,7 +249,7 @@ const PropertyList = () => {
                 Oportunidades
               </button>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[140px] bg-secondary border-border text-xs h-9">
+                <SelectTrigger className="w-[140px] bg-secondary border-border text-xs h-10 rounded-full">
                   <SelectValue placeholder="Ordenar" />
                 </SelectTrigger>
                 <SelectContent>
@@ -248,20 +279,20 @@ const PropertyList = () => {
         </div>
 
         {/* Property grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.slice(0, 60).map((property) => (
             <PropertyCard key={property.id} property={property} />
           ))}
         </div>
         {filtered.length > 60 && (
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-8">
             Mostrando 60 de {filtered.length} propiedades. Usá los filtros para refinar.
           </p>
         )}
         {filtered.length === 0 && (
-          <div className="text-center py-20 text-muted-foreground">
+          <div className="text-center py-24 text-muted-foreground">
             <TrendingDown className="h-12 w-12 mx-auto mb-4 opacity-30" />
-            <p>No se encontraron propiedades con estos filtros.</p>
+            <p className="text-lg">No se encontraron propiedades con estos filtros.</p>
           </div>
         )}
       </div>
@@ -324,10 +355,8 @@ const NeighborhoodDropdown = ({
     };
 
     if (allIncluded) {
-      // All included → clear all
       allValues.forEach((v) => next.included.delete(v));
     } else {
-      // Include all
       allValues.forEach((v) => {
         next.excluded.delete(v);
         next.included.add(v);
@@ -338,7 +367,6 @@ const NeighborhoodDropdown = ({
 
   const activeCount = state.included.size + state.excluded.size;
 
-  // Filter groups/neighborhoods by query
   const filteredGroups = useMemo(() => {
     if (!query) return groups;
     const q = query.toLowerCase();
@@ -366,14 +394,13 @@ const NeighborhoodDropdown = ({
         )}
       </div>
 
-      {/* Selected tags */}
       {activeCount > 0 && (
         <div className="flex flex-wrap gap-1 mt-1.5 mb-1.5">
           {Array.from(state.included).map((v) => (
             <span
               key={v}
               onClick={() => handleClick(v)}
-              className="cursor-pointer px-2 py-0.5 rounded text-xs font-medium bg-primary/20 text-primary border border-primary/30"
+              className="cursor-pointer px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30"
             >
               {v} ×
             </span>
@@ -382,7 +409,7 @@ const NeighborhoodDropdown = ({
             <span
               key={v}
               onClick={() => handleClick(v)}
-              className="cursor-pointer px-2 py-0.5 rounded text-xs font-medium bg-destructive/10 text-destructive border border-destructive/30 line-through"
+              className="cursor-pointer px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/30 line-through"
             >
               ✕ {v} ×
             </span>
@@ -392,20 +419,20 @@ const NeighborhoodDropdown = ({
 
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs bg-secondary border border-border text-muted-foreground hover:text-foreground transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 rounded-full text-xs bg-secondary border border-border text-muted-foreground hover:text-foreground transition-colors"
       >
         <span>{activeCount > 0 ? `${activeCount} barrio${activeCount > 1 ? "s" : ""} seleccionado${activeCount > 1 ? "s" : ""}` : "Seleccionar barrios..."}</span>
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-80 overflow-hidden">
-          <div className="p-2 border-b border-border">
+        <div className="absolute z-50 mt-1 w-full rounded-2xl border border-border bg-popover shadow-lg max-h-80 overflow-hidden">
+          <div className="p-2.5 border-b border-border">
             <Input
               placeholder="Buscar barrio o localidad..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="h-8 text-xs bg-secondary border-border"
+              className="h-9 text-xs bg-secondary border-border rounded-full"
               autoFocus
             />
           </div>
@@ -423,7 +450,7 @@ const NeighborhoodDropdown = ({
                         else next.add(group.province);
                         setCollapsed(next);
                       }}
-                      className={`px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground`}
+                      className="px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground"
                     >
                       <ChevronDown className={`h-3 w-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`} />
                     </button>
@@ -472,9 +499,9 @@ const NeighborhoodDropdown = ({
 };
 
 const StatCard = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
-  <div className="glass-card rounded-lg p-4">
-    <p className="text-xs text-muted-foreground mb-1">{label}</p>
-    <p className={`text-2xl font-mono font-bold ${highlight ? "text-primary" : ""}`}>{value}</p>
+  <div className="glass-card rounded-2xl p-5">
+    <p className="text-xs text-muted-foreground mb-2">{label}</p>
+    <p className={`text-3xl font-mono font-bold tracking-tight ${highlight ? "text-primary" : ""}`}>{value}</p>
   </div>
 );
 

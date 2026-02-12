@@ -12,23 +12,23 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border glass-card sticky top-0 z-50">
-        <div className="container flex items-center justify-between h-14 px-4">
+        <div className="container flex items-center justify-between h-16 px-6">
           <div className="flex items-center gap-3">
             <BarChart3 className="h-6 w-6 text-primary" />
-            <h1 className="text-lg font-semibold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight">
               <span className="text-gradient-opportunity">PropAnalytics</span>
             </h1>
           </div>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/15 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                 >
