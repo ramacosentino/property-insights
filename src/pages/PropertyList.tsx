@@ -287,6 +287,7 @@ const NeighborhoodDropdown = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -411,18 +412,32 @@ const NeighborhoodDropdown = ({
           <div className="overflow-y-auto max-h-64">
             {filteredGroups.map((group) => {
               const allIncluded = group.neighborhoods.every((n) => state.included.has(n.value));
+              const isCollapsed = collapsed.has(group.province) && !query;
               return (
                 <div key={group.province}>
-                  <button
-                    onClick={() => handleProvinceToggle(group)}
-                    className={`w-full text-left px-3 py-1.5 text-xs font-semibold border-b border-border flex items-center justify-between sticky top-0 z-10 ${
-                      allIncluded ? "bg-primary/10 text-primary" : "bg-muted text-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    <span>{group.province} ({group.totalCount})</span>
-                    {allIncluded && <span className="text-primary text-[10px]">✓ todos</span>}
-                  </button>
-                  {group.neighborhoods.map((opt) => {
+                  <div className="flex items-center border-b border-border sticky top-0 z-10">
+                    <button
+                      onClick={() => {
+                        const next = new Set(collapsed);
+                        if (next.has(group.province)) next.delete(group.province);
+                        else next.add(group.province);
+                        setCollapsed(next);
+                      }}
+                      className={`px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground`}
+                    >
+                      <ChevronDown className={`h-3 w-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`} />
+                    </button>
+                    <button
+                      onClick={() => handleProvinceToggle(group)}
+                      className={`flex-1 text-left py-1.5 pr-3 text-xs font-semibold flex items-center justify-between ${
+                        allIncluded ? "bg-primary/10 text-primary" : "bg-muted text-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      <span>{group.province} ({group.totalCount})</span>
+                      {allIncluded && <span className="text-primary text-[10px]">✓ todos</span>}
+                    </button>
+                  </div>
+                  {!isCollapsed && group.neighborhoods.map((opt) => {
                     const isIncluded = state.included.has(opt.value);
                     const isExcluded = state.excluded.has(opt.value);
                     return (
