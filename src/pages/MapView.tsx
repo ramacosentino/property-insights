@@ -1,10 +1,10 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { loadProperties, NeighborhoodStats } from "@/lib/propertyData";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Approximate coordinates for known neighborhoods in GBA Norte / CABA
+// Approximate coordinates for known neighborhoods
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "Benavidez": [-34.42, -58.68],
   "Puerto Madero": [-34.62, -58.36],
@@ -35,7 +35,6 @@ const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "San Isidro": [-34.47, -58.52],
   "Dique Luján": [-34.38, -58.60],
   "Nordelta": [-34.40, -58.65],
-  "Benavídez": [-34.42, -58.68],
   "Villanueva": [-34.39, -58.67],
   "Palermo": [-34.58, -58.43],
   "Recoleta": [-34.59, -58.39],
@@ -74,160 +73,129 @@ const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "Vicente López": [-34.53, -58.48],
   "La Lucila": [-34.51, -58.49],
   "Boulogne": [-34.50, -58.56],
-  "Acasusso": [-34.48, -58.51],
+  "Cid Campeador": [-34.61, -58.43],
+  "La Paternal": [-34.60, -58.47],
 };
 
-const DEFAULT_CENTER: [number, number] = [-34.45, -58.55];
-
 function getColor(medianPricePerSqm: number, allMedians: number[]): string {
-  const sorted = [...allMedians].sort((a, b) => a - b);
+  const sorted = [...new Set(allMedians)].sort((a, b) => a - b);
   const rank = sorted.indexOf(medianPricePerSqm);
   const ratio = rank / (sorted.length - 1 || 1);
 
-  // Blue (cheap) -> Yellow (mid) -> Green (expensive)
   if (ratio < 0.5) {
-    // Blue range
     const t = ratio / 0.5;
-    const h = 200 - t * 40; // 200 to 160
+    const h = 200 - t * 40;
     return `hsl(${h}, 85%, ${50 + t * 10}%)`;
   } else {
-    // Green range
     const t = (ratio - 0.5) / 0.5;
-    const h = 160 - t * 20; // 160 to 140
+    const h = 160 - t * 20;
     return `hsl(${h}, 70%, ${55 + t * 15}%)`;
   }
 }
 
-function MapBounds({ neighborhoods }: { neighborhoods: [number, number][] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (neighborhoods.length > 0) {
-      const bounds = neighborhoods.reduce(
-        (acc, coord) => {
-          return [
-            [Math.min(acc[0][0], coord[0]), Math.min(acc[0][1], coord[1])],
-            [Math.max(acc[1][0], coord[0]), Math.max(acc[1][1], coord[1])],
-          ] as [[number, number], [number, number]];
-        },
-        [
-          [90, 180],
-          [-90, -180],
-        ] as [[number, number], [number, number]]
-      );
-      map.fitBounds(bounds, { padding: [30, 30] });
-    }
-  }, [neighborhoods, map]);
-  return null;
-}
-
 const MapView = () => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
   const { neighborhoodStats } = useMemo(() => loadProperties(), []);
 
   const mappedNeighborhoods = useMemo(() => {
     const stats = Array.from(neighborhoodStats.values());
     const allMedians = stats.map((s) => s.medianPricePerSqm);
-    const uniqueMedians = [...new Set(allMedians)].sort((a, b) => a - b);
 
     return stats
       .filter((s) => NEIGHBORHOOD_COORDS[s.name])
       .map((s) => ({
         ...s,
         coords: NEIGHBORHOOD_COORDS[s.name],
-        color: getColor(s.medianPricePerSqm, uniqueMedians),
+        color: getColor(s.medianPricePerSqm, allMedians),
         radius: Math.max(8, Math.min(25, Math.sqrt(s.count) * 5)),
       }));
   }, [neighborhoodStats]);
 
-  const coords = mappedNeighborhoods.map((n) => n.coords);
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
 
-  // Legend data
+    const map = L.map(mapRef.current, {
+      center: [-34.45, -58.55],
+      zoom: 12,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+    }).addTo(map);
+
+    const bounds: L.LatLngBoundsExpression = mappedNeighborhoods.map((n) => n.coords as [number, number]);
+    if (bounds.length > 0) {
+      map.fitBounds(bounds as L.LatLngBoundsExpression, { padding: [30, 30] });
+    }
+
+    mappedNeighborhoods.forEach((n) => {
+      L.circleMarker(n.coords, {
+        radius: n.radius,
+        color: n.color,
+        fillColor: n.color,
+        fillOpacity: 0.5,
+        weight: 2,
+      })
+        .bindPopup(
+          `<div style="font-family: Inter, sans-serif; font-size: 13px; color: #111;">
+            <strong style="font-size: 15px;">${n.name}</strong><br/>
+            ${n.province}<br/><br/>
+            <strong>Mediana USD/m²:</strong> $${n.medianPricePerSqm.toLocaleString()}<br/>
+            <strong>Promedio USD/m²:</strong> $${Math.round(n.avgPricePerSqm).toLocaleString()}<br/>
+            <strong>Rango:</strong> $${n.minPricePerSqm.toLocaleString()} - $${n.maxPricePerSqm.toLocaleString()}<br/>
+            <strong>Propiedades:</strong> ${n.count}
+          </div>`
+        )
+        .addTo(map);
+    });
+
+    mapInstanceRef.current = map;
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, [mappedNeighborhoods]);
+
   const allMedians = mappedNeighborhoods.map((n) => n.medianPricePerSqm);
-  const minMedian = Math.min(...allMedians);
-  const maxMedian = Math.max(...allMedians);
+  const minMedian = allMedians.length ? Math.min(...allMedians) : 0;
+  const maxMedian = allMedians.length ? Math.max(...allMedians) : 0;
+
+  const topCheap = [...mappedNeighborhoods]
+    .sort((a, b) => a.medianPricePerSqm - b.medianPricePerSqm)
+    .slice(0, 5);
 
   return (
     <Layout>
       <div className="relative h-[calc(100vh-3.5rem)]">
-        <MapContainer
-          center={DEFAULT_CENTER}
-          zoom={12}
-          className="h-full w-full"
-          style={{ background: "hsl(220, 25%, 6%)" }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          />
-          <MapBounds neighborhoods={coords} />
-          {mappedNeighborhoods.map((n) => (
-            <CircleMarker
-              key={n.name}
-              center={n.coords}
-              radius={n.radius}
-              pathOptions={{
-                color: n.color,
-                fillColor: n.color,
-                fillOpacity: 0.5,
-                weight: 2,
-              }}
-            >
-              <Popup>
-                <div className="text-sm space-y-1 font-sans" style={{ color: "#111" }}>
-                  <p className="font-bold text-base">{n.name}</p>
-                  <p>{n.province}</p>
-                  <p>
-                    <strong>Mediana USD/m²:</strong> ${n.medianPricePerSqm.toLocaleString()}
-                  </p>
-                  <p>
-                    <strong>Promedio USD/m²:</strong> ${Math.round(n.avgPricePerSqm).toLocaleString()}
-                  </p>
-                  <p>
-                    <strong>Rango:</strong> ${n.minPricePerSqm.toLocaleString()} - $
-                    {n.maxPricePerSqm.toLocaleString()}
-                  </p>
-                  <p>
-                    <strong>Propiedades:</strong> {n.count}
-                  </p>
-                </div>
-              </Popup>
-            </CircleMarker>
-          ))}
-        </MapContainer>
+        <div ref={mapRef} className="h-full w-full" />
 
         {/* Legend */}
         <div className="absolute bottom-6 left-6 glass-card rounded-lg p-4 z-[1000]">
           <p className="text-xs font-medium text-foreground mb-3">USD/m² por barrio</p>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-primary font-mono">
-              ${minMedian.toLocaleString()}
-            </span>
+            <span className="text-xs text-primary font-mono">${minMedian.toLocaleString()}</span>
             <div
               className="h-3 w-32 rounded-full"
               style={{
                 background: "linear-gradient(to right, hsl(200,85%,50%), hsl(160,70%,55%), hsl(140,70%,70%))",
               }}
             />
-            <span className="text-xs text-expensive font-mono">
-              ${maxMedian.toLocaleString()}
-            </span>
+            <span className="text-xs text-expensive font-mono">${maxMedian.toLocaleString()}</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Tamaño = cantidad de propiedades
-          </p>
+          <p className="text-xs text-muted-foreground mt-2">Tamaño = cantidad de propiedades</p>
         </div>
 
         {/* Quick stats */}
         <div className="absolute top-6 right-6 glass-card rounded-lg p-4 z-[1000] max-w-xs">
           <p className="text-xs font-medium text-foreground mb-2">Top barrios más baratos</p>
-          {mappedNeighborhoods
-            .sort((a, b) => a.medianPricePerSqm - b.medianPricePerSqm)
-            .slice(0, 5)
-            .map((n) => (
-              <div key={n.name} className="flex justify-between text-xs py-1 border-b border-border last:border-0">
-                <span className="text-foreground">{n.name}</span>
-                <span className="font-mono text-primary">${n.medianPricePerSqm.toLocaleString()}/m²</span>
-              </div>
-            ))}
+          {topCheap.map((n) => (
+            <div key={n.name} className="flex justify-between text-xs py-1 border-b border-border last:border-0">
+              <span className="text-foreground">{n.name}</span>
+              <span className="font-mono text-primary">${n.medianPricePerSqm.toLocaleString()}/m²</span>
+            </div>
+          ))}
         </div>
       </div>
     </Layout>
