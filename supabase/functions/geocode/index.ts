@@ -38,7 +38,7 @@ function extractNormalizedGeo(address: any): {
   return { norm_neighborhood, norm_locality, norm_province };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
