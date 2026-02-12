@@ -360,7 +360,7 @@ const MapView = () => {
         </div>
 
         {/* Quick stats - Province median prices */}
-        <div className="absolute top-6 right-6 glass-card rounded-2xl p-4 z-[1000] max-w-xs max-h-[60vh] overflow-y-auto">
+        <div className="absolute top-6 right-6 glass-card rounded-2xl p-4 z-[1000] max-w-xs max-h-[calc(100%-10rem)] overflow-y-auto">
           <p className="text-xs font-medium text-foreground mb-2">Mediana USD/m² por localidad</p>
           {provinceStats.map((p) => (
             <div key={p.name} className="flex justify-between text-xs py-1 border-b border-border last:border-0 gap-4">
