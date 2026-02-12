@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
-import { loadProperties, Property, NeighborhoodStats } from "@/lib/propertyData";
+import { loadProperties } from "@/lib/propertyData";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -110,28 +110,13 @@ function getColor(medianPricePerSqm: number, allMedians: number[]): string {
   }
 }
 
-function getPropertyColor(pricePerSqm: number, min: number, max: number): string {
-  const ratio = (pricePerSqm - min) / (max - min || 1);
-  const clamped = Math.max(0, Math.min(1, ratio));
-  if (clamped < 0.5) {
-    const t = clamped / 0.5;
-    const h = 200 - t * 40;
-    return `hsl(${h}, 85%, ${50 + t * 10}%)`;
-  } else {
-    const t = (clamped - 0.5) / 0.5;
-    const h = 160 - t * 20;
-    return `hsl(${h}, 70%, ${55 + t * 15}%)`;
-  }
-}
+const DIFFUSE_LAYERS = 20;
+const BASE_RADIUS = 50;
 
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
-
-  const allPrices = useMemo(() => properties.map((p) => p.pricePerSqm), [properties]);
-  const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
-  const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
   const mappedNeighborhoods = useMemo(() => {
     const stats = Array.from(neighborhoodStats.values());
@@ -167,79 +152,53 @@ const MapView = () => {
       map.fitBounds(bounds, { padding: [30, 30] });
     }
 
-    // Layer 1: All properties as tiny diffuse dots
-    const propertyLayer = L.layerGroup().addTo(map);
-    properties.forEach((p) => {
-      const base = NEIGHBORHOOD_COORDS[p.neighborhood];
-      if (!base) return;
-      const coords = scatterCoord(base, p.id);
-      const color = getPropertyColor(p.pricePerSqm, minPrice, maxPrice);
+    // Diffuse neighborhood glow: 20 concentric layers per neighborhood
+    const glowLayer = L.layerGroup().addTo(map);
 
-      L.circleMarker(coords, {
-        radius: 6,
-        color: "transparent",
-        fillColor: color,
-        fillOpacity: 0.25,
-        weight: 0,
-      })
-        .bindPopup(
-          `<div style="font-family: Inter, sans-serif; font-size: 12px; color: #111; min-width: 180px;">
-            <strong>${p.neighborhood}</strong><br/>
-            <span style="color: #555;">${p.location}</span><br/><br/>
-            <strong>USD/m²:</strong> $${p.pricePerSqm.toLocaleString()}<br/>
-            <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
-            ${p.totalArea ? `<strong>Superficie:</strong> ${p.totalArea} m²<br/>` : ""}
-            ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
-            ${p.opportunityScore > 0 ? `<strong>Score:</strong> ${p.opportunityScore.toFixed(1)}% bajo mediana<br/>` : ""}
-          </div>`
-        )
-        .addTo(propertyLayer);
-    });
-
-    // Layer 2: Neighborhood diffuse glow (large, very transparent)
     mappedNeighborhoods.forEach((n) => {
-      const glowRadius = Math.max(30, Math.min(60, Math.sqrt(n.count) * 8));
-      // Outer glow
-      L.circleMarker(n.coords, {
-        radius: glowRadius,
-        color: "transparent",
-        fillColor: n.color,
-        fillOpacity: 0.08,
-        weight: 0,
-      }).addTo(map);
-      // Inner glow
-      L.circleMarker(n.coords, {
-        radius: glowRadius * 0.6,
-        color: "transparent",
-        fillColor: n.color,
-        fillOpacity: 0.12,
-        weight: 0,
-      })
-        .bindPopup(
-          `<div style="font-family: Inter, sans-serif; font-size: 13px; color: #111;">
-            <strong style="font-size: 15px;">${n.name}</strong><br/>
-            ${n.province}<br/><br/>
-            <strong>Mediana USD/m²:</strong> $${n.medianPricePerSqm.toLocaleString()}<br/>
-            <strong>Promedio USD/m²:</strong> $${Math.round(n.avgPricePerSqm).toLocaleString()}<br/>
-            <strong>Rango:</strong> $${n.minPricePerSqm.toLocaleString()} - $${n.maxPricePerSqm.toLocaleString()}<br/>
-            <strong>Propiedades:</strong> ${n.count}
-          </div>`
-        )
-        .addTo(map);
+      const sizeScale = Math.max(0.7, Math.min(1.5, Math.sqrt(n.count) / 4));
+
+      for (let i = 0; i < DIFFUSE_LAYERS; i++) {
+        const t = i / (DIFFUSE_LAYERS - 1); // 0 (outermost) to 1 (innermost)
+        const radius = BASE_RADIUS * sizeScale * (1 - t * 0.7); // shrinks inward
+        const opacity = 0.008 + t * 0.025; // 0.008 outer → 0.033 inner
+
+        L.circleMarker(n.coords, {
+          radius,
+          color: "transparent",
+          fillColor: n.color,
+          fillOpacity: opacity,
+          weight: 0,
+          interactive: i === DIFFUSE_LAYERS - 1, // only innermost is clickable
+        })
+          .bindPopup(
+            i === DIFFUSE_LAYERS - 1
+              ? `<div style="font-family: Inter, sans-serif; font-size: 13px; color: #111;">
+                  <strong style="font-size: 15px;">${n.name}</strong><br/>
+                  ${n.province}<br/><br/>
+                  <strong>Mediana USD/m²:</strong> $${n.medianPricePerSqm.toLocaleString()}<br/>
+                  <strong>Promedio USD/m²:</strong> $${Math.round(n.avgPricePerSqm).toLocaleString()}<br/>
+                  <strong>Rango:</strong> $${n.minPricePerSqm.toLocaleString()} - $${n.maxPricePerSqm.toLocaleString()}<br/>
+                  <strong>Propiedades:</strong> ${n.count}
+                </div>`
+              : ""
+          )
+          .addTo(glowLayer);
+      }
     });
 
-    // Layer 3: Deal markers (pulsing pins for <40% below median)
+    // Deal markers only — white-ish pins with glow
     const dealIcon = L.divIcon({
-      className: "deal-marker",
+      className: "",
       html: `<div style="
-        width: 12px; height: 12px;
-        background: hsl(190, 90%, 50%);
-        border: 2px solid hsl(190, 90%, 70%);
+        width: 10px; height: 10px;
+        background: rgba(255,255,255,0.9);
+        border: 1.5px solid rgba(255,255,255,0.5);
         border-radius: 50%;
-        box-shadow: 0 0 8px 3px hsla(190, 90%, 50%, 0.5);
+        box-shadow: 0 0 10px 3px rgba(255,255,255,0.3), 0 0 4px 1px rgba(190,230,255,0.4);
       "></div>`,
-      iconSize: [12, 12],
-      iconAnchor: [6, 6],
+      iconSize: [10, 10],
+      iconAnchor: [5, 5],
     });
 
     dealProperties.forEach((p) => {
@@ -265,13 +224,25 @@ const MapView = () => {
         .addTo(map);
     });
 
+    // Adjust opacity on zoom to prevent over-saturation
+    map.on("zoomend", () => {
+      const zoom = map.getZoom();
+      const opacityScale = Math.max(0.3, Math.min(1, 12 / zoom));
+      glowLayer.eachLayer((layer) => {
+        if (layer instanceof L.CircleMarker) {
+          const baseOpacity = layer.options.fillOpacity ?? 0.02;
+          layer.setStyle({ fillOpacity: baseOpacity * opacityScale });
+        }
+      });
+    });
+
     mapInstanceRef.current = map;
 
     return () => {
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, [mappedNeighborhoods, dealProperties, properties, minPrice, maxPrice]);
+  }, [mappedNeighborhoods, dealProperties]);
 
   const allMedians = mappedNeighborhoods.map((n) => n.medianPricePerSqm);
   const minMedian = allMedians.length ? Math.min(...allMedians) : 0;
@@ -288,7 +259,7 @@ const MapView = () => {
 
         {/* Legend */}
         <div className="absolute bottom-6 left-6 glass-card rounded-lg p-4 z-[1000]">
-          <p className="text-xs font-medium text-foreground mb-3">USD/m² por propiedad</p>
+          <p className="text-xs font-medium text-foreground mb-3">USD/m² por barrio</p>
           <div className="flex items-center gap-2">
             <span className="text-xs text-primary font-mono">${minMedian.toLocaleString()}</span>
             <div
@@ -303,8 +274,8 @@ const MapView = () => {
             <div
               className="w-3 h-3 rounded-full"
               style={{
-                background: "hsl(190, 90%, 50%)",
-                boxShadow: "0 0 6px 2px hsla(190, 90%, 50%, 0.5)",
+                background: "rgba(255,255,255,0.9)",
+                boxShadow: "0 0 6px 2px rgba(255,255,255,0.4)",
               }}
             />
             <span className="text-xs text-muted-foreground">
@@ -312,7 +283,7 @@ const MapView = () => {
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {dealProperties.length} propiedades destacadas · {properties.length} total
+            {dealProperties.length} oportunidades · {properties.length} total
           </p>
         </div>
 
