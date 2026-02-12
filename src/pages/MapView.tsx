@@ -335,7 +335,7 @@ const MapView = () => {
         </div>
 
         {/* Right sidebar: stats + geocoding */}
-        <div className="absolute top-4 right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[220px]">
+        <div className="absolute top-4 right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px]">
           {/* Quick stats - Province median prices */}
           <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
             <p className="text-xs font-medium text-foreground mb-3 shrink-0">Mediana USD/m² por localidad</p>
