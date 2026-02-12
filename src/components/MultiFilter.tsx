@@ -17,9 +17,6 @@ interface MultiFilterProps {
   onChange: (state: FilterState) => void;
 }
 
-/**
- * Click = include (teal), click again = exclude (red strikethrough), click again = clear
- */
 const MultiFilter = ({ title, options, state, onChange }: MultiFilterProps) => {
   const handleClick = (value: string) => {
     const next: FilterState = {
@@ -28,14 +25,11 @@ const MultiFilter = ({ title, options, state, onChange }: MultiFilterProps) => {
     };
 
     if (next.included.has(value)) {
-      // included → excluded
       next.included.delete(value);
       next.excluded.add(value);
     } else if (next.excluded.has(value)) {
-      // excluded → clear
       next.excluded.delete(value);
     } else {
-      // clear → included
       next.included.add(value);
     }
 
@@ -70,7 +64,7 @@ const MultiFilter = ({ title, options, state, onChange }: MultiFilterProps) => {
             <button
               key={opt.value}
               onClick={() => handleClick(opt.value)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all border ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
                 isIncluded
                   ? "bg-primary/20 text-primary border-primary/30"
                   : isExcluded
