@@ -366,17 +366,84 @@ const MapView = () => {
 
         {/* Right sidebar: stats + geocoding */}
         <div className="absolute top-4 right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px]">
-          {/* Quick stats - Province median prices */}
           <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
-            <p className="text-xs font-medium text-foreground mb-3 shrink-0">Mediana USD/m² por localidad</p>
-            <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
-              {provinceStats.map((p) => (
-                <div key={p.name} className="flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3">
-                  <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
-                  <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
+            {selectedProvince ? (
+              <>
+                <button
+                  onClick={() => setSelectedProvince(null)}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 shrink-0"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Volver a localidades
+                </button>
+                <p className="text-xs font-medium text-foreground mb-1 shrink-0">{selectedProvince}</p>
+                <p className="text-[11px] text-muted-foreground mb-3 shrink-0">
+                  {selectedDeals.length} oportunidad{selectedDeals.length !== 1 ? "es" : ""}
+                </p>
+                <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll space-y-2">
+                  {selectedDeals.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground">Sin oportunidades en esta localidad.</p>
+                  )}
+                  {selectedDeals.map((p) => (
+                    <div key={p.id} className="rounded-xl border border-border/50 p-3 hover:border-primary/30 transition-colors">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <span className="text-[11px] text-foreground leading-tight line-clamp-2">{p.location}</span>
+                        <a
+                          href={p.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <TrendingDown className="h-3 w-3 text-primary" />
+                        <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                        <div>
+                          <span className="text-muted-foreground">USD/m²</span>
+                          <span className="block font-mono font-semibold text-foreground">${p.pricePerSqm.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Precio</span>
+                          <span className="block font-mono font-semibold text-foreground">${p.price.toLocaleString()}</span>
+                        </div>
+                        {p.totalArea && (
+                          <div>
+                            <span className="text-muted-foreground">Sup.</span>
+                            <span className="block font-mono text-foreground">{p.totalArea} m²</span>
+                          </div>
+                        )}
+                        {p.rooms && (
+                          <div>
+                            <span className="text-muted-foreground">Amb.</span>
+                            <span className="block font-mono text-foreground">{p.rooms}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-medium text-foreground mb-3 shrink-0">Mediana USD/m² por localidad</p>
+                <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
+                  {provinceStats.map((p) => (
+                    <button
+                      key={p.name}
+                      onClick={() => setSelectedProvince(p.name)}
+                      className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
+                    >
+                      <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
+                      <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Geocoding progress indicator */}
