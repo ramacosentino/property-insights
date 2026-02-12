@@ -287,6 +287,7 @@ const NeighborhoodDropdown = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
