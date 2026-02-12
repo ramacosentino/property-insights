@@ -294,10 +294,15 @@ const MapView = () => {
       .map((s) => ({ ...s, coords: NEIGHBORHOOD_COORDS[s.name] }));
   }, [neighborhoodStats]);
 
-  // Zoom map to selected province bounds
+  // Zoom map to selected province bounds — only on explicit province selection
+  const prevProvinceRef = useRef<string | null>(null);
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+    // Only fitBounds when province selection actually changed
+    if (selectedProvince === prevProvinceRef.current) return;
+    prevProvinceRef.current = selectedProvince;
+
     if (selectedProvince) {
       const coords = mappedProperties.map((p) => getCoord(p));
       if (coords.length > 0) {
