@@ -203,7 +203,7 @@ const PropertyList = () => {
                 <SelectValue placeholder="Rango precio" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todo precio</SelectItem>
+                <SelectItem value="all">Precio</SelectItem>
                 <SelectItem value="< 100K">&lt; 100K</SelectItem>
                 <SelectItem value="100K-200K">100K-200K</SelectItem>
                 <SelectItem value="200K-400K">200K-400K</SelectItem>
