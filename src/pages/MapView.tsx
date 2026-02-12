@@ -117,6 +117,7 @@ const MapView = () => {
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [seedingDone, setSeedingDone] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
 
   const totalProperties = properties.length;
   const geocodedCount = geocodedCoords.size;
