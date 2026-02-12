@@ -85,7 +85,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, roomsFilter, sizeFilter, priceFilter, sortBy, showOnlyDeals]);
+  }, [properties, search, neighborhoodFilter, roomsFilter, sizeFilter, priceFilter, parkingFilter, sortBy, showOnlyDeals]);
 
   // Segment stats
   const segmentStats = useMemo(() => {
