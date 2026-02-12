@@ -63,12 +63,13 @@ Deno.serve(async (req) => {
     if (addresses.length === 0) {
       autonomousMode = true;
       // Fetch rows with null lat OR null norm_locality (need re-geocoding for normalization)
+      // Limit to 10 to avoid rate limiting with concurrent cron calls
       const { data: uncached, error } = await supabase
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
         .or("lat.is.null,norm_locality.is.null")
         .not("lat", "eq", 0) // skip "not_found" entries
-        .limit(50);
+        .limit(10);
 
       if (error) {
         console.error("Error fetching uncached addresses:", error);
