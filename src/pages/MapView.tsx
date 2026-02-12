@@ -113,6 +113,7 @@ const MapView = () => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const diffuseLayerRef = useRef<L.LayerGroup | null>(null);
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
+  const highlightLayerRef = useRef<L.LayerGroup | null>(null);
 
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
@@ -233,6 +234,7 @@ const MapView = () => {
 
     diffuseLayerRef.current = L.layerGroup().addTo(map);
     dealLayerRef.current = L.layerGroup().addTo(map);
+    highlightLayerRef.current = L.layerGroup().addTo(map);
 
     map.on("zoomend", () => {
       const zoom = map.getZoom();
@@ -251,6 +253,7 @@ const MapView = () => {
       mapInstanceRef.current = null;
       diffuseLayerRef.current = null;
       dealLayerRef.current = null;
+      highlightLayerRef.current = null;
     };
   }, [mappedNeighborhoods]);
 
@@ -386,7 +389,33 @@ const MapView = () => {
                     <p className="text-[11px] text-muted-foreground">Sin oportunidades en esta localidad.</p>
                   )}
                   {selectedDeals.map((p) => (
-                    <div key={p.id} className="rounded-xl border border-border/50 p-3 hover:border-primary/30 transition-colors">
+                    <div
+                      key={p.id}
+                      className="rounded-xl border border-border/50 p-3 hover:border-primary/30 transition-colors"
+                      onMouseEnter={() => {
+                        const hl = highlightLayerRef.current;
+                        if (!hl) return;
+                        hl.clearLayers();
+                        const coords = getCoord(p);
+                        L.circleMarker(coords, {
+                          radius: 18,
+                          color: "hsl(190,90%,50%)",
+                          fillColor: "hsl(190,90%,50%)",
+                          fillOpacity: 0.35,
+                          weight: 2,
+                          interactive: false,
+                        }).addTo(hl);
+                        L.circleMarker(coords, {
+                          radius: 6,
+                          color: "white",
+                          fillColor: "hsl(190,90%,70%)",
+                          fillOpacity: 0.9,
+                          weight: 1.5,
+                          interactive: false,
+                        }).addTo(hl);
+                      }}
+                      onMouseLeave={() => highlightLayerRef.current?.clearLayers()}
+                    >
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <span className="text-[11px] text-foreground leading-tight line-clamp-2">{p.location}</span>
                         <a
