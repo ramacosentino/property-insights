@@ -234,6 +234,7 @@ const MapView = () => {
 
     diffuseLayerRef.current = L.layerGroup().addTo(map);
     dealLayerRef.current = L.layerGroup().addTo(map);
+    highlightLayerRef.current = L.layerGroup().addTo(map);
 
     map.on("zoomend", () => {
       const zoom = map.getZoom();
