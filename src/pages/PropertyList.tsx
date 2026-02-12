@@ -269,13 +269,19 @@ const PropertyList = () => {
   );
 };
 
-/* Searchable dropdown for barrios with include/exclude */
+/* Searchable dropdown for barrios grouped by province with include/exclude */
+interface ProvinceGroup {
+  province: string;
+  totalCount: number;
+  neighborhoods: { value: string; label: string; count: number }[];
+}
+
 const NeighborhoodDropdown = ({
-  options,
+  groups,
   state,
   onChange,
 }: {
-  options: FilterOption[];
+  groups: ProvinceGroup[];
   state: FilterState;
   onChange: (s: FilterState) => void;
 }) => {
@@ -290,10 +296,6 @@ const NeighborhoodDropdown = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const filtered = query
-    ? options.filter((o) => o.value.toLowerCase().includes(query.toLowerCase()))
-    : options;
 
   const handleClick = (value: string) => {
     const next: FilterState = {
@@ -311,7 +313,43 @@ const NeighborhoodDropdown = ({
     onChange(next);
   };
 
+  const handleProvinceToggle = (group: ProvinceGroup) => {
+    const allValues = group.neighborhoods.map((n) => n.value);
+    const allIncluded = allValues.every((v) => state.included.has(v));
+
+    const next: FilterState = {
+      included: new Set(state.included),
+      excluded: new Set(state.excluded),
+    };
+
+    if (allIncluded) {
+      // All included → clear all
+      allValues.forEach((v) => next.included.delete(v));
+    } else {
+      // Include all
+      allValues.forEach((v) => {
+        next.excluded.delete(v);
+        next.included.add(v);
+      });
+    }
+    onChange(next);
+  };
+
   const activeCount = state.included.size + state.excluded.size;
+
+  // Filter groups/neighborhoods by query
+  const filteredGroups = useMemo(() => {
+    if (!query) return groups;
+    const q = query.toLowerCase();
+    return groups
+      .map((g) => ({
+        ...g,
+        neighborhoods: g.neighborhoods.filter(
+          (n) => n.value.toLowerCase().includes(q) || g.province.toLowerCase().includes(q)
+        ),
+      }))
+      .filter((g) => g.neighborhoods.length > 0);
+  }, [groups, query]);
 
   return (
     <div ref={ref} className="relative">
@@ -360,39 +398,55 @@ const NeighborhoodDropdown = ({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-64 overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-80 overflow-hidden">
           <div className="p-2 border-b border-border">
             <Input
-              placeholder="Buscar barrio..."
+              placeholder="Buscar barrio o localidad..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-8 text-xs bg-secondary border-border"
               autoFocus
             />
           </div>
-          <div className="overflow-y-auto max-h-48">
-            {filtered.map((opt) => {
-              const isIncluded = state.included.has(opt.value);
-              const isExcluded = state.excluded.has(opt.value);
+          <div className="overflow-y-auto max-h-64">
+            {filteredGroups.map((group) => {
+              const allIncluded = group.neighborhoods.every((n) => state.included.has(n.value));
               return (
-                <button
-                  key={opt.value}
-                  onClick={() => handleClick(opt.value)}
-                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center justify-between ${
-                    isIncluded
-                      ? "bg-primary/10 text-primary"
-                      : isExcluded
-                      ? "bg-destructive/5 text-destructive line-through"
-                      : "text-foreground hover:bg-secondary"
-                  }`}
-                >
-                  <span>{opt.label}</span>
-                  {isIncluded && <span className="text-primary">✓</span>}
-                  {isExcluded && <span className="text-destructive">✕</span>}
-                </button>
+                <div key={group.province}>
+                  <button
+                    onClick={() => handleProvinceToggle(group)}
+                    className={`w-full text-left px-3 py-1.5 text-xs font-semibold border-b border-border flex items-center justify-between sticky top-0 z-10 ${
+                      allIncluded ? "bg-primary/10 text-primary" : "bg-muted text-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    <span>{group.province} ({group.totalCount})</span>
+                    {allIncluded && <span className="text-primary text-[10px]">✓ todos</span>}
+                  </button>
+                  {group.neighborhoods.map((opt) => {
+                    const isIncluded = state.included.has(opt.value);
+                    const isExcluded = state.excluded.has(opt.value);
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleClick(opt.value)}
+                        className={`w-full text-left pl-6 pr-3 py-1 text-xs transition-colors flex items-center justify-between ${
+                          isIncluded
+                            ? "bg-primary/5 text-primary"
+                            : isExcluded
+                            ? "bg-destructive/5 text-destructive line-through"
+                            : "text-foreground hover:bg-secondary"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {isIncluded && <span className="text-primary">✓</span>}
+                        {isExcluded && <span className="text-destructive">✕</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
-            {filtered.length === 0 && (
+            {filteredGroups.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-3">Sin resultados</p>
             )}
           </div>
