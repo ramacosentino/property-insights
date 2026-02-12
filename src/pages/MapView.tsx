@@ -132,6 +132,24 @@ const MapView = () => {
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [seedingDone, setSeedingDone] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
+  const [sizeFilter, setSizeFilter] = useState<FilterState>(createFilterState());
+  const [priceFilter, setPriceFilter] = useState<FilterState>(createFilterState());
+  const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
+  const [showOnlyDeals, setShowOnlyDeals] = useState(false);
+
+  const activeFilterCount = [roomsFilter, sizeFilter, priceFilter, parkingFilter].reduce(
+    (acc, f) => acc + f.included.size + f.excluded.size, 0
+  ) + (showOnlyDeals ? 1 : 0);
+
+  const clearAllFilters = () => {
+    setRoomsFilter(createFilterState());
+    setSizeFilter(createFilterState());
+    setPriceFilter(createFilterState());
+    setParkingFilter(createFilterState());
+    setShowOnlyDeals(false);
+  };
 
   const totalProperties = properties.length;
   const geocodedCount = geocodedCoords.size;
