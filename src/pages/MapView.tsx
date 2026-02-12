@@ -156,13 +156,13 @@ const MapFilterRow = ({ title, keys, state, onChange }: {
   );
 };
 
-const LAYERS_PER_PROPERTY = 5;
+const LAYERS_PER_PROPERTY = 3;
 const BASE_RADIUS = 24;
 
 function getRadiusForZoom(zoom: number): number {
   const scale = Math.pow(2, zoom - 12);
   const raw = BASE_RADIUS * scale * 0.5;
-  return Math.max(BASE_RADIUS, Math.min(raw, 120));
+  return Math.max(BASE_RADIUS, Math.min(raw, 80));
 }
 
 const MapView = () => {
