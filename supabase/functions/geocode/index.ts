@@ -142,9 +142,9 @@ Deno.serve(async (req) => {
       addresses = toGeocode;
     }
 
-    // Geocode batch — up to 20 per call (reduced to avoid Nominatim rate limits)
+    // Geocode batch — up to 10 per call (reduced to avoid Nominatim rate limits)
     const results: any[] = [];
-    const batchSize = Math.min(addresses.length, 20);
+    const batchSize = Math.min(addresses.length, 10);
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
