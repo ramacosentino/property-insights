@@ -115,14 +115,16 @@ const MapView = () => {
 
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
-  const [geocodeStatus, setGeocodeStatus] = useState<string>("");
-  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [seedingDone, setSeedingDone] = useState(false);
+
+  const totalProperties = properties.length;
+  const geocodedCount = geocodedCoords.size;
+  const progressPct = totalProperties > 0 ? Math.round((geocodedCount / totalProperties) * 100) : 0;
 
   const allPrices = useMemo(() => properties.map((p) => p.pricePerSqm), [properties]);
   const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
   const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
-  // Show properties that have geocoded coords OR a neighborhood fallback
   const mappedProperties = useMemo(
     () => properties.filter((p) => geocodedCoords.has(p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
     [properties, geocodedCoords]
@@ -138,7 +140,36 @@ const MapView = () => {
     fetchCachedCoordinates().then(setGeocodedCoords);
   }, []);
 
-  // Get coordinate for a property: geocoded > scattered fallback
+  // Auto-seed all addresses on mount (once)
+  useEffect(() => {
+    if (seedingDone || geocodedCoords.size === 0 && properties.length === 0) return;
+    
+    const seed = async () => {
+      const allAddresses = new Set(
+        Array.from(geocodedCoords.keys())
+      );
+      const uncached = properties.filter((p) => !allAddresses.has(p.location));
+      
+      if (uncached.length === 0) {
+        setSeedingDone(true);
+        return;
+      }
+
+      console.log(`Seeding ${uncached.length} addresses into geocoding queue...`);
+      const batchSize = 200;
+      for (let i = 0; i < uncached.length; i += batchSize) {
+        const batch = uncached.slice(i, i + batchSize);
+        await geocodeBatch(batch);
+      }
+      setSeedingDone(true);
+      console.log(`Seeding complete. Cron will geocode automatically.`);
+    };
+
+    // Small delay to let initial fetch complete
+    const timer = setTimeout(seed, 2000);
+    return () => clearTimeout(timer);
+  }, [properties, geocodedCoords, seedingDone]);
+
   const getCoord = useCallback(
     (p: { id: string; location: string; neighborhood: string }): [number, number] => {
       const geo = geocodedCoords.get(p.location);
@@ -201,7 +232,6 @@ const MapView = () => {
     diffuse.clearLayers();
     deals.clearLayers();
 
-    // Per-property diffuse coloring
     mappedProperties.forEach((p) => {
       const coords = getCoord(p);
       const color = getPropertyColor(p.pricePerSqm, minPrice, maxPrice);
@@ -219,7 +249,6 @@ const MapView = () => {
       }
     });
 
-    // Deal markers
     const dealIcon = L.divIcon({
       className: "",
       html: `<div style="width:7px;height:7px;background:rgba(220,235,245,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:50%;"></div>`,
@@ -231,7 +260,7 @@ const MapView = () => {
       const coords = getCoord(p);
       L.marker(coords, { icon: dealIcon })
         .bindPopup(
-          `<div style="font-family:Inter,sans-serif;font-size:12px;color:#111;min-width:200px;">
+          `<div style="font-family:Satoshi,sans-serif;font-size:12px;color:#111;min-width:200px;">
             <div style="background:hsl(190,90%,50%);color:#000;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
               ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
             </div><br/>
@@ -247,33 +276,6 @@ const MapView = () => {
         .addTo(deals);
     });
   }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice]);
-
-  // Seed all addresses & trigger geocoding
-  const handleGeocode = useCallback(async () => {
-    setIsGeocoding(true);
-    setGeocodeStatus("Enviando direcciones...");
-
-    // Send ALL property addresses so they get inserted into geocoded_addresses table
-    const uncached = properties.filter((p) => !geocodedCoords.has(p.location));
-    if (uncached.length === 0) {
-      setGeocodeStatus("✓ Todas las propiedades geocodificadas");
-      setIsGeocoding(false);
-      return;
-    }
-
-    // Send in big batches just to seed the DB — the cron will do the actual geocoding
-    const batchSize = 200;
-    for (let i = 0; i < uncached.length; i += batchSize) {
-      const batch = uncached.slice(i, i + batchSize);
-      await geocodeBatch(batch);
-      setGeocodeStatus(`Enviadas ${Math.min(i + batchSize, uncached.length)} / ${uncached.length} direcciones...`);
-    }
-
-    const finalCoords = await fetchCachedCoordinates();
-    setGeocodedCoords(finalCoords);
-    setGeocodeStatus(`✓ ${finalCoords.size} geocodificadas. El cron sigue procesando automáticamente.`);
-    setIsGeocoding(false);
-  }, [properties, geocodedCoords]);
 
   // Auto-refresh geocoded coords every 30s
   useEffect(() => {
@@ -309,11 +311,11 @@ const MapView = () => {
 
   return (
     <Layout>
-      <div className="relative h-[calc(100vh-3.5rem)]">
+      <div className="relative h-[calc(100vh-4rem)]">
         <div ref={mapRef} className="h-full w-full" />
 
         {/* Legend */}
-        <div className="absolute bottom-6 left-6 glass-card rounded-lg p-4 z-[1000]">
+        <div className="absolute bottom-6 left-6 glass-card rounded-2xl p-4 z-[1000]">
           <p className="text-xs font-medium text-foreground mb-3">USD/m² por propiedad</p>
           <div className="flex items-center gap-2">
             <span className="text-xs text-primary font-mono">${minMedian.toLocaleString()}</span>
@@ -328,26 +330,37 @@ const MapView = () => {
             <span className="text-xs text-muted-foreground">Oportunidad (&gt;40% bajo mediana)</span>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {dealProperties.length} oportunidades · {geocodedCoords.size} geocodificadas
+            {dealProperties.length} oportunidades
           </p>
         </div>
 
-        {/* Geocode button */}
-        <div className="absolute bottom-6 right-6 glass-card rounded-lg p-3 z-[1000]">
-          <button
-            onClick={handleGeocode}
-            disabled={isGeocoding}
-            className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors disabled:opacity-50"
-          >
-            {isGeocoding ? "Geocodificando..." : "📍 Geocodificar propiedades"}
-          </button>
-          {geocodeStatus && (
-            <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">{geocodeStatus}</p>
+        {/* Geocoding progress indicator */}
+        <div className="absolute bottom-6 right-6 glass-card rounded-2xl p-4 z-[1000] min-w-[200px]">
+          <p className="text-xs font-medium text-foreground mb-2">📍 Geocodificación</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <span className="text-xs font-mono text-primary">{progressPct}%</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {geocodedCount.toLocaleString()} / {totalProperties.toLocaleString()} propiedades
+          </p>
+          {progressPct < 100 && (
+            <p className="text-xs text-muted-foreground mt-1 opacity-60">
+              Procesando automáticamente...
+            </p>
+          )}
+          {progressPct === 100 && (
+            <p className="text-xs text-primary mt-1">✓ Completo</p>
           )}
         </div>
 
         {/* Quick stats - Province median prices */}
-        <div className="absolute top-6 right-6 glass-card rounded-lg p-4 z-[1000] max-w-xs max-h-[60vh] overflow-y-auto">
+        <div className="absolute top-6 right-6 glass-card rounded-2xl p-4 z-[1000] max-w-xs max-h-[60vh] overflow-y-auto">
           <p className="text-xs font-medium text-foreground mb-2">Mediana USD/m² por localidad</p>
           {provinceStats.map((p) => (
             <div key={p.name} className="flex justify-between text-xs py-1 border-b border-border last:border-0 gap-4">
