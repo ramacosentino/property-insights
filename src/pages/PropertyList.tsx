@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
 import PropertyCard from "@/components/PropertyCard";
 import {
@@ -11,6 +11,7 @@ import MultiFilter, {
   createFilterState,
   applyFilter,
   FilterState,
+  FilterOption,
 } from "@/components/MultiFilter";
 import {
   Select,
@@ -20,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search, SlidersHorizontal, TrendingDown, Star } from "lucide-react";
+import { Search, SlidersHorizontal, TrendingDown, Star, X, ChevronDown } from "lucide-react";
 
 function getParkingLabel(parking: number | null): string {
   if (!parking || parking === 0) return "Sin cochera";
@@ -29,35 +30,20 @@ function getParkingLabel(parking: number | null): string {
   return "3+ cocheras";
 }
 
-const ROOMS_OPTIONS = [
-  { value: "1-2 amb", label: "1-2 amb" },
-  { value: "3 amb", label: "3 amb" },
-  { value: "4 amb", label: "4 amb" },
-  { value: "5+ amb", label: "5+ amb" },
-];
+const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
+const SIZE_KEYS = ["< 100 m²", "100-200 m²", "200-400 m²", "400-700 m²", "700+ m²"];
+const PRICE_KEYS = ["< 100K", "100K-200K", "200K-400K", "400K-700K", "700K+"];
+const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
 
-const SIZE_OPTIONS = [
-  { value: "< 100 m²", label: "< 100 m²" },
-  { value: "100-200 m²", label: "100-200 m²" },
-  { value: "200-400 m²", label: "200-400 m²" },
-  { value: "400-700 m²", label: "400-700 m²" },
-  { value: "700+ m²", label: "700+ m²" },
-];
-
-const PRICE_OPTIONS = [
-  { value: "< 100K", label: "< 100K" },
-  { value: "100K-200K", label: "100-200K" },
-  { value: "200K-400K", label: "200-400K" },
-  { value: "400K-700K", label: "400-700K" },
-  { value: "700K+", label: "700K+" },
-];
-
-const PARKING_OPTIONS = [
-  { value: "Sin cochera", label: "Sin cochera" },
-  { value: "1 cochera", label: "1 cochera" },
-  { value: "2 cocheras", label: "2 cocheras" },
-  { value: "3+ cocheras", label: "3+ cocheras" },
-];
+function buildOptionsWithCounts(
+  keys: string[],
+  countMap: Map<string, number>
+): FilterOption[] {
+  return keys.map((k) => ({
+    value: k,
+    label: `${k} (${countMap.get(k) || 0})`,
+  }));
+}
 
 const PropertyList = () => {
   const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
@@ -71,17 +57,44 @@ const PropertyList = () => {
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
 
+  // Compute counts per filter category
+  const counts = useMemo(() => {
+    const rooms = new Map<string, number>();
+    const sizes = new Map<string, number>();
+    const prices = new Map<string, number>();
+    const parking = new Map<string, number>();
+    const neighborhoods = new Map<string, number>();
+
+    for (const p of properties) {
+      const r = getRoomsLabel(p.rooms);
+      rooms.set(r, (rooms.get(r) || 0) + 1);
+      const s = getSizeRange(p.totalArea);
+      sizes.set(s, (sizes.get(s) || 0) + 1);
+      const pr = getPriceRange(p.price);
+      prices.set(pr, (prices.get(pr) || 0) + 1);
+      const pk = getParkingLabel(p.parking);
+      parking.set(pk, (parking.get(pk) || 0) + 1);
+      neighborhoods.set(p.neighborhood, (neighborhoods.get(p.neighborhood) || 0) + 1);
+    }
+
+    return { rooms, sizes, prices, parking, neighborhoods };
+  }, [properties]);
+
+  const roomsOptions = useMemo(() => buildOptionsWithCounts(ROOMS_KEYS, counts.rooms), [counts.rooms]);
+  const sizeOptions = useMemo(() => buildOptionsWithCounts(SIZE_KEYS, counts.sizes), [counts.sizes]);
+  const priceOptions = useMemo(() => buildOptionsWithCounts(PRICE_KEYS, counts.prices), [counts.prices]);
+  const parkingOptions = useMemo(() => buildOptionsWithCounts(PARKING_KEYS, counts.parking), [counts.parking]);
+
+  const neighborhoodOptions = useMemo(() => {
+    return Array.from(counts.neighborhoods.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({ value: name, label: `${name} (${count})` }));
+  }, [counts.neighborhoods]);
+
   const neighborhoods = useMemo(() => {
     return Array.from(neighborhoodStats.values())
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [neighborhoodStats]);
-
-  const neighborhoodOptions = useMemo(() => {
-    return neighborhoods.map((n) => ({
-      value: n.name,
-      label: `${n.name} (${n.count})`,
-    }));
-  }, [neighborhoods]);
 
   const filtered = useMemo(() => {
     let result = properties;
@@ -155,7 +168,7 @@ const PropertyList = () => {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <SlidersHorizontal className="h-4 w-4" />
             Filtros
-            <span className="text-xs ml-auto">click = incluir · 2do click = excluir · 3ro = limpiar</span>
+            <span className="text-xs ml-auto opacity-60">click = incluir · 2do = excluir · 3ro = limpiar</span>
           </div>
 
           {/* Search + sort row */}
@@ -196,15 +209,19 @@ const PropertyList = () => {
           </div>
 
           {/* Chip filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <MultiFilter title="Precio USD" options={PRICE_OPTIONS} state={priceFilter} onChange={setPriceFilter} />
-            <MultiFilter title="Ambientes" options={ROOMS_OPTIONS} state={roomsFilter} onChange={setRoomsFilter} />
-            <MultiFilter title="Superficie" options={SIZE_OPTIONS} state={sizeFilter} onChange={setSizeFilter} />
-            <MultiFilter title="Cocheras" options={PARKING_OPTIONS} state={parkingFilter} onChange={setParkingFilter} />
-            <div className="lg:col-span-2">
-              <MultiFilter title="Barrio" options={neighborhoodOptions} state={neighborhoodFilter} onChange={setNeighborhoodFilter} />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MultiFilter title="Precio USD" options={priceOptions} state={priceFilter} onChange={setPriceFilter} />
+            <MultiFilter title="Ambientes" options={roomsOptions} state={roomsFilter} onChange={setRoomsFilter} />
+            <MultiFilter title="Superficie" options={sizeOptions} state={sizeFilter} onChange={setSizeFilter} />
+            <MultiFilter title="Cocheras" options={parkingOptions} state={parkingFilter} onChange={setParkingFilter} />
           </div>
+
+          {/* Barrio dropdown multi-select */}
+          <NeighborhoodDropdown
+            options={neighborhoodOptions}
+            state={neighborhoodFilter}
+            onChange={setNeighborhoodFilter}
+          />
         </div>
 
         {/* Property grid */}
@@ -226,6 +243,139 @@ const PropertyList = () => {
         )}
       </div>
     </Layout>
+  );
+};
+
+/* Searchable dropdown for barrios with include/exclude */
+const NeighborhoodDropdown = ({
+  options,
+  state,
+  onChange,
+}: {
+  options: FilterOption[];
+  state: FilterState;
+  onChange: (s: FilterState) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = query
+    ? options.filter((o) => o.value.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  const handleClick = (value: string) => {
+    const next: FilterState = {
+      included: new Set(state.included),
+      excluded: new Set(state.excluded),
+    };
+    if (next.included.has(value)) {
+      next.included.delete(value);
+      next.excluded.add(value);
+    } else if (next.excluded.has(value)) {
+      next.excluded.delete(value);
+    } else {
+      next.included.add(value);
+    }
+    onChange(next);
+  };
+
+  const activeCount = state.included.size + state.excluded.size;
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">Barrio</span>
+        {activeCount > 0 && (
+          <button
+            onClick={() => onChange(createFilterState())}
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-0.5"
+          >
+            <X className="h-3 w-3" /> Limpiar
+          </button>
+        )}
+      </div>
+
+      {/* Selected tags */}
+      {activeCount > 0 && (
+        <div className="flex flex-wrap gap-1 mt-1.5 mb-1.5">
+          {Array.from(state.included).map((v) => (
+            <span
+              key={v}
+              onClick={() => handleClick(v)}
+              className="cursor-pointer px-2 py-0.5 rounded text-xs font-medium bg-primary/20 text-primary border border-primary/30"
+            >
+              {v} ×
+            </span>
+          ))}
+          {Array.from(state.excluded).map((v) => (
+            <span
+              key={v}
+              onClick={() => handleClick(v)}
+              className="cursor-pointer px-2 py-0.5 rounded text-xs font-medium bg-destructive/10 text-destructive border border-destructive/30 line-through"
+            >
+              ✕ {v} ×
+            </span>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs bg-secondary border border-border text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span>{activeCount > 0 ? `${activeCount} barrio${activeCount > 1 ? "s" : ""} seleccionado${activeCount > 1 ? "s" : ""}` : "Seleccionar barrios..."}</span>
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-64 overflow-hidden">
+          <div className="p-2 border-b border-border">
+            <Input
+              placeholder="Buscar barrio..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-8 text-xs bg-secondary border-border"
+              autoFocus
+            />
+          </div>
+          <div className="overflow-y-auto max-h-48">
+            {filtered.map((opt) => {
+              const isIncluded = state.included.has(opt.value);
+              const isExcluded = state.excluded.has(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleClick(opt.value)}
+                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center justify-between ${
+                    isIncluded
+                      ? "bg-primary/10 text-primary"
+                      : isExcluded
+                      ? "bg-destructive/5 text-destructive line-through"
+                      : "text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <span>{opt.label}</span>
+                  {isIncluded && <span className="text-primary">✓</span>}
+                  {isExcluded && <span className="text-destructive">✕</span>}
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-3">Sin resultados</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

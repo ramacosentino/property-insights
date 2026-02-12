@@ -163,8 +163,9 @@ export function getPriceRange(price: number): string {
 // Rooms label
 export function getRoomsLabel(rooms: number | null): string {
   if (!rooms) return "Sin dato";
-  if (rooms <= 2) return "1-2 amb";
-  if (rooms <= 3) return "3 amb";
-  if (rooms <= 4) return "4 amb";
+  if (rooms === 1) return "1 amb";
+  if (rooms === 2) return "2 amb";
+  if (rooms === 3) return "3 amb";
+  if (rooms === 4) return "4 amb";
   return "5+ amb";
 }
