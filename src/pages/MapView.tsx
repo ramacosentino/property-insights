@@ -253,6 +253,7 @@ const MapView = () => {
       mapInstanceRef.current = null;
       diffuseLayerRef.current = null;
       dealLayerRef.current = null;
+      highlightLayerRef.current = null;
     };
   }, [mappedNeighborhoods]);
 
