@@ -134,7 +134,7 @@ export function loadProperties(): { properties: Property[]; neighborhoodStats: M
       ...p,
       opportunityScore,
       isTopOpportunity: topIds.has(p.id),
-      isNeighborhoodDeal: opportunityScore > 15, // 15%+ below neighborhood median
+      isNeighborhoodDeal: opportunityScore > 40, // 40%+ below neighborhood median
     };
   });
 

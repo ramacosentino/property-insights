@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
-import { loadProperties, NeighborhoodStats } from "@/lib/propertyData";
+import { loadProperties, Property, NeighborhoodStats } from "@/lib/propertyData";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -77,6 +77,23 @@ const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "La Paternal": [-34.60, -58.47],
 };
 
+// Deterministic pseudo-random from string
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return h;
+}
+
+function scatterCoord(base: [number, number], id: string, spread = 0.012): [number, number] {
+  const h1 = hashStr(id + "lat");
+  const h2 = hashStr(id + "lng");
+  const offsetLat = ((h1 % 1000) / 1000 - 0.5) * spread;
+  const offsetLng = ((h2 % 1000) / 1000 - 0.5) * spread;
+  return [base[0] + offsetLat, base[1] + offsetLng];
+}
+
 function getColor(medianPricePerSqm: number, allMedians: number[]): string {
   const sorted = [...new Set(allMedians)].sort((a, b) => a - b);
   const rank = sorted.indexOf(medianPricePerSqm);
@@ -93,24 +110,45 @@ function getColor(medianPricePerSqm: number, allMedians: number[]): string {
   }
 }
 
+function getPropertyColor(pricePerSqm: number, min: number, max: number): string {
+  const ratio = (pricePerSqm - min) / (max - min || 1);
+  const clamped = Math.max(0, Math.min(1, ratio));
+  if (clamped < 0.5) {
+    const t = clamped / 0.5;
+    const h = 200 - t * 40;
+    return `hsl(${h}, 85%, ${50 + t * 10}%)`;
+  } else {
+    const t = (clamped - 0.5) / 0.5;
+    const h = 160 - t * 20;
+    return `hsl(${h}, 70%, ${55 + t * 15}%)`;
+  }
+}
+
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const { neighborhoodStats } = useMemo(() => loadProperties(), []);
+  const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
+
+  const allPrices = useMemo(() => properties.map((p) => p.pricePerSqm), [properties]);
+  const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
+  const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
   const mappedNeighborhoods = useMemo(() => {
     const stats = Array.from(neighborhoodStats.values());
     const allMedians = stats.map((s) => s.medianPricePerSqm);
-
     return stats
       .filter((s) => NEIGHBORHOOD_COORDS[s.name])
       .map((s) => ({
         ...s,
         coords: NEIGHBORHOOD_COORDS[s.name],
         color: getColor(s.medianPricePerSqm, allMedians),
-        radius: Math.max(8, Math.min(25, Math.sqrt(s.count) * 5)),
       }));
   }, [neighborhoodStats]);
+
+  const dealProperties = useMemo(
+    () => properties.filter((p) => p.isNeighborhoodDeal && NEIGHBORHOOD_COORDS[p.neighborhood]),
+    [properties]
+  );
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -124,18 +162,58 @@ const MapView = () => {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
     }).addTo(map);
 
-    const bounds: L.LatLngBoundsExpression = mappedNeighborhoods.map((n) => n.coords as [number, number]);
+    const bounds: [number, number][] = mappedNeighborhoods.map((n) => n.coords);
     if (bounds.length > 0) {
-      map.fitBounds(bounds as L.LatLngBoundsExpression, { padding: [30, 30] });
+      map.fitBounds(bounds, { padding: [30, 30] });
     }
 
+    // Layer 1: All properties as tiny diffuse dots
+    const propertyLayer = L.layerGroup().addTo(map);
+    properties.forEach((p) => {
+      const base = NEIGHBORHOOD_COORDS[p.neighborhood];
+      if (!base) return;
+      const coords = scatterCoord(base, p.id);
+      const color = getPropertyColor(p.pricePerSqm, minPrice, maxPrice);
+
+      L.circleMarker(coords, {
+        radius: 6,
+        color: "transparent",
+        fillColor: color,
+        fillOpacity: 0.25,
+        weight: 0,
+      })
+        .bindPopup(
+          `<div style="font-family: Inter, sans-serif; font-size: 12px; color: #111; min-width: 180px;">
+            <strong>${p.neighborhood}</strong><br/>
+            <span style="color: #555;">${p.location}</span><br/><br/>
+            <strong>USD/m²:</strong> $${p.pricePerSqm.toLocaleString()}<br/>
+            <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
+            ${p.totalArea ? `<strong>Superficie:</strong> ${p.totalArea} m²<br/>` : ""}
+            ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
+            ${p.opportunityScore > 0 ? `<strong>Score:</strong> ${p.opportunityScore.toFixed(1)}% bajo mediana<br/>` : ""}
+          </div>`
+        )
+        .addTo(propertyLayer);
+    });
+
+    // Layer 2: Neighborhood diffuse glow (large, very transparent)
     mappedNeighborhoods.forEach((n) => {
+      const glowRadius = Math.max(30, Math.min(60, Math.sqrt(n.count) * 8));
+      // Outer glow
       L.circleMarker(n.coords, {
-        radius: n.radius,
-        color: n.color,
+        radius: glowRadius,
+        color: "transparent",
         fillColor: n.color,
-        fillOpacity: 0.5,
-        weight: 2,
+        fillOpacity: 0.08,
+        weight: 0,
+      }).addTo(map);
+      // Inner glow
+      L.circleMarker(n.coords, {
+        radius: glowRadius * 0.6,
+        color: "transparent",
+        fillColor: n.color,
+        fillOpacity: 0.12,
+        weight: 0,
       })
         .bindPopup(
           `<div style="font-family: Inter, sans-serif; font-size: 13px; color: #111;">
@@ -150,13 +228,50 @@ const MapView = () => {
         .addTo(map);
     });
 
+    // Layer 3: Deal markers (pulsing pins for <40% below median)
+    const dealIcon = L.divIcon({
+      className: "deal-marker",
+      html: `<div style="
+        width: 12px; height: 12px;
+        background: hsl(190, 90%, 50%);
+        border: 2px solid hsl(190, 90%, 70%);
+        border-radius: 50%;
+        box-shadow: 0 0 8px 3px hsla(190, 90%, 50%, 0.5);
+      "></div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6],
+    });
+
+    dealProperties.forEach((p) => {
+      const base = NEIGHBORHOOD_COORDS[p.neighborhood];
+      if (!base) return;
+      const coords = scatterCoord(base, p.id);
+
+      L.marker(coords, { icon: dealIcon })
+        .bindPopup(
+          `<div style="font-family: Inter, sans-serif; font-size: 12px; color: #111; min-width: 200px;">
+            <div style="background: hsl(190,90%,50%); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 6px;">
+              ⭐ OPORTUNIDAD -${p.opportunityScore.toFixed(0)}%
+            </div><br/>
+            <strong>${p.neighborhood}</strong><br/>
+            <span style="color: #555;">${p.location}</span><br/><br/>
+            <strong>USD/m²:</strong> $${p.pricePerSqm.toLocaleString()}<br/>
+            <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
+            ${p.totalArea ? `<strong>Superficie:</strong> ${p.totalArea} m²<br/>` : ""}
+            ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
+            <a href="${p.url}" target="_blank" style="color: hsl(190,90%,50%); text-decoration: none; font-weight: 600;">Ver publicación →</a>
+          </div>`
+        )
+        .addTo(map);
+    });
+
     mapInstanceRef.current = map;
 
     return () => {
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, [mappedNeighborhoods]);
+  }, [mappedNeighborhoods, dealProperties, properties, minPrice, maxPrice]);
 
   const allMedians = mappedNeighborhoods.map((n) => n.medianPricePerSqm);
   const minMedian = allMedians.length ? Math.min(...allMedians) : 0;
@@ -173,7 +288,7 @@ const MapView = () => {
 
         {/* Legend */}
         <div className="absolute bottom-6 left-6 glass-card rounded-lg p-4 z-[1000]">
-          <p className="text-xs font-medium text-foreground mb-3">USD/m² por barrio</p>
+          <p className="text-xs font-medium text-foreground mb-3">USD/m² por propiedad</p>
           <div className="flex items-center gap-2">
             <span className="text-xs text-primary font-mono">${minMedian.toLocaleString()}</span>
             <div
@@ -184,7 +299,21 @@ const MapView = () => {
             />
             <span className="text-xs text-expensive font-mono">${maxMedian.toLocaleString()}</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Tamaño = cantidad de propiedades</p>
+          <div className="flex items-center gap-2 mt-3">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{
+                background: "hsl(190, 90%, 50%)",
+                boxShadow: "0 0 6px 2px hsla(190, 90%, 50%, 0.5)",
+              }}
+            />
+            <span className="text-xs text-muted-foreground">
+              Oportunidad (&gt;40% bajo mediana barrio)
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {dealProperties.length} propiedades destacadas · {properties.length} total
+          </p>
         </div>
 
         {/* Quick stats */}
