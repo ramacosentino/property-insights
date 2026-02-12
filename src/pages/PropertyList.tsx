@@ -27,6 +27,7 @@ const PropertyList = () => {
   const [roomsFilter, setRoomsFilter] = useState("all");
   const [sizeFilter, setSizeFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+  const [parkingFilter, setParkingFilter] = useState("all");
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
 
@@ -60,6 +61,15 @@ const PropertyList = () => {
     if (priceFilter !== "all") {
       result = result.filter((p) => getPriceRange(p.price) === priceFilter);
     }
+    if (parkingFilter !== "all") {
+      if (parkingFilter === "0") {
+        result = result.filter((p) => !p.parking || p.parking === 0);
+      } else if (parkingFilter === "3+") {
+        result = result.filter((p) => p.parking && p.parking >= 3);
+      } else {
+        result = result.filter((p) => p.parking === Number(parkingFilter));
+      }
+    }
     if (showOnlyDeals) {
       result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
     }
@@ -75,7 +85,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, roomsFilter, sizeFilter, priceFilter, sortBy, showOnlyDeals]);
+  }, [properties, search, neighborhoodFilter, roomsFilter, sizeFilter, priceFilter, parkingFilter, sortBy, showOnlyDeals]);
 
   // Segment stats
   const segmentStats = useMemo(() => {
@@ -131,7 +141,7 @@ const PropertyList = () => {
                 <SelectValue placeholder="Barrio" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los barrios</SelectItem>
+                <SelectItem value="all">Barrio</SelectItem>
                 {neighborhoods.map((n) => (
                   <SelectItem key={n.name} value={n.name}>
                     {n.name} ({n.count})
@@ -144,7 +154,7 @@ const PropertyList = () => {
                 <SelectValue placeholder="Ambientes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Ambientes</SelectItem>
                 <SelectItem value="1-2 amb">1-2 amb</SelectItem>
                 <SelectItem value="3 amb">3 amb</SelectItem>
                 <SelectItem value="4 amb">4 amb</SelectItem>
@@ -156,7 +166,7 @@ const PropertyList = () => {
                 <SelectValue placeholder="Superficie" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="all">Superficie</SelectItem>
                 <SelectItem value="< 100 m²">&lt; 100 m²</SelectItem>
                 <SelectItem value="100-200 m²">100-200 m²</SelectItem>
                 <SelectItem value="200-400 m²">200-400 m²</SelectItem>
@@ -193,12 +203,24 @@ const PropertyList = () => {
                 <SelectValue placeholder="Rango precio" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todo precio</SelectItem>
+                <SelectItem value="all">Precio</SelectItem>
                 <SelectItem value="< 100K">&lt; 100K</SelectItem>
                 <SelectItem value="100K-200K">100K-200K</SelectItem>
                 <SelectItem value="200K-400K">200K-400K</SelectItem>
                 <SelectItem value="400K-700K">400K-700K</SelectItem>
                 <SelectItem value="700K+">700K+</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={parkingFilter} onValueChange={setParkingFilter}>
+              <SelectTrigger className="w-auto bg-secondary border-border text-xs h-8">
+                <SelectValue placeholder="Cocheras" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Cocheras</SelectItem>
+                <SelectItem value="0">Sin cochera</SelectItem>
+                <SelectItem value="1">1 cochera</SelectItem>
+                <SelectItem value="2">2 cocheras</SelectItem>
+                <SelectItem value="3+">3+ cocheras</SelectItem>
               </SelectContent>
             </Select>
           </div>
