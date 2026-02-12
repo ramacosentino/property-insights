@@ -160,10 +160,9 @@ const LAYERS_PER_PROPERTY = 5;
 const BASE_RADIUS = 24;
 
 function getRadiusForZoom(zoom: number): number {
-  // At zoom 12 (neighborhood level): base size. At zoom 16+: bigger to cover blocks
-  // Radius grows exponentially with zoom so circles cover real-world area
   const scale = Math.pow(2, zoom - 12);
-  return Math.max(BASE_RADIUS, BASE_RADIUS * scale * 0.5);
+  const raw = BASE_RADIUS * scale * 0.5;
+  return Math.max(BASE_RADIUS, Math.min(raw, 120));
 }
 
 const MapView = () => {
@@ -295,10 +294,15 @@ const MapView = () => {
       .map((s) => ({ ...s, coords: NEIGHBORHOOD_COORDS[s.name] }));
   }, [neighborhoodStats]);
 
-  // Zoom map to selected province bounds
+  // Zoom map to selected province bounds — only on explicit province selection
+  const prevProvinceRef = useRef<string | null>(null);
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+    // Only fitBounds when province selection actually changed
+    if (selectedProvince === prevProvinceRef.current) return;
+    prevProvinceRef.current = selectedProvince;
+
     if (selectedProvince) {
       const coords = mappedProperties.map((p) => getCoord(p));
       if (coords.length > 0) {
