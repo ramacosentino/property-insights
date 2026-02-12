@@ -166,7 +166,7 @@ const PropertyList = () => {
                 <SelectValue placeholder="Superficie" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="all">Superficie</SelectItem>
                 <SelectItem value="< 100 m²">&lt; 100 m²</SelectItem>
                 <SelectItem value="100-200 m²">100-200 m²</SelectItem>
                 <SelectItem value="200-400 m²">200-400 m²</SelectItem>
