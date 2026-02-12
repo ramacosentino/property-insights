@@ -164,10 +164,23 @@ const MapView = () => {
     [properties, geocodedCoords]
   );
 
-  const mappedProperties = useMemo(
-    () => selectedProvince ? allMappedProperties.filter((p) => p.province === selectedProvince) : allMappedProperties,
-    [allMappedProperties, selectedProvince]
-  );
+  // Apply filters to allMappedProperties
+  const filteredProperties = useMemo(() => {
+    let result = allMappedProperties;
+    if (selectedProvince) result = result.filter((p) => p.province === selectedProvince);
+    if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
+    if (sizeFilter.included.size > 0 || sizeFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getSizeRange(p.totalArea), sizeFilter));
+    if (priceFilter.included.size > 0 || priceFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getPriceRange(p.price), priceFilter));
+    if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
+    if (showOnlyDeals) result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
+    return result;
+  }, [allMappedProperties, selectedProvince, roomsFilter, sizeFilter, priceFilter, parkingFilter, showOnlyDeals]);
+
+  const mappedProperties = filteredProperties;
 
   const dealProperties = useMemo(
     () => mappedProperties.filter((p) => p.isNeighborhoodDeal),
