@@ -61,7 +61,7 @@ export async function geocodeBatch(
   const addresses = properties.map((p) => ({
     address: p.location,
     neighborhood: p.neighborhood,
-    province: p.province,
+    province: p.city,
     id: p.id,
   }));
 

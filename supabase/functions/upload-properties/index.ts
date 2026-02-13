@@ -12,6 +12,43 @@ function parseNum(val: string | undefined): number | null {
   return isNaN(n) ? null : n;
 }
 
+function trimOrNull(val: string | undefined): string | null {
+  if (!val) return null;
+  const t = val.trim();
+  return t === "" ? null : t;
+}
+
+// CSV column order (header-based mapping)
+const HEADER_MAP: Record<string, string> = {
+  external_id: "external_id",
+  property_type: "property_type",
+  title: "title",
+  url: "url",
+  price: "price",
+  currency: "currency",
+  location: "location",
+  neighborhood: "neighborhood",
+  city: "city",
+  scraped_at: "scraped_at",
+  address: "address",
+  street: "street",
+  expenses: "expenses",
+  description: "description",
+  surface_total: "surface_total",
+  surface_covered: "surface_covered",
+  rooms: "rooms",
+  bathrooms: "bathrooms",
+  parking: "parking",
+  bedrooms: "bedrooms",
+  age_years: "age_years",
+  price_per_m2_total: "price_per_m2_total",
+  price_per_m2_covered: "price_per_m2_covered",
+  toilettes: "toilettes",
+  disposition: "disposition",
+  orientation: "orientation",
+  luminosity: "luminosity",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,7 +68,6 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Parse CSV
     const lines = csv.split("\n").filter((l: string) => l.trim());
     if (lines.length < 2) {
       return new Response(
@@ -40,14 +76,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Skip header row
+    // Parse header to get column indices
+    const headerLine = lines[0].replace(/^\uFEFF/, ""); // strip BOM
+    const headers = headerLine.split(delimiter).map((h: string) => h.trim().toLowerCase());
+    const colIndex = new Map<string, number>();
+    headers.forEach((h: string, i: number) => {
+      if (HEADER_MAP[h]) colIndex.set(HEADER_MAP[h], i);
+    });
+
+    const getCol = (row: string[], col: string): string | undefined => {
+      const idx = colIndex.get(col);
+      return idx !== undefined ? row[idx] : undefined;
+    };
+
     const dataLines = lines.slice(1);
     let inserted = 0;
-    let updated = 0;
     let skipped = 0;
     const errors: string[] = [];
 
-    // Process in batches of 100
     const batchSize = 100;
     for (let i = 0; i < dataLines.length; i += batchSize) {
       const batch = dataLines.slice(i, i + batchSize);
@@ -55,48 +101,55 @@ Deno.serve(async (req) => {
 
       for (const line of batch) {
         const cols = line.split(delimiter);
-        if (cols.length < 16) {
-          skipped++;
-          continue;
-        }
-
-        const externalId = cols[1]?.trim();
+        const externalId = trimOrNull(getCol(cols, "external_id"));
         if (!externalId) {
           skipped++;
           continue;
         }
 
-        const price = parseNum(cols[2]);
-        const pricePerSqm = parseNum(cols[4]);
-        if (!price || price <= 0 || !pricePerSqm || pricePerSqm <= 0 || pricePerSqm > 15000) {
+        const price = parseNum(getCol(cols, "price"));
+        if (!price || price <= 0) {
           skipped++;
           continue;
         }
 
-        rows.push({
+        const row: Record<string, unknown> = {
           external_id: externalId,
-          popularity: parseNum(cols[0]) ?? 0,
           price,
-          currency: cols[3]?.trim() || "USD",
-          price_per_sqm: pricePerSqm,
-          expenses: parseNum(cols[5]),
-          location: cols[6]?.trim() || null,
-          neighborhood: cols[7]?.trim() || "Sin barrio",
-          province: cols[8]?.trim() || "Sin provincia",
-          total_area: parseNum(cols[9]),
-          covered_area: parseNum(cols[10]),
-          rooms: parseNum(cols[11]),
-          bedrooms: parseNum(cols[12]),
-          bathrooms: parseNum(cols[13]),
-          parking: parseNum(cols[14]),
-          url: cols[15]?.trim() || null,
-          scraped_at: cols[16]?.trim() ? new Date(cols[16].trim()).toISOString() : new Date().toISOString(),
-        });
+          currency: trimOrNull(getCol(cols, "currency")) || "USD",
+          url: trimOrNull(getCol(cols, "url")),
+          location: trimOrNull(getCol(cols, "location")),
+          neighborhood: trimOrNull(getCol(cols, "neighborhood")) || "Sin barrio",
+          city: trimOrNull(getCol(cols, "city")) || "Sin ciudad",
+          property_type: trimOrNull(getCol(cols, "property_type")),
+          title: trimOrNull(getCol(cols, "title")),
+          address: trimOrNull(getCol(cols, "address")),
+          street: trimOrNull(getCol(cols, "street")),
+          expenses: parseNum(getCol(cols, "expenses")),
+          description: trimOrNull(getCol(cols, "description")),
+          surface_total: parseNum(getCol(cols, "surface_total")),
+          surface_covered: parseNum(getCol(cols, "surface_covered")),
+          rooms: parseNum(getCol(cols, "rooms")),
+          bedrooms: parseNum(getCol(cols, "bedrooms")),
+          bathrooms: parseNum(getCol(cols, "bathrooms")),
+          toilettes: parseNum(getCol(cols, "toilettes")),
+          parking: parseNum(getCol(cols, "parking")),
+          age_years: parseNum(getCol(cols, "age_years")),
+          disposition: trimOrNull(getCol(cols, "disposition")),
+          orientation: trimOrNull(getCol(cols, "orientation")),
+          luminosity: trimOrNull(getCol(cols, "luminosity")),
+          price_per_m2_total: parseNum(getCol(cols, "price_per_m2_total")),
+          price_per_m2_covered: parseNum(getCol(cols, "price_per_m2_covered")),
+          scraped_at: getCol(cols, "scraped_at")?.trim()
+            ? new Date(getCol(cols, "scraped_at")!.trim()).toISOString()
+            : new Date().toISOString(),
+        };
+
+        rows.push(row);
       }
 
       if (rows.length === 0) continue;
 
-      // Upsert: on conflict(external_id), update only non-null incoming fields
       const { data, error } = await supabase
         .from("properties")
         .upsert(rows, {
@@ -108,8 +161,6 @@ Deno.serve(async (req) => {
       if (error) {
         errors.push(`Batch ${Math.floor(i / batchSize)}: ${error.message}`);
       } else {
-        // We can't easily distinguish insert vs update with upsert,
-        // so we count all as processed
         inserted += data?.length || 0;
       }
     }

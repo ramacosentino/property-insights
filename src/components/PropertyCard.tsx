@@ -27,7 +27,7 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
             <h3 className="text-sm font-semibold truncate">{property.location}</h3>
           </div>
           <p className="text-xs text-muted-foreground">
-            {property.neighborhood}, {property.province}
+            {property.neighborhood}, {property.city}
           </p>
         </div>
         <a
@@ -50,7 +50,7 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">USD/m²</p>
           <p className={`text-sm font-mono font-bold ${isHighlighted ? "text-primary" : ""}`}>
-            ${property.pricePerSqm.toLocaleString()}
+            {property.pricePerM2Total ? `$${property.pricePerM2Total.toLocaleString()}` : "—"}
           </p>
         </div>
       </div>
@@ -59,7 +59,7 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
         <>
           <div className="mt-3 grid grid-cols-4 gap-2 text-xs text-muted-foreground">
             <div>
-              <span className="block text-foreground font-mono">{property.totalArea ?? "—"}</span>
+              <span className="block text-foreground font-mono">{property.surfaceTotal ?? "—"}</span>
               m² tot
             </div>
             <div>

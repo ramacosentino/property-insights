@@ -58,7 +58,7 @@ function enrichProperties(
     return {
       ...p,
       neighborhood: geo.norm_neighborhood || p.neighborhood,
-      province: geo.norm_locality || geo.norm_province || p.province,
+      city: geo.norm_locality || geo.norm_province || p.city,
     };
   });
 }
@@ -98,7 +98,7 @@ const PropertyList = () => {
     for (const p of properties) {
       const r = getRoomsLabel(p.rooms);
       rooms.set(r, (rooms.get(r) || 0) + 1);
-      const s = getSizeRange(p.totalArea);
+      const s = getSizeRange(p.surfaceTotal);
       sizes.set(s, (sizes.get(s) || 0) + 1);
       const pr = getPriceRange(p.price);
       prices.set(pr, (prices.get(pr) || 0) + 1);
@@ -121,13 +121,13 @@ const PropertyList = () => {
     const provCounts = new Map<string, number>();
 
     for (const p of properties) {
-      const prov = p.province || "Sin provincia";
+      const prov = p.city || "Sin ciudad";
       provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
     }
 
     for (const [hood, count] of counts.neighborhoods.entries()) {
       const sample = properties.find((p) => p.neighborhood === hood);
-      const prov = sample?.province || "Sin provincia";
+      const prov = sample?.city || "Sin ciudad";
       if (!provMap.has(prov)) provMap.set(prov, []);
       provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
     }
@@ -155,7 +155,7 @@ const PropertyList = () => {
         (p) =>
           p.location.toLowerCase().includes(s) ||
           p.neighborhood.toLowerCase().includes(s) ||
-          p.province.toLowerCase().includes(s)
+          p.city.toLowerCase().includes(s)
       );
     }
 
@@ -166,7 +166,7 @@ const PropertyList = () => {
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     }
     if (sizeFilter.included.size > 0 || sizeFilter.excluded.size > 0) {
-      result = result.filter((p) => applyFilter(getSizeRange(p.totalArea), sizeFilter));
+      result = result.filter((p) => applyFilter(getSizeRange(p.surfaceTotal), sizeFilter));
     }
     if (priceFilter.included.size > 0 || priceFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(getPriceRange(p.price), priceFilter));
@@ -180,11 +180,11 @@ const PropertyList = () => {
 
     result.sort((a, b) => {
       switch (sortBy) {
-        case "pricePerSqm": return a.pricePerSqm - b.pricePerSqm;
+        case "pricePerSqm": return (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0);
         case "price": return a.price - b.price;
         case "opportunity": return b.opportunityScore - a.opportunityScore;
-        case "area": return (b.totalArea ?? 0) - (a.totalArea ?? 0);
-        default: return a.pricePerSqm - b.pricePerSqm;
+        case "area": return (b.surfaceTotal ?? 0) - (a.surfaceTotal ?? 0);
+        default: return (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0);
       }
     });
 
@@ -197,7 +197,7 @@ const PropertyList = () => {
       total: filtered.length,
       deals: deals.length,
       avgPricePerSqm: filtered.length
-        ? Math.round(filtered.reduce((a, b) => a + b.pricePerSqm, 0) / filtered.length)
+        ? Math.round(filtered.reduce((a, b) => a + (b.pricePerM2Total ?? 0), 0) / filtered.length)
         : 0,
     };
   }, [filtered]);
