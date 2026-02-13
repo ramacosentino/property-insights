@@ -59,7 +59,7 @@ export async function geocodeBatch(
   properties: Property[]
 ): Promise<{ geocoded: number; remaining: number }> {
   const addresses = properties.map((p) => ({
-    address: p.location,
+    address: p.address || p.location,
     neighborhood: p.neighborhood,
     province: p.city,
     id: p.id,

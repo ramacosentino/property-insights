@@ -202,7 +202,7 @@ const MapView = () => {
   const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
   const allMappedProperties = useMemo(
-    () => properties.filter((p) => geocodedCoords.has(p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
+    () => properties.filter((p) => geocodedCoords.has(p.address || p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
     [properties, geocodedCoords]
   );
 
@@ -252,7 +252,7 @@ const MapView = () => {
       const allAddresses = new Set(
         Array.from(geocodedCoords.keys())
       );
-      const uncached = properties.filter((p) => !allAddresses.has(p.location));
+      const uncached = properties.filter((p) => !allAddresses.has(p.address || p.location));
       
       if (uncached.length === 0) {
         setSeedingDone(true);
@@ -275,8 +275,8 @@ const MapView = () => {
   }, [properties, geocodedCoords, seedingDone]);
 
   const getCoord = useCallback(
-    (p: { id: string; location: string; neighborhood: string }): [number, number] => {
-      const geo = geocodedCoords.get(p.location);
+    (p: { id: string; location: string; neighborhood: string; address?: string | null }): [number, number] => {
+      const geo = geocodedCoords.get(p.address || p.location);
       if (geo) return [geo.lat, geo.lng];
       const base = NEIGHBORHOOD_COORDS[p.neighborhood];
       if (base) return scatterCoord(base, p.id);
