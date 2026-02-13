@@ -59,6 +59,75 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          covered_area: number | null
+          created_at: string
+          currency: string | null
+          expenses: number | null
+          external_id: string
+          id: string
+          location: string | null
+          neighborhood: string | null
+          parking: number | null
+          popularity: number | null
+          price: number | null
+          price_per_sqm: number | null
+          province: string | null
+          rooms: number | null
+          scraped_at: string | null
+          total_area: number | null
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          covered_area?: number | null
+          created_at?: string
+          currency?: string | null
+          expenses?: number | null
+          external_id: string
+          id?: string
+          location?: string | null
+          neighborhood?: string | null
+          parking?: number | null
+          popularity?: number | null
+          price?: number | null
+          price_per_sqm?: number | null
+          province?: string | null
+          rooms?: number | null
+          scraped_at?: string | null
+          total_area?: number | null
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          covered_area?: number | null
+          created_at?: string
+          currency?: string | null
+          expenses?: number | null
+          external_id?: string
+          id?: string
+          location?: string | null
+          neighborhood?: string | null
+          parking?: number | null
+          popularity?: number | null
+          price?: number | null
+          price_per_sqm?: number | null
+          province?: string | null
+          rooms?: number | null
+          scraped_at?: string | null
+          total_area?: number | null
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
