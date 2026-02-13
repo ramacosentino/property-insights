@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
-import { loadProperties, getSizeRange, getPriceRange, getRoomsLabel } from "@/lib/propertyData";
+import { getSizeRange, getPriceRange, getRoomsLabel } from "@/lib/propertyData";
+import { useProperties } from "@/hooks/useProperties";
 import { fetchCachedCoordinates, geocodeBatch, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X } from "lucide-react";
@@ -167,7 +168,9 @@ const MapView = () => {
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
 
-  const { properties, neighborhoodStats } = useMemo(() => loadProperties(), []);
+  const { data, isLoading } = useProperties();
+  const properties = data?.properties ?? [];
+  const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [seedingDone, setSeedingDone] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);

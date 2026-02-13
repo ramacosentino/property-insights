@@ -2,12 +2,12 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
 import PropertyCard from "@/components/PropertyCard";
 import {
-  loadProperties,
   getSizeRange,
   getPriceRange,
   getRoomsLabel,
   Property,
 } from "@/lib/propertyData";
+import { useProperties } from "@/hooks/useProperties";
 import MultiFilter, {
   createFilterState,
   applyFilter,
@@ -64,7 +64,9 @@ function enrichProperties(
 }
 
 const PropertyList = () => {
-  const { properties: rawProperties, neighborhoodStats } = useMemo(() => loadProperties(), []);
+  const { data, isLoading } = useProperties();
+  const rawProperties = data?.properties ?? [];
+  const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geoData, setGeoData] = useState<Map<string, CachedGeoData>>(new Map());
 
   useEffect(() => {

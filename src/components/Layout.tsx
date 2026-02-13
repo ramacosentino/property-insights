@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Map, List, BarChart3 } from "lucide-react";
+import CsvUploadButton from "./CsvUploadButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,6 +48,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
                 </Link>
               );
             })}
+            <CsvUploadButton />
           </nav>
         </div>
       </header>
