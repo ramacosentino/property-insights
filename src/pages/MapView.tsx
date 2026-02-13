@@ -197,7 +197,7 @@ const MapView = () => {
   const geocodedCount = geocodedCoords.size;
   const progressPct = totalProperties > 0 ? Math.round((geocodedCount / totalProperties) * 100) : 0;
 
-  const allPrices = useMemo(() => properties.map((p) => p.pricePerSqm), [properties]);
+  const allPrices = useMemo(() => properties.filter((p) => p.pricePerM2Total).map((p) => p.pricePerM2Total!), [properties]);
   const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
   const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
 
@@ -209,11 +209,11 @@ const MapView = () => {
   // Apply filters to allMappedProperties
   const filteredProperties = useMemo(() => {
     let result = allMappedProperties;
-    if (selectedProvince) result = result.filter((p) => p.province === selectedProvince);
+    if (selectedProvince) result = result.filter((p) => p.city === selectedProvince);
     if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     if (sizeFilter.included.size > 0 || sizeFilter.excluded.size > 0)
-      result = result.filter((p) => applyFilter(getSizeRange(p.totalArea), sizeFilter));
+      result = result.filter((p) => applyFilter(getSizeRange(p.surfaceTotal), sizeFilter));
     if (priceFilter.included.size > 0 || priceFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getPriceRange(p.price), priceFilter));
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
@@ -231,7 +231,7 @@ const MapView = () => {
 
   const selectedDeals = useMemo(
     () => selectedProvince
-      ? filteredProperties.filter((p) => p.province === selectedProvince && p.isNeighborhoodDeal)
+      ? filteredProperties.filter((p) => p.city === selectedProvince && p.isNeighborhoodDeal)
           .sort((a, b) => b.opportunityScore - a.opportunityScore)
       : [],
     [filteredProperties, selectedProvince]
@@ -360,7 +360,7 @@ const MapView = () => {
 
     mappedProperties.forEach((p) => {
       const coords = getCoord(p);
-      const color = getPropertyColor(p.pricePerSqm, minPrice, maxPrice);
+      const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
 
       const radiusFactor = 0.55;
       const marker = L.circle(coords, {
@@ -392,9 +392,9 @@ const MapView = () => {
             </div><br/>
             <strong>${p.neighborhood}</strong><br/>
             <span style="color:#555;">${p.location}</span><br/><br/>
-            <strong>USD/m²:</strong> $${p.pricePerSqm.toLocaleString()}<br/>
+            <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
             <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
-            ${p.totalArea ? `<strong>Superficie:</strong> ${p.totalArea} m²<br/>` : ""}
+            ${p.surfaceTotal ? `<strong>Superficie:</strong> ${p.surfaceTotal} m²<br/>` : ""}
             ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
             <a href="${p.url}" target="_blank" style="color:hsl(190,90%,50%);text-decoration:none;font-weight:600;">Ver publicación →</a>
           </div>`
@@ -416,10 +416,10 @@ const MapView = () => {
   const provinceStats = useMemo(() => {
     const map = new Map<string, { prices: number[]; count: number }>();
     for (const p of properties) {
-      const prov = p.province || "Sin provincia";
+      const prov = p.city || "Sin ciudad";
       if (!map.has(prov)) map.set(prov, { prices: [], count: 0 });
       const entry = map.get(prov)!;
-      entry.prices.push(p.pricePerSqm);
+      entry.prices.push(p.pricePerM2Total ?? 0);
       entry.count++;
     }
     const result: { name: string; medianPricePerSqm: number; count: number }[] = [];
@@ -563,16 +563,16 @@ const MapView = () => {
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
                         <div>
                           <span className="text-muted-foreground">USD/m²</span>
-                          <span className="block font-mono font-semibold text-foreground">${p.pricePerSqm.toLocaleString()}</span>
+                          <span className="block font-mono font-semibold text-foreground">${(p.pricePerM2Total ?? 0).toLocaleString()}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Precio</span>
                           <span className="block font-mono font-semibold text-foreground">${p.price.toLocaleString()}</span>
                         </div>
-                        {p.totalArea && (
+                        {p.surfaceTotal && (
                           <div>
                             <span className="text-muted-foreground">Sup.</span>
-                            <span className="block font-mono text-foreground">{p.totalArea} m²</span>
+                            <span className="block font-mono text-foreground">{p.surfaceTotal} m²</span>
                           </div>
                         )}
                         {p.rooms && (

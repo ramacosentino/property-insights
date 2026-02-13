@@ -5,22 +5,32 @@ import { Property, NeighborhoodStats } from "@/lib/propertyData";
 interface DBPropertyRow {
   id: string;
   external_id: string;
-  popularity: number | null;
+  property_type: string | null;
+  title: string | null;
+  url: string | null;
   price: number | null;
   currency: string | null;
-  price_per_sqm: number | null;
-  expenses: number | null;
   location: string | null;
   neighborhood: string | null;
-  province: string | null;
-  total_area: number | null;
-  covered_area: number | null;
+  city: string | null;
+  scraped_at: string | null;
+  address: string | null;
+  street: string | null;
+  expenses: number | null;
+  description: string | null;
+  surface_total: number | null;
+  surface_covered: number | null;
   rooms: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  toilettes: number | null;
   parking: number | null;
-  url: string | null;
-  scraped_at: string | null;
+  age_years: number | null;
+  disposition: string | null;
+  orientation: string | null;
+  luminosity: string | null;
+  price_per_m2_total: number | null;
+  price_per_m2_covered: number | null;
 }
 
 function median(values: number[]): number {
@@ -34,37 +44,45 @@ function computeStats(rows: DBPropertyRow[]): {
   properties: Property[];
   neighborhoodStats: Map<string, NeighborhoodStats>;
 } {
-  // Filter valid rows
-  const valid = rows.filter(
-    (r) => r.price && r.price > 0 && r.price_per_sqm && r.price_per_sqm > 0 && r.price_per_sqm <= 15000
-  );
+  const valid = rows.filter((r) => r.price && r.price > 0);
 
   const rawProperties = valid.map((r) => ({
     id: r.id,
-    popularity: r.popularity ?? 0,
     externalId: r.external_id,
+    propertyType: r.property_type,
+    title: r.title,
+    url: r.url || "",
     price: r.price!,
     currency: r.currency || "USD",
-    pricePerSqm: r.price_per_sqm!,
-    expenses: r.expenses,
     location: r.location || "",
     neighborhood: r.neighborhood || "Sin barrio",
-    province: r.province || "Sin provincia",
-    totalArea: r.total_area,
-    coveredArea: r.covered_area,
+    city: r.city || "Sin ciudad",
+    scrapedAt: r.scraped_at || "",
+    address: r.address,
+    street: r.street,
+    expenses: r.expenses,
+    description: r.description,
+    surfaceTotal: r.surface_total,
+    surfaceCovered: r.surface_covered,
     rooms: r.rooms,
     bedrooms: r.bedrooms,
     bathrooms: r.bathrooms,
+    toilettes: r.toilettes,
     parking: r.parking,
-    url: r.url || "",
-    scrapedAt: r.scraped_at || "",
+    ageYears: r.age_years,
+    disposition: r.disposition,
+    orientation: r.orientation,
+    luminosity: r.luminosity,
+    pricePerM2Total: r.price_per_m2_total,
+    pricePerM2Covered: r.price_per_m2_covered,
   }));
 
   // Neighborhood stats
   const neighborhoodMap = new Map<string, number[]>();
   for (const p of rawProperties) {
+    if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
     if (!neighborhoodMap.has(p.neighborhood)) neighborhoodMap.set(p.neighborhood, []);
-    neighborhoodMap.get(p.neighborhood)!.push(p.pricePerSqm);
+    neighborhoodMap.get(p.neighborhood)!.push(p.pricePerM2Total);
   }
 
   const neighborhoodStats = new Map<string, NeighborhoodStats>();
@@ -73,7 +91,7 @@ function computeStats(rows: DBPropertyRow[]): {
     const sample = rawProperties.find((p) => p.neighborhood === name);
     neighborhoodStats.set(name, {
       name,
-      province: sample?.province || "",
+      city: sample?.city || "",
       medianPricePerSqm: median(values),
       avgPricePerSqm: values.reduce((a, b) => a + b, 0) / values.length,
       count: values.length,
@@ -83,15 +101,16 @@ function computeStats(rows: DBPropertyRow[]): {
   }
 
   // Top 10% by price
-  const sortedByPrice = [...rawProperties].sort((a, b) => a.pricePerSqm - b.pricePerSqm);
+  const withPrice = rawProperties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0);
+  const sortedByPrice = [...withPrice].sort((a, b) => (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0));
   const top10Percent = Math.ceil(sortedByPrice.length * 0.1);
   const topIds = new Set(sortedByPrice.slice(0, top10Percent).map((p) => p.id));
 
-  // Compute opportunity scores
   const properties: Property[] = rawProperties.map((p) => {
     const stats = neighborhoodStats.get(p.neighborhood);
-    const neighborhoodMedian = stats?.medianPricePerSqm || p.pricePerSqm;
-    const opportunityScore = ((neighborhoodMedian - p.pricePerSqm) / neighborhoodMedian) * 100;
+    const neighborhoodMedian = stats?.medianPricePerSqm || p.pricePerM2Total || 0;
+    const ppm2 = p.pricePerM2Total || 0;
+    const opportunityScore = neighborhoodMedian > 0 ? ((neighborhoodMedian - ppm2) / neighborhoodMedian) * 100 : 0;
 
     return {
       ...p,
@@ -121,7 +140,7 @@ async function fetchAllProperties(): Promise<DBPropertyRow[]> {
       break;
     }
 
-    if (data) allRows.push(...(data as DBPropertyRow[]));
+    if (data) allRows.push(...(data as unknown as DBPropertyRow[]));
     hasMore = (data?.length || 0) === pageSize;
     from += pageSize;
   }
@@ -136,6 +155,6 @@ export function useProperties() {
       const rows = await fetchAllProperties();
       return computeStats(rows);
     },
-    staleTime: 5 * 60 * 1000, // 5 min
+    staleTime: 5 * 60 * 1000,
   });
 }

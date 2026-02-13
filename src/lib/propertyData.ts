@@ -3,32 +3,42 @@ import csvFile from "@/data/properties.csv?raw";
 
 export interface Property {
   id: string;
-  popularity: number;
   externalId: string;
+  propertyType: string | null;
+  title: string | null;
+  url: string;
   price: number;
   currency: string;
-  pricePerSqm: number;
-  expenses: number | null;
   location: string;
   neighborhood: string;
-  province: string;
-  totalArea: number | null;
-  coveredArea: number | null;
+  city: string;
+  scrapedAt: string;
+  address: string | null;
+  street: string | null;
+  expenses: number | null;
+  description: string | null;
+  surfaceTotal: number | null;
+  surfaceCovered: number | null;
   rooms: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  toilettes: number | null;
   parking: number | null;
-  url: string;
-  scrapedAt: string;
+  ageYears: number | null;
+  disposition: string | null;
+  orientation: string | null;
+  luminosity: string | null;
+  pricePerM2Total: number | null;
+  pricePerM2Covered: number | null;
   // Computed
-  opportunityScore: number; // % below neighborhood median (positive = cheaper)
+  opportunityScore: number;
   isTopOpportunity: boolean;
   isNeighborhoodDeal: boolean;
 }
 
 export interface NeighborhoodStats {
   name: string;
-  province: string;
+  city: string;
   medianPricePerSqm: number;
   avgPricePerSqm: number;
   count: number;
@@ -57,51 +67,58 @@ export function loadProperties(): { properties: Property[]; neighborhoodStats: M
   });
 
   const rows = parsed.data as string[][];
-  // Skip header
   const dataRows = rows.slice(1);
 
-  // First pass: parse all valid properties
   const rawProperties: Omit<Property, "opportunityScore" | "isTopOpportunity" | "isNeighborhoodDeal">[] = [];
 
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i];
     if (row.length < 17) continue;
 
-    const pricePerSqm = parseNum(row[4]);
-    const price = parseNum(row[2]);
+    const price = parseNum(row[4]);
+    const pricePerM2Total = parseNum(row[21]);
     
-    // Skip if no valid price_per_sqm or it's an extreme outlier (> 15000 USD/m²)
-    if (!pricePerSqm || pricePerSqm <= 0 || pricePerSqm > 15000) continue;
     if (!price || price <= 0) continue;
 
     rawProperties.push({
       id: `prop-${i}`,
-      popularity: parseNum(row[0]) ?? 0,
-      externalId: row[1],
+      externalId: row[0],
+      propertyType: row[1] || null,
+      title: row[2] || null,
+      url: row[3] || "",
       price,
-      currency: row[3] || "USD",
-      pricePerSqm,
-      expenses: parseNum(row[5]),
+      currency: row[5] || "USD",
       location: row[6] || "",
       neighborhood: row[7] || "Sin barrio",
-      province: row[8] || "Sin provincia",
-      totalArea: parseNum(row[9]),
-      coveredArea: parseNum(row[10]),
-      rooms: parseNum(row[11]),
-      bedrooms: parseNum(row[12]),
-      bathrooms: parseNum(row[13]),
-      parking: parseNum(row[14]),
-      url: row[15] || "",
-      scrapedAt: row[16] || "",
+      city: row[8] || "Sin ciudad",
+      scrapedAt: row[9] || "",
+      address: row[10] || null,
+      street: row[11] || null,
+      expenses: parseNum(row[12]),
+      description: row[13] || null,
+      surfaceTotal: parseNum(row[14]),
+      surfaceCovered: parseNum(row[15]),
+      rooms: parseNum(row[16]),
+      bathrooms: parseNum(row[17]),
+      parking: parseNum(row[18]),
+      bedrooms: parseNum(row[19]),
+      ageYears: parseNum(row[20]),
+      pricePerM2Total: pricePerM2Total,
+      pricePerM2Covered: parseNum(row[22]),
+      toilettes: parseNum(row[23]),
+      disposition: row[24] || null,
+      orientation: row[25] || null,
+      luminosity: row[26] || null,
     });
   }
 
-  // Compute neighborhood stats
+  // Compute neighborhood stats using pricePerM2Total
   const neighborhoodMap = new Map<string, number[]>();
   for (const p of rawProperties) {
+    if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
     const key = p.neighborhood;
     if (!neighborhoodMap.has(key)) neighborhoodMap.set(key, []);
-    neighborhoodMap.get(key)!.push(p.pricePerSqm);
+    neighborhoodMap.get(key)!.push(p.pricePerM2Total);
   }
 
   const neighborhoodStats = new Map<string, NeighborhoodStats>();
@@ -110,7 +127,7 @@ export function loadProperties(): { properties: Property[]; neighborhoodStats: M
     const sample = rawProperties.find((p) => p.neighborhood === name);
     neighborhoodStats.set(name, {
       name,
-      province: sample?.province || "",
+      city: sample?.city || "",
       medianPricePerSqm: median(values),
       avgPricePerSqm: values.reduce((a, b) => a + b, 0) / values.length,
       count: values.length,
@@ -119,22 +136,22 @@ export function loadProperties(): { properties: Property[]; neighborhoodStats: M
     });
   }
 
-  // Sort by pricePerSqm to find global top opportunities
-  const sortedByPrice = [...rawProperties].sort((a, b) => a.pricePerSqm - b.pricePerSqm);
+  const propertiesWithPrice = rawProperties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0);
+  const sortedByPrice = [...propertiesWithPrice].sort((a, b) => (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0));
   const top10Percent = Math.ceil(sortedByPrice.length * 0.1);
   const topIds = new Set(sortedByPrice.slice(0, top10Percent).map((p) => p.id));
 
-  // Compute opportunity scores
   const properties: Property[] = rawProperties.map((p) => {
     const stats = neighborhoodStats.get(p.neighborhood);
-    const neighborhoodMedian = stats?.medianPricePerSqm || p.pricePerSqm;
-    const opportunityScore = ((neighborhoodMedian - p.pricePerSqm) / neighborhoodMedian) * 100;
+    const neighborhoodMedian = stats?.medianPricePerSqm || p.pricePerM2Total || 0;
+    const ppm2 = p.pricePerM2Total || 0;
+    const opportunityScore = neighborhoodMedian > 0 ? ((neighborhoodMedian - ppm2) / neighborhoodMedian) * 100 : 0;
 
     return {
       ...p,
       opportunityScore,
       isTopOpportunity: topIds.has(p.id),
-      isNeighborhoodDeal: opportunityScore > 40, // 40%+ below neighborhood median
+      isNeighborhoodDeal: opportunityScore > 40,
     };
   });
 

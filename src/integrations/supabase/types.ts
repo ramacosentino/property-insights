@@ -61,68 +61,98 @@ export type Database = {
       }
       properties: {
         Row: {
+          address: string | null
+          age_years: number | null
           bathrooms: number | null
           bedrooms: number | null
-          covered_area: number | null
+          city: string | null
           created_at: string
           currency: string | null
+          description: string | null
+          disposition: string | null
           expenses: number | null
           external_id: string
           id: string
           location: string | null
+          luminosity: string | null
           neighborhood: string | null
+          orientation: string | null
           parking: number | null
-          popularity: number | null
           price: number | null
-          price_per_sqm: number | null
-          province: string | null
+          price_per_m2_covered: number | null
+          price_per_m2_total: number | null
+          property_type: string | null
           rooms: number | null
           scraped_at: string | null
-          total_area: number | null
+          street: string | null
+          surface_covered: number | null
+          surface_total: number | null
+          title: string | null
+          toilettes: number | null
           updated_at: string
           url: string | null
         }
         Insert: {
+          address?: string | null
+          age_years?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
-          covered_area?: number | null
+          city?: string | null
           created_at?: string
           currency?: string | null
+          description?: string | null
+          disposition?: string | null
           expenses?: number | null
           external_id: string
           id?: string
           location?: string | null
+          luminosity?: string | null
           neighborhood?: string | null
+          orientation?: string | null
           parking?: number | null
-          popularity?: number | null
           price?: number | null
-          price_per_sqm?: number | null
-          province?: string | null
+          price_per_m2_covered?: number | null
+          price_per_m2_total?: number | null
+          property_type?: string | null
           rooms?: number | null
           scraped_at?: string | null
-          total_area?: number | null
+          street?: string | null
+          surface_covered?: number | null
+          surface_total?: number | null
+          title?: string | null
+          toilettes?: number | null
           updated_at?: string
           url?: string | null
         }
         Update: {
+          address?: string | null
+          age_years?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
-          covered_area?: number | null
+          city?: string | null
           created_at?: string
           currency?: string | null
+          description?: string | null
+          disposition?: string | null
           expenses?: number | null
           external_id?: string
           id?: string
           location?: string | null
+          luminosity?: string | null
           neighborhood?: string | null
+          orientation?: string | null
           parking?: number | null
-          popularity?: number | null
           price?: number | null
-          price_per_sqm?: number | null
-          province?: string | null
+          price_per_m2_covered?: number | null
+          price_per_m2_total?: number | null
+          property_type?: string | null
           rooms?: number | null
           scraped_at?: string | null
-          total_area?: number | null
+          street?: string | null
+          surface_covered?: number | null
+          surface_total?: number | null
+          title?: string | null
+          toilettes?: number | null
           updated_at?: string
           url?: string | null
         }
