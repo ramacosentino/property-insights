@@ -18,6 +18,69 @@ function trimOrNull(val: string | undefined): string | null {
   return t === "" ? null : t;
 }
 
+/**
+ * Parse CSV handling quoted fields with newlines/delimiters inside.
+ * Returns array of string arrays (rows of columns).
+ */
+function parseCSV(csv: string, delimiter: string): string[][] {
+  const rows: string[][] = [];
+  let current: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < csv.length) {
+    const ch = csv[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < csv.length && csv[i + 1] === '"') {
+          field += '"';
+          i += 2;
+        } else {
+          inQuotes = false;
+          i++;
+        }
+      } else {
+        field += ch;
+        i++;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+        i++;
+      } else if (ch === delimiter) {
+        current.push(field);
+        field = "";
+        i++;
+      } else if (ch === '\r') {
+        i++;
+      } else if (ch === '\n') {
+        current.push(field);
+        field = "";
+        if (current.some(c => c.trim() !== "")) {
+          rows.push(current);
+        }
+        current = [];
+        i++;
+      } else {
+        field += ch;
+        i++;
+      }
+    }
+  }
+
+  // Last field/row
+  if (field || current.length > 0) {
+    current.push(field);
+    if (current.some(c => c.trim() !== "")) {
+      rows.push(current);
+    }
+  }
+
+  return rows;
+}
+
 // CSV column order (header-based mapping)
 const HEADER_MAP: Record<string, string> = {
   external_id: "external_id",
@@ -68,8 +131,10 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const lines = csv.split("\n").filter((l: string) => l.trim());
-    if (lines.length < 2) {
+    // Use proper CSV parser that handles quoted fields with newlines
+    const allRows = parseCSV(csv, delimiter);
+    
+    if (allRows.length < 2) {
       return new Response(
         JSON.stringify({ success: false, error: "CSV must have a header and at least one data row" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -77,8 +142,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse header to get column indices
-    const headerLine = lines[0].replace(/^\uFEFF/, ""); // strip BOM
-    const headers = headerLine.split(delimiter).map((h: string) => h.trim().toLowerCase());
+    const headers = allRows[0].map((h: string) => h.trim().toLowerCase().replace(/^\uFEFF/, ""));
     const colIndex = new Map<string, number>();
     headers.forEach((h: string, i: number) => {
       if (HEADER_MAP[h]) colIndex.set(HEADER_MAP[h], i);
@@ -89,18 +153,17 @@ Deno.serve(async (req) => {
       return idx !== undefined ? row[idx] : undefined;
     };
 
-    const dataLines = lines.slice(1);
+    const dataRows = allRows.slice(1);
     let inserted = 0;
     let skipped = 0;
     const errors: string[] = [];
 
     const batchSize = 100;
-    for (let i = 0; i < dataLines.length; i += batchSize) {
-      const batch = dataLines.slice(i, i + batchSize);
+    for (let i = 0; i < dataRows.length; i += batchSize) {
+      const batch = dataRows.slice(i, i + batchSize);
       const rows: Record<string, unknown>[] = [];
 
-      for (const line of batch) {
-        const cols = line.split(delimiter);
+      for (const cols of batch) {
         const externalId = trimOrNull(getCol(cols, "external_id"));
         if (!externalId) {
           skipped++;
@@ -173,7 +236,7 @@ Deno.serve(async (req) => {
         processed: inserted,
         skipped,
         errors: errors.length > 0 ? errors : undefined,
-        total_lines: dataLines.length,
+        total_lines: dataRows.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
