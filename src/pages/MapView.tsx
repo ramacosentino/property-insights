@@ -2,7 +2,7 @@ import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { getSizeRange, getPriceRange, getRoomsLabel } from "@/lib/propertyData";
 import { useProperties } from "@/hooks/useProperties";
-import { fetchCachedCoordinates, geocodeBatch, CachedGeoData } from "@/lib/geocoding";
+import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X } from "lucide-react";
 import * as L from "leaflet";
@@ -172,7 +172,6 @@ const MapView = () => {
   const properties = data?.properties ?? [];
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
-  const [seedingDone, setSeedingDone] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
@@ -244,35 +243,7 @@ const MapView = () => {
     fetchCachedCoordinates().then(setGeocodedCoords);
   }, []);
 
-  // Auto-seed all addresses on mount (once)
-  useEffect(() => {
-    if (seedingDone || geocodedCoords.size === 0 && properties.length === 0) return;
-    
-    const seed = async () => {
-      const allAddresses = new Set(
-        Array.from(geocodedCoords.keys())
-      );
-      const uncached = properties.filter((p) => !allAddresses.has(p.address || p.location));
-      
-      if (uncached.length === 0) {
-        setSeedingDone(true);
-        return;
-      }
-
-      console.log(`Seeding ${uncached.length} addresses into geocoding queue...`);
-      const batchSize = 200;
-      for (let i = 0; i < uncached.length; i += batchSize) {
-        const batch = uncached.slice(i, i + batchSize);
-        await geocodeBatch(batch);
-      }
-      setSeedingDone(true);
-      console.log(`Seeding complete. Cron will geocode automatically.`);
-    };
-
-    // Small delay to let initial fetch complete
-    const timer = setTimeout(seed, 2000);
-    return () => clearTimeout(timer);
-  }, [properties, geocodedCoords, seedingDone]);
+  // Seeding is now fully automatic via the backend cron job
 
   const getCoord = useCallback(
     (p: { id: string; location: string; neighborhood: string; address?: string | null }): [number, number] => {
