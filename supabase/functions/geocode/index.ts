@@ -6,8 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const DELAY_MS = 1100; // Slightly over 1s to respect Nominatim's rate limit
+const LOCATIONIQ_URL = "https://us1.locationiq.com/v1/search";
+const DELAY_MS = 250; // LocationIQ free tier allows ~2 req/sec
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -113,6 +113,15 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const locationiqKey = Deno.env.get("LOCATIONIQ_API_KEY");
+    
+    if (!locationiqKey) {
+      return new Response(
+        JSON.stringify({ error: "LOCATIONIQ_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let addresses: any[] = [];
@@ -138,7 +147,7 @@ Deno.serve(async (req) => {
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
         .is("lat", null)
-        .limit(10); // Conservative batch size to fit within edge function timeout
+        .limit(10);
 
       if (error) {
         console.error("Error fetching uncached addresses:", error);
@@ -215,7 +224,7 @@ Deno.serve(async (req) => {
       addresses = toGeocode;
     }
 
-    // Geocode batch
+    // Geocode batch using LocationIQ
     const results: any[] = [];
     const batchSize = Math.min(addresses.length, 10);
     let successCount = 0;
@@ -224,21 +233,81 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
-      const query = `${item.address}, ${item.neighborhood || ""}, ${item.province || ""}, Argentina`;
+      // Build a clean query - just the address + Argentina
+      const query = `${item.address}, Argentina`;
 
       try {
-        const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=ar&addressdetails=1`;
-        const res = await fetch(url, {
-          headers: { "User-Agent": "LovableAnalytics/1.0" },
+        const params = new URLSearchParams({
+          key: locationiqKey,
+          q: query,
+          format: "json",
+          limit: "1",
+          countrycodes: "ar",
+          addressdetails: "1",
         });
+        const url = `${LOCATIONIQ_URL}?${params.toString()}`;
+        const res = await fetch(url);
 
         if (res.status === 429) {
-          console.warn(`Rate limited at item ${i + 1}/${batchSize}. Stopping batch early.`);
-          break;
+          console.warn(`Rate limited at item ${i + 1}/${batchSize}. Waiting 2s and retrying...`);
+          await sleep(2000);
+          // Retry once
+          const retryRes = await fetch(url);
+          if (retryRes.status === 429) {
+            console.warn(`Still rate limited. Stopping batch early.`);
+            break;
+          }
+          if (!retryRes.ok) {
+            console.warn(`HTTP ${retryRes.status} on retry for: ${item.address}`);
+            errorCount++;
+            await sleep(DELAY_MS);
+            continue;
+          }
+          const retryData = await retryRes.json();
+          if (retryData && retryData.length > 0) {
+            const lat = parseFloat(retryData[0].lat);
+            const lng = parseFloat(retryData[0].lon);
+            const addressDetails = retryData[0].address || {};
+            const normalized = extractNormalizedGeo(addressDetails);
+
+            await supabase.from("geocoded_addresses").upsert({
+              address: item.address,
+              neighborhood: item.neighborhood,
+              province: item.province,
+              lat,
+              lng,
+              norm_neighborhood: normalized.norm_neighborhood,
+              norm_locality: normalized.norm_locality,
+              norm_province: normalized.norm_province,
+              raw_address_details: addressDetails,
+              source: "locationiq",
+            }, { onConflict: "address" });
+
+            results.push({ ...item, lat, lng, ...normalized, source: "locationiq" });
+            successCount++;
+          }
+          await sleep(DELAY_MS);
+          continue;
         }
 
         if (!res.ok) {
-          console.warn(`HTTP ${res.status} for: ${item.address}. Skipping.`);
+          const errorBody = await res.text();
+          // LocationIQ returns 404 for not found
+          if (res.status === 404) {
+            await supabase.from("geocoded_addresses").upsert({
+              address: item.address,
+              neighborhood: item.neighborhood,
+              province: item.province,
+              lat: 0,
+              lng: 0,
+              source: "not_found",
+            }, { onConflict: "address" });
+            results.push({ ...item, lat: null, lng: null, source: "not_found" });
+            notFoundCount++;
+            await sleep(DELAY_MS);
+            continue;
+          }
+          console.warn(`HTTP ${res.status} for: ${item.address}. Body: ${errorBody}`);
           results.push({ ...item, lat: null, lng: null, source: "error" });
           errorCount++;
           await sleep(DELAY_MS);
@@ -263,10 +332,10 @@ Deno.serve(async (req) => {
             norm_locality: normalized.norm_locality,
             norm_province: normalized.norm_province,
             raw_address_details: addressDetails,
-            source: "nominatim",
+            source: "locationiq",
           }, { onConflict: "address" });
 
-          results.push({ ...item, lat, lng, ...normalized, source: "nominatim" });
+          results.push({ ...item, lat, lng, ...normalized, source: "locationiq" });
           successCount++;
         } else {
           await supabase.from("geocoded_addresses").upsert({
@@ -283,7 +352,6 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         console.error(`Geocoding failed for: ${item.address}`, e);
-        // Mark as error so it doesn't retry infinitely
         await supabase.from("geocoded_addresses").upsert({
           address: item.address,
           lat: 0,
