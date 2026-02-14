@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const DELAY_MS = 1000;
+const DELAY_MS = 1100; // Slightly over 1s to respect Nominatim's rate limit
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -19,38 +19,55 @@ function extractNormalizedGeo(address: any): {
   norm_province: string | null;
 } {
   if (!address) return { norm_neighborhood: null, norm_locality: null, norm_province: null };
-  const norm_neighborhood = address.suburb || address.neighbourhood || address.city_district || null;
-  const norm_locality = address.city || address.town || address.municipality || address.city_district || null;
-  const norm_province = address.state || null;
-  return { norm_neighborhood, norm_locality, norm_province };
+  return {
+    norm_neighborhood: address.suburb || address.neighbourhood || address.city_district || null,
+    norm_locality: address.city || address.town || address.municipality || address.city_district || null,
+    norm_province: address.state || null,
+  };
+}
+
+/**
+ * Paginated fetch of all rows from a table/query.
+ * Supabase limits to 1000 rows per request.
+ */
+async function fetchAllRows(supabase: any, table: string, select: string, filters?: (q: any) => any): Promise<any[]> {
+  const PAGE_SIZE = 1000;
+  const allRows: any[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase.from(table).select(select).range(from, from + PAGE_SIZE - 1);
+    if (filters) query = filters(query);
+    const { data, error } = await query;
+
+    if (error) {
+      console.error(`Error fetching ${table} (offset ${from}):`, error);
+      break;
+    }
+
+    allRows.push(...(data || []));
+    hasMore = (data?.length || 0) === PAGE_SIZE;
+    from += PAGE_SIZE;
+  }
+
+  return allRows;
 }
 
 /**
  * Auto-seed: find properties whose address is not yet in geocoded_addresses and insert them.
+ * Uses pagination to handle >1000 rows.
  */
 async function autoSeedMissingAddresses(supabase: any): Promise<number> {
-  // Get all distinct addresses from properties that have an address
-  const { data: allProps, error: propsErr } = await supabase
-    .from("properties")
-    .select("address, neighborhood, city")
-    .not("address", "is", null);
+  const allProps = await fetchAllRows(supabase, "properties", "address, neighborhood, city", (q: any) => q.not("address", "is", null));
 
-  if (propsErr || !allProps) {
-    console.error("Error fetching properties for seeding:", propsErr);
+  if (allProps.length === 0) {
+    console.log("No properties found for seeding");
     return 0;
   }
 
-  // Get all addresses already in geocoded_addresses
-  const { data: existing, error: geoErr } = await supabase
-    .from("geocoded_addresses")
-    .select("address");
-
-  if (geoErr) {
-    console.error("Error fetching existing geocoded addresses:", geoErr);
-    return 0;
-  }
-
-  const existingSet = new Set((existing || []).map((r: any) => r.address));
+  const existingRows = await fetchAllRows(supabase, "geocoded_addresses", "address");
+  const existingSet = new Set(existingRows.map((r: any) => r.address));
 
   // Deduplicate by address
   const toInsertMap = new Map<string, any>();
@@ -62,6 +79,7 @@ async function autoSeedMissingAddresses(supabase: any): Promise<number> {
         province: p.city,
         lat: null,
         lng: null,
+        source: "pending",
       });
     }
   }
@@ -115,12 +133,12 @@ Deno.serve(async (req) => {
       // Step 1: Auto-seed any missing addresses from properties table
       const seeded = await autoSeedMissingAddresses(supabase);
 
-      // Step 2: Fetch pending rows to geocode
+      // Step 2: Fetch pending rows to geocode (lat IS NULL = never attempted)
       const { data: uncached, error } = await supabase
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
         .is("lat", null)
-        .limit(25);
+        .limit(10); // Conservative batch size to fit within edge function timeout
 
       if (error) {
         console.error("Error fetching uncached addresses:", error);
@@ -131,11 +149,14 @@ Deno.serve(async (req) => {
       }
 
       if (!uncached || uncached.length === 0) {
+        console.log("All addresses geocoded. Nothing to do.");
         return new Response(
-          JSON.stringify({ message: "All addresses geocoded and normalized", geocoded: 0, seeded, remaining: 0 }),
+          JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      console.log(`Found ${uncached.length} pending addresses to geocode`);
 
       addresses = uncached.map((row: any) => ({
         address: row.address,
@@ -164,6 +185,7 @@ Deno.serve(async (req) => {
             province: a.province,
             lat: null,
             lng: null,
+            source: "pending",
           })),
           { onConflict: "address" }
         );
@@ -193,9 +215,12 @@ Deno.serve(async (req) => {
       addresses = toGeocode;
     }
 
-    // Geocode batch — up to 25 per call
+    // Geocode batch
     const results: any[] = [];
-    const batchSize = Math.min(addresses.length, 25);
+    const batchSize = Math.min(addresses.length, 10);
+    let successCount = 0;
+    let notFoundCount = 0;
+    let errorCount = 0;
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
@@ -208,13 +233,14 @@ Deno.serve(async (req) => {
         });
 
         if (res.status === 429) {
-          console.warn(`Rate limited at item ${i}/${batchSize}. Stopping batch early.`);
+          console.warn(`Rate limited at item ${i + 1}/${batchSize}. Stopping batch early.`);
           break;
         }
 
         if (!res.ok) {
           console.warn(`HTTP ${res.status} for: ${item.address}. Skipping.`);
           results.push({ ...item, lat: null, lng: null, source: "error" });
+          errorCount++;
           await sleep(DELAY_MS);
           continue;
         }
@@ -241,6 +267,7 @@ Deno.serve(async (req) => {
           }, { onConflict: "address" });
 
           results.push({ ...item, lat, lng, ...normalized, source: "nominatim" });
+          successCount++;
         } else {
           await supabase.from("geocoded_addresses").upsert({
             address: item.address,
@@ -252,10 +279,19 @@ Deno.serve(async (req) => {
           }, { onConflict: "address" });
 
           results.push({ ...item, lat: null, lng: null, source: "not_found" });
+          notFoundCount++;
         }
       } catch (e) {
         console.error(`Geocoding failed for: ${item.address}`, e);
+        // Mark as error so it doesn't retry infinitely
+        await supabase.from("geocoded_addresses").upsert({
+          address: item.address,
+          lat: 0,
+          lng: 0,
+          source: "error",
+        }, { onConflict: "address" });
         results.push({ ...item, lat: null, lng: null, source: "error" });
+        errorCount++;
       }
 
       if (i < batchSize - 1) await sleep(DELAY_MS);
@@ -263,12 +299,17 @@ Deno.serve(async (req) => {
 
     const remaining = addresses.length - batchSize;
 
+    console.log(`Geocoded batch: ${successCount} ok, ${notFoundCount} not found, ${errorCount} errors. Remaining: ${remaining}`);
+
     return new Response(
       JSON.stringify({
         results,
         remaining,
         total: addresses.length,
         geocoded: batchSize,
+        success: successCount,
+        notFound: notFoundCount,
+        errors: errorCount,
         autonomous: autonomousMode,
       }),
       {
