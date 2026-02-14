@@ -1032,8 +1032,7 @@ const MapView = () => {
               </div>
               <div className="w-px h-5 bg-border" />
               <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
-            </div>
-            <div className="flex items-center gap-4 flex-wrap">
+              <div className="w-px h-5 bg-border" />
               <MapFilterRow title="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
               <div className="w-px h-5 bg-border" />
               <MapFilterRow title="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
