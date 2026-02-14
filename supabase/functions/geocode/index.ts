@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
     let addresses: any[] = [];
     let autonomousMode = false;
     let fallbackMode = false;
+    let neighborhoodFallbackMode = false;
 
     try {
       const body = await req.json();
@@ -190,20 +191,53 @@ Deno.serve(async (req) => {
           .limit(30);
 
         if (nfError || !notFound || notFound.length === 0) {
-          console.log("All addresses geocoded. Nothing to do.");
-          return new Response(
-            JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+          // Step 4: For not_found_final, assign generic neighborhood coords from properties table
+          const { data: finalFails, error: ffError } = await supabase
+            .from("geocoded_addresses")
+            .select("address")
+            .eq("source", "not_found_final")
+            .limit(30);
 
-        console.log(`Retrying ${notFound.length} not_found addresses with fallback query`);
-        fallbackMode = true;
-        addresses = notFound.map((row: any) => ({
-          address: row.address,
-          neighborhood: row.neighborhood,
-          province: row.province,
-        }));
+          if (ffError || !finalFails || finalFails.length === 0) {
+            console.log("All addresses geocoded. Nothing to do.");
+            return new Response(
+              JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
+          // Look up the real neighborhood from properties and geocode that
+          const failAddresses = finalFails.map((f: any) => f.address);
+          const { data: props } = await supabase
+            .from("properties")
+            .select("address, neighborhood, city")
+            .in("address", failAddresses);
+
+          if (!props || props.length === 0) {
+            console.log("No matching properties for final fails.");
+            return new Response(
+              JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
+          console.log(`Final fallback: geocoding ${props.length} addresses by neighborhood+city`);
+          fallbackMode = true;
+          neighborhoodFallbackMode = true;
+          addresses = props.map((p: any) => ({
+            address: p.address,
+            neighborhood: p.neighborhood,
+            province: p.city,
+          }));
+        } else {
+          console.log(`Retrying ${notFound.length} not_found addresses with fallback query`);
+          fallbackMode = true;
+          addresses = notFound.map((row: any) => ({
+            address: row.address,
+            neighborhood: row.neighborhood,
+            province: row.province,
+          }));
+        }
       } else {
         console.log(`Found ${uncached.length} pending addresses to geocode`);
         addresses = uncached.map((row: any) => ({
@@ -348,7 +382,7 @@ Deno.serve(async (req) => {
               province: item.province,
               lat: 0,
               lng: 0,
-              source: fallbackMode ? "not_found_final" : "not_found",
+              source: neighborhoodFallbackMode ? "not_found_forever" : (fallbackMode ? "not_found_final" : "not_found"),
             }, { onConflict: "address" });
             results.push({ ...item, lat: null, lng: null, source: "not_found" });
             notFoundCount++;
@@ -380,7 +414,7 @@ Deno.serve(async (req) => {
             norm_locality: normalized.norm_locality,
             norm_province: normalized.norm_province,
             raw_address_details: addressDetails,
-            source: fallbackMode ? "locationiq_fallback" : "locationiq",
+            source: neighborhoodFallbackMode ? "locationiq_neighborhood" : (fallbackMode ? "locationiq_fallback" : "locationiq"),
           }, { onConflict: "address" });
 
           results.push({ ...item, lat, lng, ...normalized, source: "locationiq" });
@@ -392,7 +426,7 @@ Deno.serve(async (req) => {
             province: item.province,
             lat: 0,
             lng: 0,
-            source: fallbackMode ? "not_found_final" : "not_found",
+            source: neighborhoodFallbackMode ? "not_found_forever" : (fallbackMode ? "not_found_final" : "not_found"),
           }, { onConflict: "address" });
 
           results.push({ ...item, lat: null, lng: null, source: "not_found" });
