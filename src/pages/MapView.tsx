@@ -242,12 +242,14 @@ const MapView = () => {
   // Range filters
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 5000;
+  const SURFACE_COVERED_CAP = 5000;
   const AGE_CAP = 50;
   const EXPENSES_CAP = 500000;
 
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);
     const surfaces = properties.map((p) => p.surfaceTotal).filter((s): s is number => s !== null && s > 0);
+    const surfacesCovered = properties.map((p) => p.surfaceCovered).filter((s): s is number => s !== null && s > 0);
     const ages = properties.map((p) => p.ageYears).filter((a): a is number => a !== null && a >= 0);
     const expenses = properties.map((p) => p.expenses).filter((e): e is number => e !== null && e > 0);
     return {
@@ -255,6 +257,8 @@ const MapView = () => {
       priceMax: PRICE_CAP,
       surfaceMin: surfaces.length ? Math.min(...surfaces) : 0,
       surfaceMax: SURFACE_CAP,
+      surfaceCoveredMin: surfacesCovered.length ? Math.min(...surfacesCovered) : 0,
+      surfaceCoveredMax: SURFACE_COVERED_CAP,
       ageMin: ages.length ? Math.min(...ages) : 0,
       ageMax: AGE_CAP,
       expensesMin: expenses.length ? Math.min(...expenses) : 0,
@@ -264,6 +268,7 @@ const MapView = () => {
 
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 0]);
+  const [surfaceCoveredRange, setSurfaceCoveredRange] = useState<[number, number]>([0, 0]);
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 0]);
   const [expensesRange, setExpensesRange] = useState<[number, number]>([0, 0]);
   const [rangesInitialized, setRangesInitialized] = useState(false);
@@ -272,6 +277,7 @@ const MapView = () => {
     if (properties.length > 0 && !rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
+      setSurfaceCoveredRange([dataRanges.surfaceCoveredMin, dataRanges.surfaceCoveredMax]);
       setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
       setExpensesRange([dataRanges.expensesMin, dataRanges.expensesMax]);
       setRangesInitialized(true);
@@ -282,6 +288,7 @@ const MapView = () => {
     (acc, f) => acc + f.included.size + f.excluded.size, 0
   ) + (rangesInitialized && (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) ? 1 : 0)
     + (rangesInitialized && (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) ? 1 : 0)
+    + (rangesInitialized && (surfaceCoveredRange[0] > dataRanges.surfaceCoveredMin || surfaceCoveredRange[1] < dataRanges.surfaceCoveredMax) ? 1 : 0)
     + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0)
     + (rangesInitialized && (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) ? 1 : 0);
 
@@ -297,6 +304,7 @@ const MapView = () => {
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
+      setSurfaceCoveredRange([dataRanges.surfaceCoveredMin, dataRanges.surfaceCoveredMax]);
       setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
       setExpensesRange([dataRanges.expensesMin, dataRanges.expensesMax]);
     }
@@ -345,13 +353,15 @@ const MapView = () => {
         result = result.filter((p) => p.price >= priceRange[0] && (priceRange[1] >= PRICE_CAP || p.price <= priceRange[1]));
       if (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax)
         result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && (surfaceRange[1] >= SURFACE_CAP || p.surfaceTotal <= surfaceRange[1]));
+      if (surfaceCoveredRange[0] > dataRanges.surfaceCoveredMin || surfaceCoveredRange[1] < dataRanges.surfaceCoveredMax)
+        result = result.filter((p) => p.surfaceCovered !== null && p.surfaceCovered >= surfaceCoveredRange[0] && (surfaceCoveredRange[1] >= SURFACE_COVERED_CAP || p.surfaceCovered <= surfaceCoveredRange[1]));
       if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax)
         result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && (ageRange[1] >= AGE_CAP || p.ageYears <= ageRange[1]));
       if (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax)
         result = result.filter((p) => p.expenses !== null && p.expenses >= expensesRange[0] && (expensesRange[1] >= EXPENSES_CAP || p.expenses <= expensesRange[1]));
     }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, ageRange, expensesRange, rangesInitialized, dataRanges]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges]);
 
   const mappedProperties = filteredProperties;
 
@@ -910,11 +920,21 @@ const MapView = () => {
             cappedMax
           />
           <RangeSliderFilter
-            title="Superficie m²"
+            title="Sup. total m²"
             min={dataRanges.surfaceMin}
             max={dataRanges.surfaceMax}
             value={surfaceRange}
             onChange={setSurfaceRange}
+            step={5}
+            unit=" m²"
+            cappedMax
+          />
+          <RangeSliderFilter
+            title="Sup. cubierta m²"
+            min={dataRanges.surfaceCoveredMin}
+            max={dataRanges.surfaceCoveredMax}
+            value={surfaceCoveredRange}
+            onChange={setSurfaceCoveredRange}
             step={5}
             unit=" m²"
             cappedMax
@@ -976,7 +996,7 @@ const MapView = () => {
               <MapFilterRow title="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
             </div>
             {rangesInitialized && (
-              <div className="grid grid-cols-4 gap-6 max-w-3xl">
+              <div className="grid grid-cols-5 gap-6 max-w-4xl">
                 <RangeSliderFilter
                   title="Precio USD"
                   min={dataRanges.priceMin}
@@ -988,11 +1008,21 @@ const MapView = () => {
                   cappedMax
                 />
                 <RangeSliderFilter
-                  title="Superficie m²"
+                  title="Sup. total m²"
                   min={dataRanges.surfaceMin}
                   max={dataRanges.surfaceMax}
                   value={surfaceRange}
                   onChange={setSurfaceRange}
+                  step={5}
+                  unit=" m²"
+                  cappedMax
+                />
+                <RangeSliderFilter
+                  title="Sup. cubierta m²"
+                  min={dataRanges.surfaceCoveredMin}
+                  max={dataRanges.surfaceCoveredMax}
+                  value={surfaceCoveredRange}
+                  onChange={setSurfaceCoveredRange}
                   step={5}
                   unit=" m²"
                   cappedMax

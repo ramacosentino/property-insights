@@ -106,6 +106,7 @@ const PropertyList = () => {
 
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 5000;
+  const SURFACE_COVERED_CAP = 5000;
   const AGE_CAP = 50;
   const EXPENSES_CAP = 500000;
 
@@ -113,6 +114,7 @@ const PropertyList = () => {
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);
     const surfaces = properties.map((p) => p.surfaceTotal).filter((s): s is number => s !== null && s > 0);
+    const surfacesCovered = properties.map((p) => p.surfaceCovered).filter((s): s is number => s !== null && s > 0);
     const ages = properties.map((p) => p.ageYears).filter((a): a is number => a !== null && a >= 0);
     const expenses = properties.map((p) => p.expenses).filter((e): e is number => e !== null && e > 0);
     return {
@@ -120,6 +122,8 @@ const PropertyList = () => {
       priceMax: PRICE_CAP,
       surfaceMin: surfaces.length ? Math.min(...surfaces) : 0,
       surfaceMax: SURFACE_CAP,
+      surfaceCoveredMin: surfacesCovered.length ? Math.min(...surfacesCovered) : 0,
+      surfaceCoveredMax: SURFACE_COVERED_CAP,
       ageMin: ages.length ? Math.min(...ages) : 0,
       ageMax: AGE_CAP,
       expensesMin: expenses.length ? Math.min(...expenses) : 0,
@@ -131,6 +135,7 @@ const PropertyList = () => {
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 0]);
+  const [surfaceCoveredRange, setSurfaceCoveredRange] = useState<[number, number]>([0, 0]);
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 0]);
   const [expensesRange, setExpensesRange] = useState<[number, number]>([0, 0]);
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
@@ -149,6 +154,7 @@ const PropertyList = () => {
     if (properties.length > 0 && !rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
+      setSurfaceCoveredRange([dataRanges.surfaceCoveredMin, dataRanges.surfaceCoveredMax]);
       setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
       setExpensesRange([dataRanges.expensesMin, dataRanges.expensesMax]);
       setRangesInitialized(true);
@@ -269,6 +275,9 @@ const PropertyList = () => {
       if (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) {
         result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && (surfaceRange[1] >= SURFACE_CAP || p.surfaceTotal <= surfaceRange[1]));
       }
+      if (surfaceCoveredRange[0] > dataRanges.surfaceCoveredMin || surfaceCoveredRange[1] < dataRanges.surfaceCoveredMax) {
+        result = result.filter((p) => p.surfaceCovered !== null && p.surfaceCovered >= surfaceCoveredRange[0] && (surfaceCoveredRange[1] >= SURFACE_COVERED_CAP || p.surfaceCovered <= surfaceCoveredRange[1]));
+      }
       if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) {
         result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && (ageRange[1] >= AGE_CAP || p.ageYears <= ageRange[1]));
       }
@@ -291,7 +300,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
+  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
@@ -368,7 +377,7 @@ const PropertyList = () => {
 
           {/* Range sliders */}
           {rangesInitialized && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
               <RangeSliderFilter
                 title="Precio USD"
                 min={dataRanges.priceMin}
@@ -380,11 +389,21 @@ const PropertyList = () => {
                 cappedMax
               />
               <RangeSliderFilter
-                title="Superficie m²"
+                title="Sup. total m²"
                 min={dataRanges.surfaceMin}
                 max={dataRanges.surfaceMax}
                 value={surfaceRange}
                 onChange={setSurfaceRange}
+                step={5}
+                unit=" m²"
+                cappedMax
+              />
+              <RangeSliderFilter
+                title="Sup. cubierta m²"
+                min={dataRanges.surfaceCoveredMin}
+                max={dataRanges.surfaceCoveredMax}
+                value={surfaceCoveredRange}
+                onChange={setSurfaceCoveredRange}
                 step={5}
                 unit=" m²"
                 cappedMax
