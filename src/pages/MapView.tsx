@@ -213,6 +213,8 @@ const MapView = () => {
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
+  const filterPanelRef = useRef<HTMLDivElement>(null);
+  const [filterPanelHeight, setFilterPanelHeight] = useState(0);
 
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
@@ -409,6 +411,15 @@ const MapView = () => {
   useEffect(() => {
     fetchCachedCoordinates().then(setGeocodedCoords);
   }, []);
+
+  // Measure filter panel height dynamically
+  useEffect(() => {
+    const el = filterPanelRef.current;
+    if (!el) { setFilterPanelHeight(0); return; }
+    const ro = new ResizeObserver(([entry]) => setFilterPanelHeight(entry.contentRect.height + 24));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [showFilters]);
 
   const getCoord = useCallback(
     (p: { id: string; location: string; neighborhood: string; address?: string | null }): [number, number] => {
@@ -969,7 +980,7 @@ const MapView = () => {
       <div className={`relative flex flex-col ${isMobile ? "h-[calc(100vh-5.5rem)]" : "h-[calc(100vh-3.5rem)]"}`}>
         {/* Desktop filters panel */}
         {!isMobile && showFilters && (
-          <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-[1100] relative">
+          <div ref={filterPanelRef} className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-[1100] relative">
             <div className="flex items-center gap-4 flex-wrap">
               <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
               <div className="w-px h-5 bg-border" />
@@ -1066,7 +1077,7 @@ const MapView = () => {
             </div>
 
             {/* Right sidebar */}
-            <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all ${showFilters ? "top-[155px]" : "top-4"}`}>
+            <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all`} style={{ top: showFilters ? `${filterPanelHeight + 16}px` : '16px' }}>
               <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
                 {selectedProvince ? selectedDealsContent : statsListContent}
               </div>
