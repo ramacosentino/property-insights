@@ -13,6 +13,29 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Clean address for geocoding:
+ * - Remove "al" between street name and number ("Potosí al 800" → "Potosí 800")
+ * - Remove "entre X y Z" clauses
+ * - Remove floor/dept info (e.g. "2º A", "Piso 3", "Depto B")
+ * - Normalize whitespace
+ */
+function cleanAddress(raw: string): string {
+  let s = raw;
+  // Remove "al" before a number: "Potosí al 800" → "Potosí 800"
+  s = s.replace(/\bal\s+(\d)/gi, "$1");
+  // Remove "entre ... y ..." or "entre ... e ..."
+  s = s.replace(/\bentre\s+.+?\s+[ye]\s+\S+/gi, "");
+  // Remove floor/dept: "2º A", "Piso 3", "Depto B", "PB", "1°B"
+  s = s.replace(/\b(piso|depto|dpto|departamento|unidad)\s*\S*/gi, "");
+  s = s.replace(/\d+[°º]\s*[A-Za-z]?\b/g, "");
+  // Normalize spaces
+  s = s.replace(/\s{2,}/g, " ").trim();
+  // Remove trailing comma
+  s = s.replace(/,\s*$/, "");
+  return s;
+}
+
 function extractNormalizedGeo(address: any): {
   norm_neighborhood: string | null;
   norm_locality: string | null;
@@ -233,8 +256,9 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
-      // Build a clean query - just the address + Argentina
-      const query = `${item.address}, Argentina`;
+      // Build a clean query - normalize address then append Argentina
+      const cleanAddr = cleanAddress(item.address);
+      const query = `${cleanAddr}, Argentina`;
 
       try {
         const params = new URLSearchParams({
