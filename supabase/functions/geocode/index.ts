@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const LOCATIONIQ_URL = "https://us1.locationiq.com/v1/search";
-const DELAY_MS = 250; // LocationIQ free tier allows ~2 req/sec
+const DELAY_MS = 500; // Safe rate for sustained LocationIQ usage (~2 req/sec limit)
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
         .is("lat", null)
-        .limit(10);
+        .limit(30);
 
       if (error) {
         console.error("Error fetching uncached addresses:", error);
@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
 
     // Geocode batch using LocationIQ
     const results: any[] = [];
-    const batchSize = Math.min(addresses.length, 10);
+    const batchSize = Math.min(addresses.length, 30);
     let successCount = 0;
     let notFoundCount = 0;
     let errorCount = 0;
