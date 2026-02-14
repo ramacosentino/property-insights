@@ -59,6 +59,62 @@
 
     --font-mono: 'JetBrains Mono', monospace;
     --font-sans: 'Satoshi', system-ui, sans-serif;
+
+    /* Map-specific tokens */
+    --deal-marker: 220 15% 10%;
+    --map-tiles: light;
+  }
+
+  .dark {
+    --background: 220 25% 6%;
+    --foreground: 210 20% 90%;
+
+    --card: 220 22% 10%;
+    --card-foreground: 210 20% 90%;
+
+    --popover: 220 22% 10%;
+    --popover-foreground: 210 20% 90%;
+
+    --primary: 190 90% 50%;
+    --primary-foreground: 220 25% 6%;
+
+    --secondary: 220 20% 16%;
+    --secondary-foreground: 210 20% 85%;
+
+    --muted: 220 18% 14%;
+    --muted-foreground: 215 15% 55%;
+
+    --accent: 155 70% 45%;
+    --accent-foreground: 220 25% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 18% 18%;
+    --input: 220 18% 18%;
+    --ring: 190 90% 50%;
+
+    --opportunity: 190 90% 50%;
+    --opportunity-foreground: 220 25% 6%;
+    --expensive: 155 70% 45%;
+    --expensive-foreground: 220 25% 6%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 25% 6%;
+    --highlight-row: 190 90% 50% / 0.08;
+    --glass: 220 22% 10% / 0.7;
+    --glass-border: 220 18% 22%;
+
+    --sidebar-background: 220 25% 8%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 190 90% 50%;
+    --sidebar-primary-foreground: 220 25% 6%;
+    --sidebar-accent: 220 20% 14%;
+    --sidebar-accent-foreground: 210 20% 85%;
+    --sidebar-border: 220 18% 18%;
+    --sidebar-ring: 190 90% 50%;
+
+    --deal-marker: 210 20% 90%;
+    --map-tiles: dark;
   }
 }
 
@@ -120,6 +176,11 @@
   }
   .text-gradient-opportunity {
     background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(200 75% 55%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .dark .text-gradient-opportunity {
+    background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(190 80% 70%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }

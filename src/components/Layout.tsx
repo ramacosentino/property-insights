@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { Map, List, BarChart3 } from "lucide-react";
+import { Map, List, BarChart3, Sun, Moon } from "lucide-react";
 import CsvUploadButton from "./CsvUploadButton";
+import { useTheme } from "@/hooks/useTheme";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface LayoutProps {
 
 const Layout = ({ children, headerContent }: LayoutProps) => {
   const location = useLocation();
+  const { isDark, toggle } = useTheme();
 
   const navItems = [
     { path: "/", label: "Mapa", icon: Map },
@@ -48,6 +50,13 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
                 </Link>
               );
             })}
+            <button
+              onClick={toggle}
+              className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+              title={isDark ? "Modo claro" : "Modo oscuro"}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
             <CsvUploadButton />
           </nav>
         </div>
