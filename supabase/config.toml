@@ -2,3 +2,6 @@ project_id = "rzmxhcebsdsyrzdkipct"
 
 [functions.upload-properties]
 verify_jwt = false
+
+[functions.geocode]
+verify_jwt = false
