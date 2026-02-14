@@ -879,7 +879,7 @@ const MapView = () => {
 
   return (
     <Layout headerContent={headerFilters}>
-      <div className="relative h-[calc(100vh-3.5rem)] flex flex-col">
+      <div className={`relative flex flex-col ${isMobile ? "h-[calc(100vh-5.5rem)]" : "h-[calc(100vh-3.5rem)]"}`}>
         {/* Desktop filters panel */}
         {!isMobile && showFilters && (
           <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-[1100] relative">
