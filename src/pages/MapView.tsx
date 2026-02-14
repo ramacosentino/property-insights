@@ -593,6 +593,7 @@ const MapView = () => {
             </div><br/>` : isDeal ? `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
               ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
             </div><br/>` : ""}
+            ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${p.propertyType}</span><br/>` : ""}
             <strong>${p.neighborhood}</strong><br/>
             <span style="color:#666;">${p.location}</span><br/><br/>
             <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
@@ -645,6 +646,7 @@ const MapView = () => {
               </div><br/>` : `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
                 ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
               </div><br/>`}
+              ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${p.propertyType}</span><br/>` : ""}
               <strong>${p.neighborhood}</strong><br/>
               <span style="color:#666;">${p.location}</span><br/><br/>
               <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
@@ -874,7 +876,10 @@ const MapView = () => {
             onMouseLeave={() => highlightLayerRef.current?.clearLayers()}
           >
             <div className="flex items-start justify-between gap-2 mb-1.5">
-              <span className="text-[11px] text-foreground leading-tight line-clamp-2">{p.location}</span>
+              <div className="leading-tight">
+                {p.propertyType && <span className="text-[10px] text-muted-foreground capitalize">{p.propertyType}</span>}
+                <span className="text-[11px] text-foreground line-clamp-2 block">{p.location}</span>
+              </div>
               <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors shrink-0">
                 <ExternalLink className="h-3 w-3" />
               </a>
