@@ -132,7 +132,7 @@ const NeighborhoodDropdown = ({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-2xl border border-border bg-popover shadow-lg max-h-80 overflow-hidden">
+        <div className="absolute z-[1200] mt-1 w-full rounded-2xl border border-border bg-popover shadow-lg max-h-80 overflow-hidden">
           <div className="p-2.5 border-b border-border">
             <Input
               placeholder="Buscar barrio o localidad..."

@@ -672,11 +672,20 @@ const MapView = () => {
     <Layout headerContent={headerFilters}>
       <div className="relative h-[calc(100vh-3.5rem)] flex flex-col">
         {showFilters && (
-          <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-10">
+          <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-[1100] relative">
             <div className="flex items-center gap-4 flex-wrap">
               <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
               <div className="w-px h-5 bg-border" />
               <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+              <div className="w-px h-5 bg-border" />
+              <div className="w-56">
+                <NeighborhoodDropdown
+                  groups={neighborhoodsByProvince}
+                  state={neighborhoodFilter}
+                  onChange={setNeighborhoodFilter}
+                  compact
+                />
+              </div>
             </div>
             {rangesInitialized && (
               <div className="grid grid-cols-3 gap-6 max-w-2xl">
@@ -711,14 +720,6 @@ const MapView = () => {
                 />
               </div>
             )}
-            <div className="max-w-md">
-              <NeighborhoodDropdown
-                groups={neighborhoodsByProvince}
-                state={neighborhoodFilter}
-                onChange={setNeighborhoodFilter}
-                compact
-              />
-            </div>
           </div>
         )}
 
