@@ -390,7 +390,7 @@ const MapView = () => {
 
   // Dynamic deal detection based on threshold
   const dealProperties = useMemo(
-    () => mappedProperties.filter((p) => p.opportunityScore >= dealThreshold),
+    () => mappedProperties.filter((p) => p.price && p.pricePerM2Total && p.opportunityScore >= dealThreshold),
     [mappedProperties, dealThreshold]
   );
 
@@ -399,7 +399,7 @@ const MapView = () => {
       ? (viewMode === "opportunities" 
           ? filteredProperties.filter((p) => {
               const match = statsGroupBy === "neighborhood" ? p.neighborhood === selectedProvince : p.city === selectedProvince;
-              return match && p.opportunityScore >= dealThreshold;
+              return match && p.price && p.pricePerM2Total && p.opportunityScore >= dealThreshold;
             })
           : filteredProperties.filter((p) => statsGroupBy === "neighborhood" ? p.neighborhood === selectedProvince : p.city === selectedProvince)
         ).sort((a, b) => b.opportunityScore - a.opportunityScore)
@@ -588,15 +588,20 @@ const MapView = () => {
         const marker = L.marker(coords, { icon });
         marker.bindPopup(
           `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
-            ${isDeal ? `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+            ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+              ⚠ Poca información
+            </div><br/>` : isDeal ? `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
               ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
             </div><br/>` : ""}
             <strong>${p.neighborhood}</strong><br/>
             <span style="color:#666;">${p.location}</span><br/><br/>
             <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
             <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
-            ${p.surfaceTotal ? `<strong>Superficie:</strong> ${p.surfaceTotal} m²<br/>` : ""}
+            ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
+            ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
             ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
+            ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
+            ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
             <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
           </div>`
         );
@@ -635,15 +640,20 @@ const MapView = () => {
         L.marker(coords, { icon: dealIcon })
           .bindPopup(
             `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
-              <div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+              ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+                ⚠ Poca información
+              </div><br/>` : `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
                 ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
-              </div><br/>
+              </div><br/>`}
               <strong>${p.neighborhood}</strong><br/>
               <span style="color:#666;">${p.location}</span><br/><br/>
               <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
               <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
-              ${p.surfaceTotal ? `<strong>Superficie:</strong> ${p.surfaceTotal} m²<br/>` : ""}
+              ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
+              ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
               ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
+              ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
+              ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
               <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
             </div>`
           )
@@ -869,12 +879,16 @@ const MapView = () => {
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
-            {p.opportunityScore > 0 && (
+            {!p.price || !p.pricePerM2Total ? (
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">⚠ Poca información</span>
+              </div>
+            ) : p.opportunityScore > 0 ? (
               <div className="flex items-center gap-1.5 mb-2">
                 <TrendingDown className="h-3 w-3 text-primary" />
                 <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
               </div>
-            )}
+            ) : null}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
               <div>
                 <span className="text-muted-foreground">USD/m²</span>
@@ -886,8 +900,14 @@ const MapView = () => {
               </div>
               {p.surfaceTotal && (
                 <div>
-                  <span className="text-muted-foreground">Sup.</span>
+                  <span className="text-muted-foreground">Sup. total</span>
                   <span className="block font-mono text-foreground">{p.surfaceTotal} m²</span>
+                </div>
+              )}
+              {p.surfaceCovered && (
+                <div>
+                  <span className="text-muted-foreground">Sup. cub.</span>
+                  <span className="block font-mono text-foreground">{p.surfaceCovered} m²</span>
                 </div>
               )}
               {p.rooms && (
@@ -896,6 +916,18 @@ const MapView = () => {
                   <span className="block font-mono text-foreground">{p.rooms}</span>
                 </div>
               )}
+              {p.parking ? (
+                <div>
+                  <span className="text-muted-foreground">Cochera</span>
+                  <span className="block font-mono text-foreground">{p.parking}</span>
+                </div>
+              ) : null}
+              {p.luminosity ? (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Luminosidad</span>
+                  <span className="block font-mono text-foreground">{p.luminosity}</span>
+                </div>
+              ) : null}
             </div>
           </div>
         ))}
