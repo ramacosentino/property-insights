@@ -5,6 +5,7 @@ import { useProperties } from "@/hooks/useProperties";
 import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import RangeSliderFilter from "@/components/RangeSliderFilter";
+import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye } from "lucide-react";
@@ -199,22 +200,25 @@ const MapView = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
-
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   // View mode: "opportunities" or "all"
   const [viewMode, setViewMode] = useState<"opportunities" | "all">("opportunities");
   // Dynamic opportunity threshold (%)
   const [dealThreshold, setDealThreshold] = useState(40);
 
   // Range filters
+  const PRICE_CAP = 2000000;
+  const SURFACE_CAP = 5000;
+
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);
     const surfaces = properties.map((p) => p.surfaceTotal).filter((s): s is number => s !== null && s > 0);
     const ages = properties.map((p) => p.ageYears).filter((a): a is number => a !== null && a >= 0);
     return {
       priceMin: prices.length ? Math.min(...prices) : 0,
-      priceMax: prices.length ? Math.max(...prices) : 1000000,
+      priceMax: PRICE_CAP,
       surfaceMin: surfaces.length ? Math.min(...surfaces) : 0,
-      surfaceMax: surfaces.length ? Math.max(...surfaces) : 1000,
+      surfaceMax: SURFACE_CAP,
       ageMin: ages.length ? Math.min(...ages) : 0,
       ageMax: ages.length ? Math.max(...ages) : 100,
     };
@@ -234,7 +238,7 @@ const MapView = () => {
     }
   }, [properties.length, dataRanges, rangesInitialized]);
 
-  const activeFilterCount = [roomsFilter, parkingFilter].reduce(
+  const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0
   ) + (rangesInitialized && (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) ? 1 : 0)
     + (rangesInitialized && (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) ? 1 : 0)
@@ -243,6 +247,7 @@ const MapView = () => {
   const clearAllFilters = () => {
     setRoomsFilter(createFilterState());
     setParkingFilter(createFilterState());
+    setNeighborhoodFilter(createFilterState());
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
@@ -271,23 +276,46 @@ const MapView = () => {
         statsGroupBy === "neighborhood" ? p.neighborhood === selectedProvince : p.city === selectedProvince
       );
     }
+    if (neighborhoodFilter.included.size > 0 || neighborhoodFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(p.neighborhood, neighborhoodFilter));
     if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
-    // Range filters
+    // Range filters (when at cap, include everything above)
     if (rangesInitialized) {
       if (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax)
-        result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+        result = result.filter((p) => p.price >= priceRange[0] && (priceRange[1] >= PRICE_CAP || p.price <= priceRange[1]));
       if (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax)
-        result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && p.surfaceTotal <= surfaceRange[1]);
+        result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && (surfaceRange[1] >= SURFACE_CAP || p.surfaceTotal <= surfaceRange[1]));
       if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax)
         result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && p.ageYears <= ageRange[1]);
     }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
 
   const mappedProperties = filteredProperties;
+
+  // Build neighborhood groups for dropdown
+  const neighborhoodsByProvince = useMemo(() => {
+    const hoodCounts = new Map<string, number>();
+    const provCounts = new Map<string, number>();
+    const provMap = new Map<string, { value: string; label: string; count: number }[]>();
+    for (const p of properties) {
+      hoodCounts.set(p.neighborhood, (hoodCounts.get(p.neighborhood) || 0) + 1);
+      const prov = p.city || "Sin ciudad";
+      provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
+    }
+    for (const [hood, count] of hoodCounts.entries()) {
+      const sample = properties.find((pp) => pp.neighborhood === hood);
+      const prov = sample?.city || "Sin ciudad";
+      if (!provMap.has(prov)) provMap.set(prov, []);
+      provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
+    }
+    return Array.from(provMap.entries())
+      .map(([prov, hoods]) => ({ province: prov, totalCount: provCounts.get(prov) || 0, neighborhoods: hoods.sort((a, b) => a.value.localeCompare(b.value)) }))
+      .sort((a, b) => b.totalCount - a.totalCount);
+  }, [properties]);
 
   // Dynamic deal detection based on threshold
   const dealProperties = useMemo(
@@ -660,6 +688,7 @@ const MapView = () => {
                   onChange={setPriceRange}
                   step={5000}
                   formatValue={formatPrice}
+                  cappedMax
                 />
                 <RangeSliderFilter
                   title="Superficie m²"
@@ -669,6 +698,7 @@ const MapView = () => {
                   onChange={setSurfaceRange}
                   step={5}
                   unit=" m²"
+                  cappedMax
                 />
                 <RangeSliderFilter
                   title="Antigüedad"
@@ -681,6 +711,14 @@ const MapView = () => {
                 />
               </div>
             )}
+            <div className="max-w-md">
+              <NeighborhoodDropdown
+                groups={neighborhoodsByProvince}
+                state={neighborhoodFilter}
+                onChange={setNeighborhoodFilter}
+                compact
+              />
+            </div>
           </div>
         )}
 
