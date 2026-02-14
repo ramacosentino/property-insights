@@ -195,6 +195,7 @@ const MapView = () => {
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [statsGroupBy, setStatsGroupBy] = useState<"city" | "neighborhood">("city");
   const [showFilters, setShowFilters] = useState(false);
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
@@ -265,7 +266,11 @@ const MapView = () => {
   // Apply filters
   const filteredProperties = useMemo(() => {
     let result = allMappedProperties;
-    if (selectedProvince) result = result.filter((p) => p.city === selectedProvince);
+    if (selectedProvince) {
+      result = result.filter((p) =>
+        statsGroupBy === "neighborhood" ? p.neighborhood === selectedProvince : p.city === selectedProvince
+      );
+    }
     if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
@@ -280,7 +285,7 @@ const MapView = () => {
         result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && p.ageYears <= ageRange[1]);
     }
     return result;
-  }, [allMappedProperties, selectedProvince, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
 
   const mappedProperties = filteredProperties;
 
@@ -293,11 +298,14 @@ const MapView = () => {
   const selectedDeals = useMemo(
     () => selectedProvince
       ? (viewMode === "opportunities" 
-          ? filteredProperties.filter((p) => p.city === selectedProvince && p.opportunityScore >= dealThreshold)
-          : filteredProperties.filter((p) => p.city === selectedProvince)
+          ? filteredProperties.filter((p) => {
+              const match = statsGroupBy === "neighborhood" ? p.neighborhood === selectedProvince : p.city === selectedProvince;
+              return match && p.opportunityScore >= dealThreshold;
+            })
+          : filteredProperties.filter((p) => statsGroupBy === "neighborhood" ? p.neighborhood === selectedProvince : p.city === selectedProvince)
         ).sort((a, b) => b.opportunityScore - a.opportunityScore)
       : [],
-    [filteredProperties, selectedProvince, viewMode, dealThreshold]
+    [filteredProperties, selectedProvince, statsGroupBy, viewMode, dealThreshold]
   );
 
   // Load cached coordinates on mount
@@ -565,6 +573,28 @@ const MapView = () => {
     return result.sort((a, b) => b.count - a.count);
   }, [properties]);
 
+  // Neighborhood median stats
+  const neighborhoodMedianStats = useMemo(() => {
+    const map = new Map<string, { prices: number[]; count: number }>();
+    for (const p of properties) {
+      const key = p.neighborhood || "Sin barrio";
+      if (!map.has(key)) map.set(key, { prices: [], count: 0 });
+      const entry = map.get(key)!;
+      entry.prices.push(p.pricePerM2Total ?? 0);
+      entry.count++;
+    }
+    const result: { name: string; medianPricePerSqm: number; count: number }[] = [];
+    for (const [name, { prices, count }] of map) {
+      const sorted = [...prices].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      result.push({ name, medianPricePerSqm: Math.round(median), count });
+    }
+    return result.sort((a, b) => b.count - a.count);
+  }, [properties]);
+
+  const activeMedianStats = statsGroupBy === "city" ? provinceStats : neighborhoodMedianStats;
+
   const minMedian = mappedNeighborhoods.length ? Math.min(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
   const maxMedian = mappedNeighborhoods.length ? Math.max(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
 
@@ -702,7 +732,7 @@ const MapView = () => {
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 shrink-0"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  Volver a localidades
+                  Volver a {statsGroupBy === "neighborhood" ? "barrios" : "localidades"}
                 </button>
                 <p className="text-xs font-medium text-foreground mb-1 shrink-0">{selectedProvince}</p>
                 <p className="text-[11px] text-muted-foreground mb-3 shrink-0">
@@ -785,12 +815,34 @@ const MapView = () => {
               </>
             ) : (
               <>
-                <p className="text-xs font-medium text-foreground mb-3 shrink-0">Mediana USD/m² por localidad</p>
+                <div className="flex items-center justify-between mb-3 shrink-0">
+                  <p className="text-xs font-medium text-foreground">Mediana USD/m²</p>
+                  <div className="flex items-center rounded-full border border-border overflow-hidden">
+                    <button
+                      onClick={() => setStatsGroupBy("city")}
+                      className={`px-2 py-0.5 text-[10px] font-medium transition-all ${
+                        statsGroupBy === "city" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Localidad
+                    </button>
+                    <button
+                      onClick={() => setStatsGroupBy("neighborhood")}
+                      className={`px-2 py-0.5 text-[10px] font-medium transition-all ${
+                        statsGroupBy === "neighborhood" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Barrio
+                    </button>
+                  </div>
+                </div>
                 <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
-                  {provinceStats.map((p) => (
+                  {activeMedianStats.map((p) => (
                     <button
                       key={p.name}
-                      onClick={() => setSelectedProvince(p.name)}
+                      onClick={() => {
+                        setSelectedProvince(p.name);
+                      }}
                       className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
                     >
                       <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
