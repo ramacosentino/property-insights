@@ -18,10 +18,6 @@ function trimOrNull(val: string | undefined): string | null {
   return t === "" ? null : t;
 }
 
-/**
- * Parse CSV handling quoted fields with newlines/delimiters inside.
- * Returns array of string arrays (rows of columns).
- */
 function parseCSV(csv: string, delimiter: string): string[][] {
   const rows: string[][] = [];
   let current: string[] = [];
@@ -31,7 +27,6 @@ function parseCSV(csv: string, delimiter: string): string[][] {
 
   while (i < csv.length) {
     const ch = csv[i];
-
     if (inQuotes) {
       if (ch === '"') {
         if (i + 1 < csv.length && csv[i + 1] === '"') {
@@ -58,9 +53,7 @@ function parseCSV(csv: string, delimiter: string): string[][] {
       } else if (ch === '\n') {
         current.push(field);
         field = "";
-        if (current.some(c => c.trim() !== "")) {
-          rows.push(current);
-        }
+        if (current.some(c => c.trim() !== "")) rows.push(current);
         current = [];
         i++;
       } else {
@@ -70,45 +63,24 @@ function parseCSV(csv: string, delimiter: string): string[][] {
     }
   }
 
-  // Last field/row
   if (field || current.length > 0) {
     current.push(field);
-    if (current.some(c => c.trim() !== "")) {
-      rows.push(current);
-    }
+    if (current.some(c => c.trim() !== "")) rows.push(current);
   }
 
   return rows;
 }
 
-// CSV column order (header-based mapping)
 const HEADER_MAP: Record<string, string> = {
-  external_id: "external_id",
-  property_type: "property_type",
-  title: "title",
-  url: "url",
-  price: "price",
-  currency: "currency",
-  location: "location",
-  neighborhood: "neighborhood",
-  city: "city",
-  scraped_at: "scraped_at",
-  address: "address",
-  street: "street",
-  expenses: "expenses",
-  description: "description",
-  surface_total: "surface_total",
-  surface_covered: "surface_covered",
-  rooms: "rooms",
-  bathrooms: "bathrooms",
-  parking: "parking",
-  bedrooms: "bedrooms",
-  age_years: "age_years",
-  price_per_m2_total: "price_per_m2_total",
-  price_per_m2_covered: "price_per_m2_covered",
-  toilettes: "toilettes",
-  disposition: "disposition",
-  orientation: "orientation",
+  external_id: "external_id", property_type: "property_type", title: "title",
+  url: "url", price: "price", currency: "currency", location: "location",
+  neighborhood: "neighborhood", city: "city", scraped_at: "scraped_at",
+  address: "address", street: "street", expenses: "expenses",
+  description: "description", surface_total: "surface_total",
+  surface_covered: "surface_covered", rooms: "rooms", bathrooms: "bathrooms",
+  parking: "parking", bedrooms: "bedrooms", age_years: "age_years",
+  price_per_m2_total: "price_per_m2_total", price_per_m2_covered: "price_per_m2_covered",
+  toilettes: "toilettes", disposition: "disposition", orientation: "orientation",
   luminosity: "luminosity",
 };
 
@@ -117,8 +89,12 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, serviceKey);
+
   try {
-    const { csv, delimiter = ";" } = await req.json();
+    const { csv, delimiter = ";", source = "manual", filename, log_id } = await req.json();
 
     if (!csv || typeof csv !== "string") {
       return new Response(
@@ -127,13 +103,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
-
-    // Use proper CSV parser that handles quoted fields with newlines
     const allRows = parseCSV(csv, delimiter);
-    
+
     if (allRows.length < 2) {
       return new Response(
         JSON.stringify({ success: false, error: "CSV must have a header and at least one data row" }),
@@ -141,7 +112,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse header to get column indices
     const headers = allRows[0].map((h: string) => h.trim().toLowerCase().replace(/^\uFEFF/, ""));
     const colIndex = new Map<string, number>();
     headers.forEach((h: string, i: number) => {
@@ -165,18 +135,11 @@ Deno.serve(async (req) => {
 
       for (const cols of batch) {
         const externalId = trimOrNull(getCol(cols, "external_id"));
-        if (!externalId) {
-          skipped++;
-          continue;
-        }
-
+        if (!externalId) { skipped++; continue; }
         const price = parseNum(getCol(cols, "price"));
-        if (!price || price <= 0) {
-          skipped++;
-          continue;
-        }
+        if (!price || price <= 0) { skipped++; continue; }
 
-        const row: Record<string, unknown> = {
+        rows.push({
           external_id: externalId,
           price,
           currency: trimOrNull(getCol(cols, "currency")) || "USD",
@@ -206,19 +169,14 @@ Deno.serve(async (req) => {
           scraped_at: getCol(cols, "scraped_at")?.trim()
             ? new Date(getCol(cols, "scraped_at")!.trim()).toISOString()
             : new Date().toISOString(),
-        };
-
-        rows.push(row);
+        });
       }
 
       if (rows.length === 0) continue;
 
       const { data, error } = await supabase
         .from("properties")
-        .upsert(rows, {
-          onConflict: "external_id",
-          ignoreDuplicates: false,
-        })
+        .upsert(rows, { onConflict: "external_id", ignoreDuplicates: false })
         .select("id");
 
       if (error) {
@@ -229,6 +187,45 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Upload complete: ${inserted} processed, ${skipped} skipped, ${errors.length} batch errors`);
+
+    // Log to upload_logs if log_id provided (update existing) or create new
+    const logData = {
+      finished_at: new Date().toISOString(),
+      source: source || "manual",
+      status: errors.length > 0 ? (inserted > 0 ? "partial" : "error") : "success",
+      total_rows: dataRows.length,
+      processed: inserted,
+      skipped,
+      errors: errors.length > 0 ? errors : null,
+      filename: filename || null,
+    };
+
+    if (log_id) {
+      // Update existing log (chunk mode - accumulate)
+      const { data: existing } = await supabase
+        .from("upload_logs")
+        .select("processed, skipped, total_rows, errors")
+        .eq("id", log_id)
+        .single();
+
+      if (existing) {
+        const prevErrors = (existing.errors as string[]) || [];
+        await supabase
+          .from("upload_logs")
+          .update({
+            finished_at: logData.finished_at,
+            processed: (existing.processed || 0) + inserted,
+            skipped: (existing.skipped || 0) + skipped,
+            total_rows: (existing.total_rows || 0) + dataRows.length,
+            status: errors.length > 0 ? "partial" : logData.status,
+            errors: [...prevErrors, ...errors].length > 0 ? [...prevErrors, ...errors] : null,
+          })
+          .eq("id", log_id);
+      }
+    } else {
+      // Single upload - create log entry
+      await supabase.from("upload_logs").insert(logData);
+    }
 
     return new Response(
       JSON.stringify({

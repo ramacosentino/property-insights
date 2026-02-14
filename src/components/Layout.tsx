@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Map, List, BarChart3, Sun, Moon } from "lucide-react";
+import { Map, List, BarChart3, Sun, Moon, Settings } from "lucide-react";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -15,6 +15,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const navItems = [
     { path: "/", label: "Mapa", icon: Map },
     { path: "/propiedades", label: "Propiedades", icon: List },
+    { path: "/configuracion", label: "Config", icon: Settings },
   ];
 
   return (

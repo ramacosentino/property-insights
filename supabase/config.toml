@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.geocode]
 verify_jwt = false
+
+[functions.upload-log]
+verify_jwt = false

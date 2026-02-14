@@ -158,6 +158,48 @@ export type Database = {
         }
         Relationships: []
       }
+      upload_logs: {
+        Row: {
+          error_message: string | null
+          errors: string[] | null
+          filename: string | null
+          finished_at: string | null
+          id: string
+          processed: number | null
+          skipped: number | null
+          source: string
+          started_at: string
+          status: string
+          total_rows: number | null
+        }
+        Insert: {
+          error_message?: string | null
+          errors?: string[] | null
+          filename?: string | null
+          finished_at?: string | null
+          id?: string
+          processed?: number | null
+          skipped?: number | null
+          source?: string
+          started_at?: string
+          status?: string
+          total_rows?: number | null
+        }
+        Update: {
+          error_message?: string | null
+          errors?: string[] | null
+          filename?: string | null
+          finished_at?: string | null
+          id?: string
+          processed?: number | null
+          skipped?: number | null
+          source?: string
+          started_at?: string
+          status?: string
+          total_rows?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
