@@ -762,7 +762,7 @@ const MapView = () => {
         </div>
 
         {/* Right sidebar */}
-        <div className="absolute top-4 right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px]">
+        <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all ${showFilters ? "top-[140px]" : "top-4"}`}>
           <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
             {selectedProvince ? (
               <>
