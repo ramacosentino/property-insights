@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const DELAY_MS = 1500; // Increased to avoid rate limiting
+const DELAY_MS = 1000; // Balance speed vs rate limiting
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
         .select("address, neighborhood, province")
         .or("lat.is.null,norm_locality.is.null")
         .not("lat", "eq", 0) // skip "not_found" entries
-        .limit(10);
+        .limit(25);
 
       if (error) {
         console.error("Error fetching uncached addresses:", error);
@@ -142,9 +142,9 @@ Deno.serve(async (req) => {
       addresses = toGeocode;
     }
 
-    // Geocode batch — up to 10 per call (reduced to avoid Nominatim rate limits)
+    // Geocode batch — up to 25 per call
     const results: any[] = [];
-    const batchSize = Math.min(addresses.length, 10);
+    const batchSize = Math.min(addresses.length, 25);
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
