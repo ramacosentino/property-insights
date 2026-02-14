@@ -8,7 +8,9 @@ import RangeSliderFilter from "@/components/RangeSliderFilter";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -191,6 +193,7 @@ const MapView = () => {
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
 
   const { isDark } = useTheme();
+  const isMobile = useIsMobile();
   const { data, isLoading } = useProperties();
   const properties = data?.properties ?? [];
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
@@ -205,6 +208,9 @@ const MapView = () => {
   const [viewMode, setViewMode] = useState<"opportunities" | "all">("opportunities");
   // Dynamic opportunity threshold (%)
   const [dealThreshold, setDealThreshold] = useState(40);
+  // Mobile bottom sheet state: "collapsed" | "half" | "full"
+  const [mobileSheet, setMobileSheet] = useState<"collapsed" | "half" | "full">("collapsed");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Range filters
   const PRICE_CAP = 2000000;
@@ -629,9 +635,9 @@ const MapView = () => {
   const headerFilters = (
     <div className="flex items-center gap-1.5 flex-wrap">
       <button
-        onClick={() => setShowFilters(!showFilters)}
+        onClick={() => isMobile ? setMobileFiltersOpen(true) : setShowFilters(!showFilters)}
         className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium transition-all border ${
-          showFilters || activeFilterCount > 0 ? "border-primary/30 text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"
+          showFilters || mobileFiltersOpen || activeFilterCount > 0 ? "border-primary/30 text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"
         }`}
       >
         <SlidersHorizontal className="h-3 w-3" />
@@ -668,10 +674,212 @@ const MapView = () => {
     </div>
   );
 
+  // Shared components for reuse between desktop and mobile
+  const legendContent = (
+    <div>
+      <p className="text-xs font-medium text-foreground mb-2">USD/m² por propiedad</p>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
+        <div
+          className="h-1.5 flex-1 rounded-full"
+          style={{ background: "linear-gradient(to right, hsl(220,70%,40%), hsl(200,70%,50%), hsl(150,65%,55%), hsl(130,75%,45%))" }}
+        />
+        <span className="text-[11px] text-expensive font-mono">${maxMedian.toLocaleString()}</span>
+      </div>
+    </div>
+  );
+
+  const thresholdContent = (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-medium text-foreground">Umbral oportunidad</span>
+        <span className="text-[11px] font-mono text-primary font-semibold">{dealThreshold}%</span>
+      </div>
+      <Slider
+        min={0}
+        max={100}
+        step={5}
+        value={[dealThreshold]}
+        onValueChange={(v) => setDealThreshold(v[0])}
+        className="w-full"
+      />
+      <p className="text-[10px] text-muted-foreground mt-1.5">
+        {viewMode === "opportunities"
+          ? `${dealProperties.length} oportunidades (≥${dealThreshold}% bajo mediana)`
+          : `${mappedProperties.length} propiedades · ${dealProperties.length} oportunidades`}
+      </p>
+    </div>
+  );
+
+  const statsListContent = (
+    <>
+      <div className="flex items-center justify-between mb-3 shrink-0">
+        <p className="text-xs font-medium text-foreground">Mediana USD/m²</p>
+        <div className="flex items-center rounded-full border border-border overflow-hidden">
+          <button
+            onClick={() => setStatsGroupBy("city")}
+            className={`px-2 py-0.5 text-[10px] font-medium transition-all ${
+              statsGroupBy === "city" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Localidad
+          </button>
+          <button
+            onClick={() => setStatsGroupBy("neighborhood")}
+            className={`px-2 py-0.5 text-[10px] font-medium transition-all ${
+              statsGroupBy === "neighborhood" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Barrio
+          </button>
+        </div>
+      </div>
+      <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
+        {activeMedianStats.map((p) => (
+          <button
+            key={p.name}
+            onClick={() => {
+              setSelectedProvince(p.name);
+              if (isMobile) setMobileSheet("full");
+            }}
+            className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
+          >
+            <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
+            <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
+  const selectedDealsContent = (
+    <>
+      <button
+        onClick={() => setSelectedProvince(null)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 shrink-0"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Volver a {statsGroupBy === "neighborhood" ? "barrios" : "localidades"}
+      </button>
+      <p className="text-xs font-medium text-foreground mb-1 shrink-0">{selectedProvince}</p>
+      <p className="text-[11px] text-muted-foreground mb-3 shrink-0">
+        {selectedDeals.length} propiedad{selectedDeals.length !== 1 ? "es" : ""}
+      </p>
+      <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll space-y-2">
+        {selectedDeals.length === 0 && (
+          <p className="text-[11px] text-muted-foreground">Sin propiedades en esta localidad.</p>
+        )}
+        {selectedDeals.map((p) => (
+          <div
+            key={p.id}
+            className="rounded-xl border border-border/50 p-3 hover:border-primary/30 transition-colors"
+            onMouseEnter={() => {
+              const hl = highlightLayerRef.current;
+              if (!hl) return;
+              hl.clearLayers();
+              const coords = getCoord(p);
+              L.circleMarker(coords, {
+                radius: 18, color: "hsl(200,85%,42%)", fillColor: "hsl(200,85%,42%)",
+                fillOpacity: 0.25, weight: 2, interactive: false,
+              }).addTo(hl);
+              L.circleMarker(coords, {
+                radius: 6, color: "white", fillColor: "hsl(200,85%,55%)",
+                fillOpacity: 0.9, weight: 1.5, interactive: false,
+              }).addTo(hl);
+            }}
+            onMouseLeave={() => highlightLayerRef.current?.clearLayers()}
+          >
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <span className="text-[11px] text-foreground leading-tight line-clamp-2">{p.location}</span>
+              <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors shrink-0">
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+            {p.opportunityScore > 0 && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <TrendingDown className="h-3 w-3 text-primary" />
+                <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+              <div>
+                <span className="text-muted-foreground">USD/m²</span>
+                <span className="block font-mono font-semibold text-foreground">${(p.pricePerM2Total ?? 0).toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Precio</span>
+                <span className="block font-mono font-semibold text-foreground">${p.price.toLocaleString()}</span>
+              </div>
+              {p.surfaceTotal && (
+                <div>
+                  <span className="text-muted-foreground">Sup.</span>
+                  <span className="block font-mono text-foreground">{p.surfaceTotal} m²</span>
+                </div>
+              )}
+              {p.rooms && (
+                <div>
+                  <span className="text-muted-foreground">Amb.</span>
+                  <span className="block font-mono text-foreground">{p.rooms}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
+  const filtersContent = (
+    <div className="flex flex-col gap-4">
+      <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+      <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+      <NeighborhoodDropdown
+        groups={neighborhoodsByProvince}
+        state={neighborhoodFilter}
+        onChange={setNeighborhoodFilter}
+        compact
+      />
+      {rangesInitialized && (
+        <div className="space-y-4">
+          <RangeSliderFilter
+            title="Precio USD"
+            min={dataRanges.priceMin}
+            max={dataRanges.priceMax}
+            value={priceRange}
+            onChange={setPriceRange}
+            step={5000}
+            formatValue={formatPrice}
+            cappedMax
+          />
+          <RangeSliderFilter
+            title="Superficie m²"
+            min={dataRanges.surfaceMin}
+            max={dataRanges.surfaceMax}
+            value={surfaceRange}
+            onChange={setSurfaceRange}
+            step={5}
+            unit=" m²"
+            cappedMax
+          />
+          <RangeSliderFilter
+            title="Antigüedad"
+            min={dataRanges.ageMin}
+            max={dataRanges.ageMax}
+            value={ageRange}
+            onChange={setAgeRange}
+            step={1}
+            unit=" años"
+          />
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <Layout headerContent={headerFilters}>
       <div className="relative h-[calc(100vh-3.5rem)] flex flex-col">
-        {showFilters && (
+        {/* Desktop filters panel */}
+        {!isMobile && showFilters && (
           <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-[1100] relative">
             <div className="flex items-center gap-4 flex-wrap">
               <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
@@ -725,199 +933,137 @@ const MapView = () => {
 
         <div ref={mapRef} className="h-full w-full flex-1" />
 
-        {/* Legend + opportunity threshold - bottom left */}
-        <div className="absolute bottom-4 left-4 glass-card rounded-2xl p-4 z-[1000] w-[260px] space-y-3">
-          <div>
-            <p className="text-xs font-medium text-foreground mb-2">USD/m² por propiedad</p>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
-              <div
-                className="h-1.5 flex-1 rounded-full"
-                style={{ background: "linear-gradient(to right, hsl(220,70%,40%), hsl(200,70%,50%), hsl(150,65%,55%), hsl(130,75%,45%))" }}
-              />
-              <span className="text-[11px] text-expensive font-mono">${maxMedian.toLocaleString()}</span>
+        {/* ===== DESKTOP: Legend + sidebar ===== */}
+        {!isMobile && (
+          <>
+            {/* Legend + opportunity threshold - bottom left */}
+            <div className="absolute bottom-4 left-4 glass-card rounded-2xl p-4 z-[1000] w-[260px] space-y-3">
+              {legendContent}
+              <div className="border-t border-border pt-3">
+                {thresholdContent}
+              </div>
             </div>
-          </div>
 
-          {/* Opportunity threshold control */}
-          <div className="border-t border-border pt-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-medium text-foreground">Umbral oportunidad</span>
-              <span className="text-[11px] font-mono text-primary font-semibold">{dealThreshold}%</span>
-            </div>
-            <Slider
-              min={0}
-              max={100}
-              step={5}
-              value={[dealThreshold]}
-              onValueChange={(v) => setDealThreshold(v[0])}
-              className="w-full"
-            />
-            <p className="text-[10px] text-muted-foreground mt-1.5">
-              {viewMode === "opportunities"
-                ? `${dealProperties.length} oportunidades (≥${dealThreshold}% bajo mediana)`
-                : `${mappedProperties.length} propiedades · ${dealProperties.length} oportunidades`}
-            </p>
-          </div>
-        </div>
+            {/* Right sidebar */}
+            <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all ${showFilters ? "top-[155px]" : "top-4"}`}>
+              <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
+                {selectedProvince ? selectedDealsContent : statsListContent}
+              </div>
 
-        {/* Right sidebar */}
-        <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all ${showFilters ? "top-[155px]" : "top-4"}`}>
-          <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
-            {selectedProvince ? (
-              <>
-                <button
-                  onClick={() => setSelectedProvince(null)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 shrink-0"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Volver a {statsGroupBy === "neighborhood" ? "barrios" : "localidades"}
-                </button>
-                <p className="text-xs font-medium text-foreground mb-1 shrink-0">{selectedProvince}</p>
-                <p className="text-[11px] text-muted-foreground mb-3 shrink-0">
-                  {selectedDeals.length} propiedad{selectedDeals.length !== 1 ? "es" : ""}
-                </p>
-                <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll space-y-2">
-                  {selectedDeals.length === 0 && (
-                    <p className="text-[11px] text-muted-foreground">Sin propiedades en esta localidad.</p>
-                  )}
-                  {selectedDeals.map((p) => (
+              {/* Geocoding progress */}
+              <div className="glass-card rounded-2xl p-4 shrink-0">
+                <p className="text-xs font-medium text-foreground mb-2">📍 Geocodificación</p>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
                     <div
-                      key={p.id}
-                      className="rounded-xl border border-border/50 p-3 hover:border-primary/30 transition-colors"
-                      onMouseEnter={() => {
-                        const hl = highlightLayerRef.current;
-                        if (!hl) return;
-                        hl.clearLayers();
-                        const coords = getCoord(p);
-                        L.circleMarker(coords, {
-                          radius: 18,
-                          color: "hsl(200,85%,42%)",
-                          fillColor: "hsl(200,85%,42%)",
-                          fillOpacity: 0.25,
-                          weight: 2,
-                          interactive: false,
-                        }).addTo(hl);
-                        L.circleMarker(coords, {
-                          radius: 6,
-                          color: "white",
-                          fillColor: "hsl(200,85%,55%)",
-                          fillOpacity: 0.9,
-                          weight: 1.5,
-                          interactive: false,
-                        }).addTo(hl);
-                      }}
-                      onMouseLeave={() => highlightLayerRef.current?.clearLayers()}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <span className="text-[11px] text-foreground leading-tight line-clamp-2">{p.location}</span>
-                        <a
-                          href={p.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary transition-colors shrink-0"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                      {p.opportunityScore > 0 && (
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <TrendingDown className="h-3 w-3 text-primary" />
-                          <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
-                        <div>
-                          <span className="text-muted-foreground">USD/m²</span>
-                          <span className="block font-mono font-semibold text-foreground">${(p.pricePerM2Total ?? 0).toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Precio</span>
-                          <span className="block font-mono font-semibold text-foreground">${p.price.toLocaleString()}</span>
-                        </div>
-                        {p.surfaceTotal && (
-                          <div>
-                            <span className="text-muted-foreground">Sup.</span>
-                            <span className="block font-mono text-foreground">{p.surfaceTotal} m²</span>
-                          </div>
-                        )}
-                        {p.rooms && (
-                          <div>
-                            <span className="text-muted-foreground">Amb.</span>
-                            <span className="block font-mono text-foreground">{p.rooms}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-mono text-primary">{progressPct}%</span>
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-3 shrink-0">
-                  <p className="text-xs font-medium text-foreground">Mediana USD/m²</p>
-                  <div className="flex items-center rounded-full border border-border overflow-hidden">
+                <p className="text-[11px] text-muted-foreground">
+                  {geocodedCount.toLocaleString()} / {totalProperties.toLocaleString()} propiedades
+                </p>
+                {progressPct < 100 && (
+                  <p className="text-[11px] text-muted-foreground mt-1 opacity-60">Procesando automáticamente...</p>
+                )}
+                {progressPct === 100 && (
+                  <p className="text-[11px] text-primary mt-1">✓ Completo</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ===== MOBILE: Bottom sheet ===== */}
+        {isMobile && (
+          <>
+            {/* Collapsed bottom bar — always visible */}
+            <div
+              className="absolute bottom-0 left-0 right-0 z-[1000] bg-card/95 backdrop-blur border-t border-border rounded-t-2xl"
+              style={{ transition: "max-height 0.3s ease" }}
+            >
+              {/* Drag handle */}
+              <button
+                onClick={() => setMobileSheet(mobileSheet === "collapsed" ? "half" : "collapsed")}
+                className="w-full flex flex-col items-center pt-2 pb-1"
+              >
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
+                <ChevronUp className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${mobileSheet !== "collapsed" ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Collapsed summary */}
+              {mobileSheet === "collapsed" && (
+                <div className="px-4 pb-3 space-y-2">
+                  {/* Compact legend */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-primary">${minMedian.toLocaleString()}</span>
+                    <div
+                      className="h-1 flex-1 rounded-full"
+                      style={{ background: "linear-gradient(to right, hsl(220,70%,40%), hsl(200,70%,50%), hsl(150,65%,55%), hsl(130,75%,45%))" }}
+                    />
+                    <span className="text-[10px] font-mono text-expensive">${maxMedian.toLocaleString()}</span>
+                    <span className="text-[10px] text-muted-foreground ml-1">USD/m²</span>
+                  </div>
+                  {/* Compact threshold + stats button */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-[10px] text-muted-foreground">Umbral</span>
+                      <span className="text-[10px] font-mono text-primary font-semibold">{dealThreshold}%</span>
+                      <span className="text-[10px] text-muted-foreground">· {dealProperties.length} oport.</span>
+                    </div>
                     <button
-                      onClick={() => setStatsGroupBy("city")}
-                      className={`px-2 py-0.5 text-[10px] font-medium transition-all ${
-                        statsGroupBy === "city" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
-                      }`}
+                      onClick={() => setMobileSheet("half")}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/15 text-primary text-[10px] font-medium"
                     >
-                      Localidad
-                    </button>
-                    <button
-                      onClick={() => setStatsGroupBy("neighborhood")}
-                      className={`px-2 py-0.5 text-[10px] font-medium transition-all ${
-                        statsGroupBy === "neighborhood" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Barrio
+                      <List className="h-3 w-3" />
+                      Precios
                     </button>
                   </div>
                 </div>
-                <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
-                  {activeMedianStats.map((p) => (
-                    <button
-                      key={p.name}
-                      onClick={() => {
-                        setSelectedProvince(p.name);
-                      }}
-                      className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
-                    >
-                      <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
-                      <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+              )}
 
-          {/* Geocoding progress */}
-          <div className="glass-card rounded-2xl p-4 shrink-0">
-            <p className="text-xs font-medium text-foreground mb-2">📍 Geocodificación</p>
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-              <span className="text-[11px] font-mono text-primary">{progressPct}%</span>
+              {/* Half expanded: legend + threshold + stats list */}
+              {mobileSheet === "half" && (
+                <div className="px-4 pb-4 space-y-3" style={{ maxHeight: "45vh", overflowY: "auto" }}>
+                  {legendContent}
+                  <div className="border-t border-border pt-3">
+                    {thresholdContent}
+                  </div>
+                  <div className="border-t border-border pt-3 flex flex-col" style={{ maxHeight: "25vh" }}>
+                    {statsListContent}
+                  </div>
+                </div>
+              )}
+
+              {/* Full expanded: selected deals or stats */}
+              {mobileSheet === "full" && (
+                <div className="px-4 pb-4 flex flex-col" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                  {legendContent}
+                  <div className="border-t border-border pt-3 mb-3">
+                    {thresholdContent}
+                  </div>
+                  <div className="border-t border-border pt-3 flex flex-col flex-1 min-h-0">
+                    {selectedProvince ? selectedDealsContent : statsListContent}
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              {geocodedCount.toLocaleString()} / {totalProperties.toLocaleString()} propiedades
-            </p>
-            {progressPct < 100 && (
-              <p className="text-[11px] text-muted-foreground mt-1 opacity-60">
-                Procesando automáticamente...
-              </p>
-            )}
-            {progressPct === 100 && (
-              <p className="text-[11px] text-primary mt-1">✓ Completo</p>
-            )}
-          </div>
-        </div>
+
+            {/* Mobile filters sheet */}
+            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+              <SheetContent side="right" className="w-[300px] overflow-y-auto z-[1100]">
+                <SheetHeader>
+                  <SheetTitle>Filtros</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  {filtersContent}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </>
+        )}
       </div>
     </Layout>
   );
