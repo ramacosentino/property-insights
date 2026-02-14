@@ -26,6 +26,7 @@ function getParkingLabel(parking: number | null): string {
 
 const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
 const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
+const PROPERTY_TYPE_KEYS = ["departamento", "casa", "ph", "terreno"];
 
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "Benavidez": [-34.42, -58.68],
@@ -204,6 +205,7 @@ const MapView = () => {
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<FilterState>(createFilterState());
   // View mode: "opportunities" or "all"
   const [viewMode, setViewMode] = useState<"opportunities" | "all">("opportunities");
   // Dynamic opportunity threshold (%)
@@ -245,7 +247,7 @@ const MapView = () => {
     }
   }, [properties.length, dataRanges, rangesInitialized]);
 
-  const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter].reduce(
+  const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter, propertyTypeFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0
   ) + (rangesInitialized && (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) ? 1 : 0)
     + (rangesInitialized && (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) ? 1 : 0)
@@ -255,6 +257,7 @@ const MapView = () => {
     setRoomsFilter(createFilterState());
     setParkingFilter(createFilterState());
     setNeighborhoodFilter(createFilterState());
+    setPropertyTypeFilter(createFilterState());
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
@@ -285,6 +288,8 @@ const MapView = () => {
     }
     if (neighborhoodFilter.included.size > 0 || neighborhoodFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(p.neighborhood, neighborhoodFilter));
+    if (propertyTypeFilter.included.size > 0 || propertyTypeFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(p.propertyType || "otro", propertyTypeFilter));
     if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
@@ -299,7 +304,7 @@ const MapView = () => {
         result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && (ageRange[1] >= AGE_CAP || p.ageYears <= ageRange[1]));
     }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
 
   const mappedProperties = filteredProperties;
 
@@ -840,6 +845,7 @@ const MapView = () => {
         onChange={setNeighborhoodFilter}
         compact
       />
+      <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
       {rangesInitialized && (
         <div className="space-y-4">
           <RangeSliderFilter
@@ -896,6 +902,8 @@ const MapView = () => {
                   compact
                 />
               </div>
+              <div className="w-px h-5 bg-border" />
+              <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
             </div>
             {rangesInitialized && (
               <div className="grid grid-cols-3 gap-6 max-w-2xl">
