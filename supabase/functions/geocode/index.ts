@@ -7,35 +7,84 @@ const corsHeaders = {
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const DELAY_MS = 1000; // Balance speed vs rate limiting
+const DELAY_MS = 1000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Extract normalized geographic fields from Nominatim address details.
- * Priority mapping for Argentina:
- * - norm_neighborhood: suburb > neighbourhood > city_district
- * - norm_locality: city > town > municipality > city_district
- * - norm_province: state
- */
 function extractNormalizedGeo(address: any): {
   norm_neighborhood: string | null;
   norm_locality: string | null;
   norm_province: string | null;
 } {
   if (!address) return { norm_neighborhood: null, norm_locality: null, norm_province: null };
-
-  const norm_neighborhood =
-    address.suburb || address.neighbourhood || address.city_district || null;
-
-  const norm_locality =
-    address.city || address.town || address.municipality || address.city_district || null;
-
+  const norm_neighborhood = address.suburb || address.neighbourhood || address.city_district || null;
+  const norm_locality = address.city || address.town || address.municipality || address.city_district || null;
   const norm_province = address.state || null;
-
   return { norm_neighborhood, norm_locality, norm_province };
+}
+
+/**
+ * Auto-seed: find properties whose address is not yet in geocoded_addresses and insert them.
+ */
+async function autoSeedMissingAddresses(supabase: any): Promise<number> {
+  // Get all distinct addresses from properties that have an address
+  const { data: allProps, error: propsErr } = await supabase
+    .from("properties")
+    .select("address, neighborhood, city")
+    .not("address", "is", null);
+
+  if (propsErr || !allProps) {
+    console.error("Error fetching properties for seeding:", propsErr);
+    return 0;
+  }
+
+  // Get all addresses already in geocoded_addresses
+  const { data: existing, error: geoErr } = await supabase
+    .from("geocoded_addresses")
+    .select("address");
+
+  if (geoErr) {
+    console.error("Error fetching existing geocoded addresses:", geoErr);
+    return 0;
+  }
+
+  const existingSet = new Set((existing || []).map((r: any) => r.address));
+
+  // Deduplicate by address
+  const toInsertMap = new Map<string, any>();
+  for (const p of allProps) {
+    if (p.address && !existingSet.has(p.address) && !toInsertMap.has(p.address)) {
+      toInsertMap.set(p.address, {
+        address: p.address,
+        neighborhood: p.neighborhood,
+        province: p.city,
+        lat: null,
+        lng: null,
+      });
+    }
+  }
+
+  const toInsert = Array.from(toInsertMap.values());
+  if (toInsert.length === 0) return 0;
+
+  // Insert in batches of 500
+  let seeded = 0;
+  for (let i = 0; i < toInsert.length; i += 500) {
+    const batch = toInsert.slice(i, i + 500);
+    const { error } = await supabase
+      .from("geocoded_addresses")
+      .upsert(batch, { onConflict: "address" });
+    if (error) {
+      console.error("Error seeding batch:", error);
+    } else {
+      seeded += batch.length;
+    }
+  }
+
+  console.log(`Auto-seeded ${seeded} new addresses into geocoded_addresses`);
+  return seeded;
 }
 
 Deno.serve(async (req) => {
@@ -62,13 +111,16 @@ Deno.serve(async (req) => {
 
     if (addresses.length === 0) {
       autonomousMode = true;
-      // Fetch rows with null lat OR null norm_locality (need re-geocoding for normalization)
-      // Limit to 10 to avoid rate limiting with concurrent cron calls
+
+      // Step 1: Auto-seed any missing addresses from properties table
+      const seeded = await autoSeedMissingAddresses(supabase);
+
+      // Step 2: Fetch pending rows to geocode
       const { data: uncached, error } = await supabase
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
         .or("lat.is.null,norm_locality.is.null")
-        .not("lat", "eq", 0) // skip "not_found" entries
+        .not("lat", "eq", 0)
         .limit(25);
 
       if (error) {
@@ -81,7 +133,7 @@ Deno.serve(async (req) => {
 
       if (!uncached || uncached.length === 0) {
         return new Response(
-          JSON.stringify({ message: "All addresses geocoded and normalized", geocoded: 0, remaining: 0 }),
+          JSON.stringify({ message: "All addresses geocoded and normalized", geocoded: 0, seeded, remaining: 0 }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -151,13 +203,11 @@ Deno.serve(async (req) => {
       const query = `${item.address}, ${item.neighborhood || ""}, ${item.province || ""}, Argentina`;
 
       try {
-        // Use addressdetails=1 to get structured location data
         const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=ar&addressdetails=1`;
         const res = await fetch(url, {
           headers: { "User-Agent": "LovableAnalytics/1.0" },
         });
 
-        // Handle rate limiting — stop batch early, don't crash
         if (res.status === 429) {
           console.warn(`Rate limited at item ${i}/${batchSize}. Stopping batch early.`);
           break;
