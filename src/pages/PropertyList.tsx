@@ -432,11 +432,14 @@ const PropertyList = () => {
           )}
 
           {/* Chip filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <MultiFilter title="Ambientes" options={roomsOptions} state={roomsFilter} onChange={setRoomsFilter} />
             <MultiFilter title="Dormitorios" options={bedroomsOptions} state={bedroomsFilter} onChange={setBedroomsFilter} />
             <MultiFilter title="Baños" options={bathroomsOptions} state={bathroomsFilter} onChange={setBathroomsFilter} />
             <MultiFilter title="Cocheras" options={parkingOptions} state={parkingFilter} onChange={setParkingFilter} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <MultiFilter title="Tipo de propiedad" options={propertyTypeOptions} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
             <MultiFilter title="Disposición" options={dispositionOptions} state={dispositionFilter} onChange={setDispositionFilter} />
             <MultiFilter title="Orientación" options={orientationOptions} state={orientationFilter} onChange={setOrientationFilter} />
           </div>
@@ -447,7 +450,6 @@ const PropertyList = () => {
             state={neighborhoodFilter}
             onChange={setNeighborhoodFilter}
           />
-          <MultiFilter title="Tipo de propiedad" options={propertyTypeOptions} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
         </div>
 
         {/* Property grid */}
