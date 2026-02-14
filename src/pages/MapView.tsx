@@ -6,7 +6,8 @@ import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import RangeSliderFilter from "@/components/RangeSliderFilter";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, Crosshair } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye } from "lucide-react";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -112,14 +113,25 @@ function scatterCoord(base: [number, number], id: string, spread = 0.015): [numb
   ];
 }
 
+// Color scale: blue (cheap) → orange/amber (mid) → green (very expensive only)
 function getPropertyColor(pricePerSqm: number, min: number, max: number): string {
   const ratio = Math.max(0, Math.min(1, (pricePerSqm - min) / (max - min || 1)));
-  if (ratio < 0.5) {
-    const t = ratio / 0.5;
-    return `hsl(${210 - t * 50}, 70%, ${35 + t * 10}%)`;
+  if (ratio < 0.3) {
+    // Blue range (cheap)
+    const t = ratio / 0.3;
+    return `hsl(${215 - t * 15}, 75%, ${42 + t * 8}%)`;
+  } else if (ratio < 0.6) {
+    // Blue → amber transition (mid-low to mid)
+    const t = (ratio - 0.3) / 0.3;
+    return `hsl(${200 - t * 160}, ${75 - t * 10}%, ${50 + t * 5}%)`;
+  } else if (ratio < 0.85) {
+    // Amber → orange (mid-high)
+    const t = (ratio - 0.6) / 0.25;
+    return `hsl(${40 - t * 15}, ${65 + t * 10}%, ${55 - t * 5}%)`;
   } else {
-    const t = (ratio - 0.5) / 0.5;
-    return `hsl(${160 - t * 20}, 55%, ${40 + t * 15}%)`;
+    // Green (very expensive only)
+    const t = (ratio - 0.85) / 0.15;
+    return `hsl(${25 + t * 120}, ${75 - t * 10}%, ${50 + t * 5}%)`;
   }
 }
 
@@ -171,11 +183,13 @@ const CIRCLE_RADIUS_METERS = 800;
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const diffuseLayerRef = useRef<L.LayerGroup | null>(null);
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
 
+  const { isDark } = useTheme();
   const { data, isLoading } = useProperties();
   const properties = data?.properties ?? [];
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
@@ -333,7 +347,10 @@ const MapView = () => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapRef.current, { center: [-34.45, -58.55], zoom: 12, preferCanvas: true });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    const tileUrl = isDark
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+    tileLayerRef.current = L.tileLayer(tileUrl, {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
     }).addTo(map);
 
@@ -399,7 +416,24 @@ const MapView = () => {
       clusterLayerRef.current = null;
       highlightLayerRef.current = null;
     };
-  }, [mappedNeighborhoods]);
+  }, [mappedNeighborhoods, isDark]);
+
+  // Swap tile layer when theme changes (after init)
+  const tileInitRef = useRef(false);
+  useEffect(() => {
+    if (!tileInitRef.current) { tileInitRef.current = true; return; }
+    const map = mapInstanceRef.current;
+    const oldTile = tileLayerRef.current;
+    if (!map || !oldTile) return;
+    const tileUrl = isDark
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+    const newTile = L.tileLayer(tileUrl, { attribution: '&copy; <a href="https://carto.com/">CARTO</a>' });
+    map.removeLayer(oldTile);
+    newTile.addTo(map);
+    newTile.setZIndex(0);
+    tileLayerRef.current = newTile;
+  }, [isDark]);
 
   // Update markers
   useEffect(() => {
@@ -418,16 +452,18 @@ const MapView = () => {
         const coords = getCoord(p);
         const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
         const isDeal = p.opportunityScore >= dealThreshold;
+        const dealColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
+        const dealBorder = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.15)";
 
         const icon = L.divIcon({
           className: "",
           html: `<div style="
             width: ${isDeal ? 10 : 7}px;
             height: ${isDeal ? 10 : 7}px;
-            background: ${isDeal ? "hsl(200, 85%, 42%)" : color};
-            border: 1.5px solid ${isDeal ? "white" : "rgba(255,255,255,0.5)"};
+            background: ${isDeal ? dealColor : color};
+            border: 1.5px solid ${isDeal ? (isDark ? "rgba(255,255,255,0.5)" : "white") : (isDark ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.6)")};
             border-radius: 50%;
-            ${isDeal ? "box-shadow: 0 0 6px rgba(30,120,180,0.4);" : ""}
+            ${isDeal ? `box-shadow: 0 0 6px ${isDark ? "rgba(220,235,245,0.3)" : "rgba(0,0,0,0.2)"};` : ""}
           "></div>`,
           iconSize: [isDeal ? 10 : 7, isDeal ? 10 : 7],
           iconAnchor: [isDeal ? 5 : 3.5, isDeal ? 5 : 3.5],
@@ -469,9 +505,11 @@ const MapView = () => {
         marker.addTo(diffuse);
       });
 
+      const dealDotColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
+      const dealDotBorder = isDark ? "rgba(255,255,255,0.3)" : "white";
       const dealIcon = L.divIcon({
         className: "",
-        html: `<div style="width:7px;height:7px;background:hsl(200,85%,42%);border:1.5px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.15);"></div>`,
+        html: `<div style="width:7px;height:7px;background:${dealDotColor};border:1.5px solid ${dealDotBorder};border-radius:50%;box-shadow:0 1px 4px ${isDark ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.15)"};"></div>`,
         iconSize: [7, 7],
         iconAnchor: [3.5, 3.5],
       });
@@ -496,7 +534,7 @@ const MapView = () => {
           .addTo(deals);
       });
     }
-  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold]);
+  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark]);
 
   // Auto-refresh geocoded coords every 30s
   useEffect(() => {
@@ -626,7 +664,7 @@ const MapView = () => {
               <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
               <div
                 className="h-1.5 flex-1 rounded-full"
-                style={{ background: "linear-gradient(to right, hsl(210,70%,35%), hsl(160,55%,40%), hsl(140,55%,55%))" }}
+                style={{ background: "linear-gradient(to right, hsl(215,75%,42%), hsl(200,70%,50%), hsl(40,65%,55%), hsl(145,65%,50%))" }}
               />
               <span className="text-[11px] text-expensive font-mono">${maxMedian.toLocaleString()}</span>
             </div>
