@@ -12,17 +12,15 @@ interface UploadResult {
   error?: string;
 }
 
-const CHUNK_LINES = 50; // rows per request to stay within CPU limits
+const CHUNK_LINES = 50;
 
 function splitCsvIntoChunks(csv: string): string[] {
   const lines = csv.split(/\r?\n/);
   const header = lines[0];
   const dataLines = lines.slice(1).filter((l) => l.trim() !== "");
-
   const chunks: string[] = [];
   for (let i = 0; i < dataLines.length; i += CHUNK_LINES) {
-    const slice = dataLines.slice(i, i + CHUNK_LINES);
-    chunks.push(header + "\n" + slice.join("\n"));
+    chunks.push(header + "\n" + dataLines.slice(i, i + CHUNK_LINES).join("\n"));
   }
   return chunks;
 }
@@ -43,17 +41,21 @@ const CsvUploadButton = () => {
       const csv = await file.text();
       const chunks = splitCsvIntoChunks(csv);
 
+      // Create log entry
+      const { data: logData } = await supabase.functions.invoke("upload-log", {
+        body: { action: "create_log", source: "manual", filename: file.name },
+      });
+      const logId = logData?.id;
+
       let totalProcessed = 0;
       let totalSkipped = 0;
       const allErrors: string[] = [];
 
       for (let i = 0; i < chunks.length; i++) {
         setProgress(`Lote ${i + 1}/${chunks.length}`);
-
         const { data, error } = await supabase.functions.invoke("upload-properties", {
-          body: { csv: chunks[i], delimiter: ";" },
+          body: { csv: chunks[i], delimiter: ";", source: "manual", filename: file.name, log_id: logId },
         });
-
         if (error) {
           allErrors.push(`Lote ${i + 1}: ${error.message}`);
         } else if (data) {
@@ -63,15 +65,22 @@ const CsvUploadButton = () => {
         }
       }
 
-      const finalResult: UploadResult = {
+      // Finalize log
+      const finalStatus = allErrors.length > 0 ? (totalProcessed > 0 ? "partial" : "error") : "success";
+      if (logId) {
+        await supabase.functions.invoke("upload-log", {
+          body: { action: "finalize_log", log_id: logId, status: finalStatus },
+        });
+      }
+
+      setResult({
         success: allErrors.length === 0,
         processed: totalProcessed,
         skipped: totalSkipped,
         errors: allErrors.length > 0 ? allErrors : undefined,
         total_lines: totalProcessed + totalSkipped,
-      };
+      });
 
-      setResult(finalResult);
       if (totalProcessed > 0) {
         queryClient.invalidateQueries({ queryKey: ["properties"] });
       }
@@ -85,32 +94,15 @@ const CsvUploadButton = () => {
 
   return (
     <div className="relative">
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFile(file);
-          e.target.value = "";
-        }}
-      />
-      <button
-        onClick={() => fileRef.current?.click()}
-        disabled={uploading}
+      <input ref={fileRef} type="file" accept=".csv" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
+      <button onClick={() => fileRef.current?.click()} disabled={uploading}
         className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
-        title="Subir CSV actualizado"
-      >
-        {uploading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : result?.success ? (
-          <CheckCircle className="h-4 w-4 text-green-500" />
-        ) : result && !result.success ? (
-          <AlertCircle className="h-4 w-4 text-destructive" />
-        ) : (
-          <Upload className="h-4 w-4" />
-        )}
+        title="Subir CSV actualizado">
+        {uploading ? <Loader2 className="h-4 w-4 animate-spin" />
+          : result?.success ? <CheckCircle className="h-4 w-4 text-green-500" />
+          : result && !result.success ? <AlertCircle className="h-4 w-4 text-destructive" />
+          : <Upload className="h-4 w-4" />}
         {uploading ? progress || "Subiendo..." : "CSV"}
       </button>
       {result && !uploading && (
@@ -126,15 +118,10 @@ const CsvUploadButton = () => {
               {result.processed !== undefined && (
                 <p className="text-muted-foreground mb-1">{result.processed} procesadas, {result.skipped} omitidas</p>
               )}
-              {result.error && <p className="text-destructive">{result.error}</p>}
             </>
           )}
-          <button
-            onClick={() => setResult(null)}
-            className="mt-2 text-muted-foreground hover:text-foreground text-[10px]"
-          >
-            Cerrar
-          </button>
+          <button onClick={() => setResult(null)}
+            className="mt-2 text-muted-foreground hover:text-foreground text-[10px]">Cerrar</button>
         </div>
       )}
     </div>
