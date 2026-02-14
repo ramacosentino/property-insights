@@ -34,6 +34,7 @@ function getParkingLabel(parking: number | null): string {
 
 const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
 const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
+const PROPERTY_TYPE_KEYS = ["departamento", "casa", "ph", "terreno"];
 
 function buildOptionsWithCounts(
   keys: string[],
@@ -108,6 +109,7 @@ const PropertyList = () => {
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 0]);
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<FilterState>(createFilterState());
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
   const [rangesInitialized, setRangesInitialized] = useState(false);
@@ -127,6 +129,7 @@ const PropertyList = () => {
     const rooms = new Map<string, number>();
     const parking = new Map<string, number>();
     const neighborhoods = new Map<string, number>();
+    const propTypes = new Map<string, number>();
 
     for (const p of properties) {
       const r = getRoomsLabel(p.rooms);
@@ -134,13 +137,16 @@ const PropertyList = () => {
       const pk = getParkingLabel(p.parking);
       parking.set(pk, (parking.get(pk) || 0) + 1);
       neighborhoods.set(p.neighborhood, (neighborhoods.get(p.neighborhood) || 0) + 1);
+      const tk = p.propertyType || "otro";
+      propTypes.set(tk, (propTypes.get(tk) || 0) + 1);
     }
 
-    return { rooms, parking, neighborhoods };
+    return { rooms, parking, neighborhoods, propTypes };
   }, [properties]);
 
   const roomsOptions = useMemo(() => buildOptionsWithCounts(ROOMS_KEYS, counts.rooms), [counts.rooms]);
   const parkingOptions = useMemo(() => buildOptionsWithCounts(PARKING_KEYS, counts.parking), [counts.parking]);
+  const propertyTypeOptions = useMemo(() => buildOptionsWithCounts(PROPERTY_TYPE_KEYS, counts.propTypes), [counts.propTypes]);
 
   // Group neighborhoods by province
   const neighborhoodsByProvince = useMemo(() => {
@@ -189,6 +195,9 @@ const PropertyList = () => {
     if (neighborhoodFilter.included.size > 0 || neighborhoodFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(p.neighborhood, neighborhoodFilter));
     }
+    if (propertyTypeFilter.included.size > 0 || propertyTypeFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(p.propertyType || "otro", propertyTypeFilter));
+    }
     if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     }
@@ -222,7 +231,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
+  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
@@ -345,6 +354,7 @@ const PropertyList = () => {
             state={neighborhoodFilter}
             onChange={setNeighborhoodFilter}
           />
+          <MultiFilter title="Tipo de propiedad" options={propertyTypeOptions} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
         </div>
 
         {/* Property grid */}
