@@ -113,25 +113,25 @@ function scatterCoord(base: [number, number], id: string, spread = 0.015): [numb
   ];
 }
 
-// Color scale: blue (cheap) → orange/amber (mid) → green (very expensive only)
+// Color scale: blue (cheap) → green (expensive), green starts earlier and stronger
 function getPropertyColor(pricePerSqm: number, min: number, max: number): string {
   const ratio = Math.max(0, Math.min(1, (pricePerSqm - min) / (max - min || 1)));
-  if (ratio < 0.3) {
-    // Blue range (cheap)
-    const t = ratio / 0.3;
-    return `hsl(${215 - t * 15}, 75%, ${42 + t * 8}%)`;
-  } else if (ratio < 0.6) {
-    // Blue → amber transition (mid-low to mid)
-    const t = (ratio - 0.3) / 0.3;
-    return `hsl(${200 - t * 160}, ${75 - t * 10}%, ${50 + t * 5}%)`;
-  } else if (ratio < 0.85) {
-    // Amber → orange (mid-high)
-    const t = (ratio - 0.6) / 0.25;
-    return `hsl(${40 - t * 15}, ${65 + t * 10}%, ${55 - t * 5}%)`;
+  if (ratio < 0.25) {
+    // Deep blue (cheapest)
+    const t = ratio / 0.25;
+    return `hsl(${220 - t * 10}, 70%, ${40 + t * 8}%)`;
+  } else if (ratio < 0.5) {
+    // Blue → teal transition
+    const t = (ratio - 0.25) / 0.25;
+    return `hsl(${210 - t * 60}, ${70 - t * 5}%, ${48 + t * 7}%)`;
+  } else if (ratio < 0.7) {
+    // Teal → green transition (green starts here)
+    const t = (ratio - 0.5) / 0.2;
+    return `hsl(${150 - t * 20}, ${65 + t * 10}%, ${55 - t * 5}%)`;
   } else {
-    // Green (very expensive only)
-    const t = (ratio - 0.85) / 0.15;
-    return `hsl(${25 + t * 120}, ${75 - t * 10}%, ${50 + t * 5}%)`;
+    // Strong green (expensive)
+    const t = (ratio - 0.7) / 0.3;
+    return `hsl(${130 - t * 10}, ${75 + t * 10}%, ${50 - t * 10}%)`;
   }
 }
 
