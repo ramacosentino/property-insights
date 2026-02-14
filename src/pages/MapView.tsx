@@ -1,12 +1,17 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import Layout from "@/components/Layout";
-import { getSizeRange, getPriceRange, getRoomsLabel } from "@/lib/propertyData";
+import { getRoomsLabel } from "@/lib/propertyData";
 import { useProperties } from "@/hooks/useProperties";
 import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X } from "lucide-react";
+import RangeSliderFilter from "@/components/RangeSliderFilter";
+import { Slider } from "@/components/ui/slider";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, Crosshair } from "lucide-react";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.markercluster";
 
 function getParkingLabel(parking: number | null): string {
   if (!parking || parking === 0) return "Sin cochera";
@@ -16,8 +21,6 @@ function getParkingLabel(parking: number | null): string {
 }
 
 const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
-const SIZE_KEYS = ["< 100 m²", "100-200 m²", "200-400 m²", "400-700 m²", "700+ m²"];
-const PRICE_KEYS = ["< 100K", "100K-200K", "200K-400K", "400K-700K", "700K+"];
 const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
 
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
@@ -113,11 +116,17 @@ function getPropertyColor(pricePerSqm: number, min: number, max: number): string
   const ratio = Math.max(0, Math.min(1, (pricePerSqm - min) / (max - min || 1)));
   if (ratio < 0.5) {
     const t = ratio / 0.5;
-    return `hsl(${210 - t * 50}, 80%, ${45 + t * 10}%)`;
+    return `hsl(${210 - t * 50}, 70%, ${35 + t * 10}%)`;
   } else {
     const t = (ratio - 0.5) / 0.5;
-    return `hsl(${160 - t * 20}, 65%, ${50 + t * 15}%)`;
+    return `hsl(${160 - t * 20}, 55%, ${40 + t * 15}%)`;
   }
+}
+
+function formatPrice(v: number): string {
+  if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+  if (v >= 1000) return `${Math.round(v / 1000)}K`;
+  return v.toString();
 }
 
 const MapFilterRow = ({ title, keys, state, onChange }: {
@@ -157,15 +166,14 @@ const MapFilterRow = ({ title, keys, state, onChange }: {
   );
 };
 
-const LAYERS_PER_PROPERTY = 1;
-const CIRCLE_RADIUS_METERS = 800; // radius in meters — scales naturally with map zoom
-
+const CIRCLE_RADIUS_METERS = 800;
 
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const diffuseLayerRef = useRef<L.LayerGroup | null>(null);
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
+  const clusterLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
 
   const { data, isLoading } = useProperties();
@@ -175,21 +183,56 @@ const MapView = () => {
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
-  const [sizeFilter, setSizeFilter] = useState<FilterState>(createFilterState());
-  const [priceFilter, setPriceFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
-  const [showOnlyDeals, setShowOnlyDeals] = useState(false);
 
-  const activeFilterCount = [roomsFilter, sizeFilter, priceFilter, parkingFilter].reduce(
+  // View mode: "opportunities" or "all"
+  const [viewMode, setViewMode] = useState<"opportunities" | "all">("opportunities");
+  // Dynamic opportunity threshold (%)
+  const [dealThreshold, setDealThreshold] = useState(40);
+
+  // Range filters
+  const dataRanges = useMemo(() => {
+    const prices = properties.map((p) => p.price).filter(Boolean);
+    const surfaces = properties.map((p) => p.surfaceTotal).filter((s): s is number => s !== null && s > 0);
+    const ages = properties.map((p) => p.ageYears).filter((a): a is number => a !== null && a >= 0);
+    return {
+      priceMin: prices.length ? Math.min(...prices) : 0,
+      priceMax: prices.length ? Math.max(...prices) : 1000000,
+      surfaceMin: surfaces.length ? Math.min(...surfaces) : 0,
+      surfaceMax: surfaces.length ? Math.max(...surfaces) : 1000,
+      ageMin: ages.length ? Math.min(...ages) : 0,
+      ageMax: ages.length ? Math.max(...ages) : 100,
+    };
+  }, [properties]);
+
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+  const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 0]);
+  const [ageRange, setAgeRange] = useState<[number, number]>([0, 0]);
+  const [rangesInitialized, setRangesInitialized] = useState(false);
+
+  useEffect(() => {
+    if (properties.length > 0 && !rangesInitialized) {
+      setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
+      setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
+      setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
+      setRangesInitialized(true);
+    }
+  }, [properties.length, dataRanges, rangesInitialized]);
+
+  const activeFilterCount = [roomsFilter, parkingFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0
-  ) + (showOnlyDeals ? 1 : 0);
+  ) + (rangesInitialized && (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) ? 1 : 0)
+    + (rangesInitialized && (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) ? 1 : 0)
+    + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0);
 
   const clearAllFilters = () => {
     setRoomsFilter(createFilterState());
-    setSizeFilter(createFilterState());
-    setPriceFilter(createFilterState());
     setParkingFilter(createFilterState());
-    setShowOnlyDeals(false);
+    if (rangesInitialized) {
+      setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
+      setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
+      setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
+    }
   };
 
   const totalProperties = properties.length;
@@ -197,53 +240,56 @@ const MapView = () => {
   const progressPct = totalProperties > 0 ? Math.round((geocodedCount / totalProperties) * 100) : 0;
 
   const allPrices = useMemo(() => properties.filter((p) => p.pricePerM2Total).map((p) => p.pricePerM2Total!), [properties]);
-  const minPrice = useMemo(() => Math.min(...allPrices), [allPrices]);
-  const maxPrice = useMemo(() => Math.max(...allPrices), [allPrices]);
+  const minPrice = useMemo(() => allPrices.length ? Math.min(...allPrices) : 0, [allPrices]);
+  const maxPrice = useMemo(() => allPrices.length ? Math.max(...allPrices) : 0, [allPrices]);
 
   const allMappedProperties = useMemo(
     () => properties.filter((p) => geocodedCoords.has(p.address || p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
     [properties, geocodedCoords]
   );
 
-  // Apply filters to allMappedProperties
+  // Apply filters
   const filteredProperties = useMemo(() => {
     let result = allMappedProperties;
     if (selectedProvince) result = result.filter((p) => p.city === selectedProvince);
     if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
-    if (sizeFilter.included.size > 0 || sizeFilter.excluded.size > 0)
-      result = result.filter((p) => applyFilter(getSizeRange(p.surfaceTotal), sizeFilter));
-    if (priceFilter.included.size > 0 || priceFilter.excluded.size > 0)
-      result = result.filter((p) => applyFilter(getPriceRange(p.price), priceFilter));
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
-    if (showOnlyDeals) result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
+    // Range filters
+    if (rangesInitialized) {
+      if (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax)
+        result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+      if (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax)
+        result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && p.surfaceTotal <= surfaceRange[1]);
+      if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax)
+        result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && p.ageYears <= ageRange[1]);
+    }
     return result;
-  }, [allMappedProperties, selectedProvince, roomsFilter, sizeFilter, priceFilter, parkingFilter, showOnlyDeals]);
+  }, [allMappedProperties, selectedProvince, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
 
   const mappedProperties = filteredProperties;
 
+  // Dynamic deal detection based on threshold
   const dealProperties = useMemo(
-    () => mappedProperties.filter((p) => p.isNeighborhoodDeal),
-    [mappedProperties]
+    () => mappedProperties.filter((p) => p.opportunityScore >= dealThreshold),
+    [mappedProperties, dealThreshold]
   );
 
   const selectedDeals = useMemo(
     () => selectedProvince
-      ? filteredProperties.filter((p) => p.city === selectedProvince && p.isNeighborhoodDeal)
-          .sort((a, b) => b.opportunityScore - a.opportunityScore)
+      ? (viewMode === "opportunities" 
+          ? filteredProperties.filter((p) => p.city === selectedProvince && p.opportunityScore >= dealThreshold)
+          : filteredProperties.filter((p) => p.city === selectedProvince)
+        ).sort((a, b) => b.opportunityScore - a.opportunityScore)
       : [],
-    [filteredProperties, selectedProvince]
+    [filteredProperties, selectedProvince, viewMode, dealThreshold]
   );
-
-
 
   // Load cached coordinates on mount
   useEffect(() => {
     fetchCachedCoordinates().then(setGeocodedCoords);
   }, []);
-
-  // Seeding is now fully automatic via the backend cron job
 
   const getCoord = useCallback(
     (p: { id: string; location: string; neighborhood: string; address?: string | null }): [number, number] => {
@@ -263,12 +309,11 @@ const MapView = () => {
       .map((s) => ({ ...s, coords: NEIGHBORHOOD_COORDS[s.name] }));
   }, [neighborhoodStats]);
 
-  // Zoom map to selected province bounds — only on explicit province selection
+  // Zoom to province
   const prevProvinceRef = useRef<string | null>(null);
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    // Only fitBounds when province selection actually changed
     if (selectedProvince === prevProvinceRef.current) return;
     prevProvinceRef.current = selectedProvince;
 
@@ -283,11 +328,12 @@ const MapView = () => {
     }
   }, [selectedProvince, mappedProperties, getCoord, mappedNeighborhoods]);
 
+  // Init map
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapRef.current, { center: [-34.45, -58.55], zoom: 12, preferCanvas: true });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
     }).addTo(map);
 
@@ -297,6 +343,40 @@ const MapView = () => {
     diffuseLayerRef.current = L.layerGroup().addTo(map);
     dealLayerRef.current = L.layerGroup().addTo(map);
     highlightLayerRef.current = L.layerGroup().addTo(map);
+
+    // Create cluster group for "all" mode
+    const clusterGroup = (L as any).markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      iconCreateFunction: (cluster: any) => {
+        const count = cluster.getChildCount();
+        let size = "small";
+        if (count > 50) size = "large";
+        else if (count > 20) size = "medium";
+        return L.divIcon({
+          html: `<div style="
+            background: hsl(200, 85%, 42%);
+            color: white;
+            border-radius: 50%;
+            width: ${size === "large" ? 44 : size === "medium" ? 36 : 28}px;
+            height: ${size === "large" ? 44 : size === "medium" ? 36 : 28}px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: ${size === "large" ? 13 : size === "medium" ? 12 : 11}px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border: 2px solid white;
+          ">${count}</div>`,
+          className: "",
+          iconSize: L.point(size === "large" ? 44 : size === "medium" ? 36 : 28, size === "large" ? 44 : size === "medium" ? 36 : 28),
+        });
+      },
+    });
+    clusterGroup.addTo(map);
+    clusterLayerRef.current = clusterGroup;
 
     map.on("zoomend", () => {
       const zoom = map.getZoom();
@@ -316,63 +396,107 @@ const MapView = () => {
       mapInstanceRef.current = null;
       diffuseLayerRef.current = null;
       dealLayerRef.current = null;
+      clusterLayerRef.current = null;
       highlightLayerRef.current = null;
     };
   }, [mappedNeighborhoods]);
 
-  // Update markers when coordinates change
+  // Update markers
   useEffect(() => {
     const diffuse = diffuseLayerRef.current;
     const deals = dealLayerRef.current;
-    if (!diffuse || !deals) return;
+    const cluster = clusterLayerRef.current;
+    if (!diffuse || !deals || !cluster) return;
 
     diffuse.clearLayers();
     deals.clearLayers();
+    cluster.clearLayers();
 
-    mappedProperties.forEach((p) => {
-      const coords = getCoord(p);
-      const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+    if (viewMode === "all") {
+      // Clustered view: show all filtered properties
+      mappedProperties.forEach((p) => {
+        const coords = getCoord(p);
+        const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+        const isDeal = p.opportunityScore >= dealThreshold;
 
-      const radiusFactor = 0.55;
-      const marker = L.circle(coords, {
-        radius: CIRCLE_RADIUS_METERS * radiusFactor,
-        color: "transparent",
-        fillColor: color,
-        fillOpacity: 0.05,
-        weight: 0,
-        interactive: false,
-      });
-      (marker as any)._baseOpacity = 0.05;
-      marker.addTo(diffuse);
-    });
+        const icon = L.divIcon({
+          className: "",
+          html: `<div style="
+            width: ${isDeal ? 10 : 7}px;
+            height: ${isDeal ? 10 : 7}px;
+            background: ${isDeal ? "hsl(200, 85%, 42%)" : color};
+            border: 1.5px solid ${isDeal ? "white" : "rgba(255,255,255,0.5)"};
+            border-radius: 50%;
+            ${isDeal ? "box-shadow: 0 0 6px rgba(30,120,180,0.4);" : ""}
+          "></div>`,
+          iconSize: [isDeal ? 10 : 7, isDeal ? 10 : 7],
+          iconAnchor: [isDeal ? 5 : 3.5, isDeal ? 5 : 3.5],
+        });
 
-    const dealIcon = L.divIcon({
-      className: "",
-      html: `<div style="width:7px;height:7px;background:rgba(220,235,245,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:50%;"></div>`,
-      iconSize: [7, 7],
-      iconAnchor: [3.5, 3.5],
-    });
-
-    dealProperties.forEach((p) => {
-      const coords = getCoord(p);
-      L.marker(coords, { icon: dealIcon })
-        .bindPopup(
-          `<div style="font-family:Satoshi,sans-serif;font-size:12px;color:#111;min-width:200px;">
-            <div style="background:hsl(190,90%,50%);color:#000;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+        const marker = L.marker(coords, { icon });
+        marker.bindPopup(
+          `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
+            ${isDeal ? `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
               ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
-            </div><br/>
+            </div><br/>` : ""}
             <strong>${p.neighborhood}</strong><br/>
-            <span style="color:#555;">${p.location}</span><br/><br/>
+            <span style="color:#666;">${p.location}</span><br/><br/>
             <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
             <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
             ${p.surfaceTotal ? `<strong>Superficie:</strong> ${p.surfaceTotal} m²<br/>` : ""}
             ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
-            <a href="${p.url}" target="_blank" style="color:hsl(190,90%,50%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+            <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
           </div>`
-        )
-        .addTo(deals);
-    });
-  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice]);
+        );
+        cluster.addLayer(marker);
+      });
+    } else {
+      // Opportunities view: diffuse heatmap + deal dots
+      mappedProperties.forEach((p) => {
+        const coords = getCoord(p);
+        const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+
+        const radiusFactor = 0.55;
+        const marker = L.circle(coords, {
+          radius: CIRCLE_RADIUS_METERS * radiusFactor,
+          color: "transparent",
+          fillColor: color,
+          fillOpacity: 0.05,
+          weight: 0,
+          interactive: false,
+        });
+        (marker as any)._baseOpacity = 0.05;
+        marker.addTo(diffuse);
+      });
+
+      const dealIcon = L.divIcon({
+        className: "",
+        html: `<div style="width:7px;height:7px;background:hsl(200,85%,42%);border:1.5px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.15);"></div>`,
+        iconSize: [7, 7],
+        iconAnchor: [3.5, 3.5],
+      });
+
+      dealProperties.forEach((p) => {
+        const coords = getCoord(p);
+        L.marker(coords, { icon: dealIcon })
+          .bindPopup(
+            `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
+              <div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+                ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
+              </div><br/>
+              <strong>${p.neighborhood}</strong><br/>
+              <span style="color:#666;">${p.location}</span><br/><br/>
+              <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+              <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
+              ${p.surfaceTotal ? `<strong>Superficie:</strong> ${p.surfaceTotal} m²<br/>` : ""}
+              ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
+              <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+            </div>`
+          )
+          .addTo(deals);
+      });
+    }
+  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold]);
 
   // Auto-refresh geocoded coords every 30s
   useEffect(() => {
@@ -383,7 +507,7 @@ const MapView = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Compute province-level stats
+  // Province stats
   const provinceStats = useMemo(() => {
     const map = new Map<string, { prices: number[]; count: number }>();
     for (const p of properties) {
@@ -417,15 +541,29 @@ const MapView = () => {
         <SlidersHorizontal className="h-3 w-3" />
         Filtros{activeFilterCount > 0 && ` (${activeFilterCount})`}
       </button>
-      <button
-        onClick={() => setShowOnlyDeals(!showOnlyDeals)}
-        className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium transition-all border ${
-          showOnlyDeals ? "bg-primary/20 text-primary border-primary/30" : "border-border text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <Star className="h-3 w-3" />
-        Oportunidades
-      </button>
+
+      {/* View mode toggle */}
+      <div className="flex items-center rounded-full border border-border overflow-hidden">
+        <button
+          onClick={() => setViewMode("opportunities")}
+          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+            viewMode === "opportunities" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Star className="h-3 w-3" />
+          Oportunidades
+        </button>
+        <button
+          onClick={() => setViewMode("all")}
+          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+            viewMode === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Eye className="h-3 w-3" />
+          Todas
+        </button>
+      </div>
+
       {activeFilterCount > 0 && (
         <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border">
           <X className="h-3 w-3" /> Limpiar
@@ -438,37 +576,85 @@ const MapView = () => {
     <Layout headerContent={headerFilters}>
       <div className="relative h-[calc(100vh-3.5rem)] flex flex-col">
         {showFilters && (
-          <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-2 flex items-center gap-4 flex-wrap z-10">
-            <MapFilterRow title="Precio" keys={PRICE_KEYS} state={priceFilter} onChange={setPriceFilter} />
-            <div className="w-px h-5 bg-border" />
-            <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
-            <div className="w-px h-5 bg-border" />
-            <MapFilterRow title="Sup." keys={SIZE_KEYS} state={sizeFilter} onChange={setSizeFilter} />
-            <div className="w-px h-5 bg-border" />
-            <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+          <div className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-10">
+            <div className="flex items-center gap-4 flex-wrap">
+              <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+              <div className="w-px h-5 bg-border" />
+              <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+            </div>
+            {rangesInitialized && (
+              <div className="grid grid-cols-3 gap-6 max-w-2xl">
+                <RangeSliderFilter
+                  title="Precio USD"
+                  min={dataRanges.priceMin}
+                  max={dataRanges.priceMax}
+                  value={priceRange}
+                  onChange={setPriceRange}
+                  step={5000}
+                  formatValue={formatPrice}
+                />
+                <RangeSliderFilter
+                  title="Superficie m²"
+                  min={dataRanges.surfaceMin}
+                  max={dataRanges.surfaceMax}
+                  value={surfaceRange}
+                  onChange={setSurfaceRange}
+                  step={5}
+                  unit=" m²"
+                />
+                <RangeSliderFilter
+                  title="Antigüedad"
+                  min={dataRanges.ageMin}
+                  max={dataRanges.ageMax}
+                  value={ageRange}
+                  onChange={setAgeRange}
+                  step={1}
+                  unit=" años"
+                />
+              </div>
+            )}
           </div>
         )}
 
         <div ref={mapRef} className="h-full w-full flex-1" />
 
-        {/* Legend - bottom left, compact like geocoding block */}
-        <div className="absolute bottom-4 left-4 glass-card rounded-2xl p-4 z-[1000] w-[250px]">
-          <p className="text-xs font-medium text-foreground mb-2">USD/m² por propiedad</p>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
-            <div
-              className="h-1.5 flex-1 rounded-full"
-              style={{ background: "linear-gradient(to right, hsl(210,80%,45%), hsl(160,65%,50%), hsl(140,65%,65%))" }}
-            />
-            <span className="text-[11px] text-expensive font-mono">${maxMedian.toLocaleString()}</span>
+        {/* Legend + opportunity threshold - bottom left */}
+        <div className="absolute bottom-4 left-4 glass-card rounded-2xl p-4 z-[1000] w-[260px] space-y-3">
+          <div>
+            <p className="text-xs font-medium text-foreground mb-2">USD/m² por propiedad</p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
+              <div
+                className="h-1.5 flex-1 rounded-full"
+                style={{ background: "linear-gradient(to right, hsl(210,70%,35%), hsl(160,55%,40%), hsl(140,55%,55%))" }}
+              />
+              <span className="text-[11px] text-expensive font-mono">${maxMedian.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "rgba(220,235,245,0.7)" }} />
-            <span className="text-[11px] text-muted-foreground">{dealProperties.length} oportunidades (&gt;40% bajo mediana)</span>
+
+          {/* Opportunity threshold control */}
+          <div className="border-t border-border pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-medium text-foreground">Umbral oportunidad</span>
+              <span className="text-[11px] font-mono text-primary font-semibold">{dealThreshold}%</span>
+            </div>
+            <Slider
+              min={0}
+              max={100}
+              step={5}
+              value={[dealThreshold]}
+              onValueChange={(v) => setDealThreshold(v[0])}
+              className="w-full"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              {viewMode === "opportunities"
+                ? `${dealProperties.length} oportunidades (≥${dealThreshold}% bajo mediana)`
+                : `${mappedProperties.length} propiedades · ${dealProperties.length} oportunidades`}
+            </p>
           </div>
         </div>
 
-        {/* Right sidebar: stats + geocoding */}
+        {/* Right sidebar */}
         <div className="absolute top-4 right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px]">
           <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
             {selectedProvince ? (
@@ -482,11 +668,11 @@ const MapView = () => {
                 </button>
                 <p className="text-xs font-medium text-foreground mb-1 shrink-0">{selectedProvince}</p>
                 <p className="text-[11px] text-muted-foreground mb-3 shrink-0">
-                  {selectedDeals.length} oportunidad{selectedDeals.length !== 1 ? "es" : ""}
+                  {selectedDeals.length} propiedad{selectedDeals.length !== 1 ? "es" : ""}
                 </p>
                 <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll space-y-2">
                   {selectedDeals.length === 0 && (
-                    <p className="text-[11px] text-muted-foreground">Sin oportunidades en esta localidad.</p>
+                    <p className="text-[11px] text-muted-foreground">Sin propiedades en esta localidad.</p>
                   )}
                   {selectedDeals.map((p) => (
                     <div
@@ -499,16 +685,16 @@ const MapView = () => {
                         const coords = getCoord(p);
                         L.circleMarker(coords, {
                           radius: 18,
-                          color: "hsl(190,90%,50%)",
-                          fillColor: "hsl(190,90%,50%)",
-                          fillOpacity: 0.35,
+                          color: "hsl(200,85%,42%)",
+                          fillColor: "hsl(200,85%,42%)",
+                          fillOpacity: 0.25,
                           weight: 2,
                           interactive: false,
                         }).addTo(hl);
                         L.circleMarker(coords, {
                           radius: 6,
                           color: "white",
-                          fillColor: "hsl(190,90%,70%)",
+                          fillColor: "hsl(200,85%,55%)",
                           fillOpacity: 0.9,
                           weight: 1.5,
                           interactive: false,
@@ -527,10 +713,12 @@ const MapView = () => {
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <TrendingDown className="h-3 w-3 text-primary" />
-                        <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
-                      </div>
+                      {p.opportunityScore > 0 && (
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <TrendingDown className="h-3 w-3 text-primary" />
+                          <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
                         <div>
                           <span className="text-muted-foreground">USD/m²</span>
@@ -576,7 +764,7 @@ const MapView = () => {
             )}
           </div>
 
-          {/* Geocoding progress indicator */}
+          {/* Geocoding progress */}
           <div className="glass-card rounded-2xl p-4 shrink-0">
             <p className="text-xs font-medium text-foreground mb-2">📍 Geocodificación</p>
             <div className="flex items-center gap-2 mb-1.5">
