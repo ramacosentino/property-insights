@@ -664,7 +664,7 @@ const MapView = () => {
               <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
               <div
                 className="h-1.5 flex-1 rounded-full"
-                style={{ background: "linear-gradient(to right, hsl(215,75%,42%), hsl(200,70%,50%), hsl(40,65%,55%), hsl(145,65%,50%))" }}
+                style={{ background: "linear-gradient(to right, hsl(220,70%,40%), hsl(200,70%,50%), hsl(150,65%,55%), hsl(130,75%,45%))" }}
               />
               <span className="text-[11px] text-expensive font-mono">${maxMedian.toLocaleString()}</span>
             </div>
