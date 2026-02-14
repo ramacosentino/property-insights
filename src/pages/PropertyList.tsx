@@ -2,8 +2,6 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
 import PropertyCard from "@/components/PropertyCard";
 import {
-  getSizeRange,
-  getPriceRange,
   getRoomsLabel,
   Property,
 } from "@/lib/propertyData";
@@ -14,6 +12,7 @@ import MultiFilter, {
   FilterState,
   FilterOption,
 } from "@/components/MultiFilter";
+import RangeSliderFilter from "@/components/RangeSliderFilter";
 import {
   Select,
   SelectContent,
@@ -33,8 +32,6 @@ function getParkingLabel(parking: number | null): string {
 }
 
 const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
-const SIZE_KEYS = ["< 100 m²", "100-200 m²", "200-400 m²", "400-700 m²", "700+ m²"];
-const PRICE_KEYS = ["< 100K", "100K-200K", "200K-400K", "400K-700K", "700K+"];
 const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
 
 function buildOptionsWithCounts(
@@ -63,6 +60,12 @@ function enrichProperties(
   });
 }
 
+function formatPrice(v: number): string {
+  if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+  if (v >= 1000) return `${Math.round(v / 1000)}K`;
+  return v.toString();
+}
+
 const PropertyList = () => {
   const { data, isLoading } = useProperties();
   const rawProperties = data?.properties ?? [];
@@ -78,44 +81,63 @@ const PropertyList = () => {
     [rawProperties, geoData]
   );
 
+  // Compute data ranges for sliders
+  const dataRanges = useMemo(() => {
+    const prices = properties.map((p) => p.price).filter(Boolean);
+    const surfaces = properties.map((p) => p.surfaceTotal).filter((s): s is number => s !== null && s > 0);
+    const ages = properties.map((p) => p.ageYears).filter((a): a is number => a !== null && a >= 0);
+    return {
+      priceMin: prices.length ? Math.min(...prices) : 0,
+      priceMax: prices.length ? Math.max(...prices) : 1000000,
+      surfaceMin: surfaces.length ? Math.min(...surfaces) : 0,
+      surfaceMax: surfaces.length ? Math.max(...surfaces) : 1000,
+      ageMin: ages.length ? Math.min(...ages) : 0,
+      ageMax: ages.length ? Math.max(...ages) : 100,
+    };
+  }, [properties]);
+
   const [search, setSearch] = useState("");
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
-  const [sizeFilter, setSizeFilter] = useState<FilterState>(createFilterState());
-  const [priceFilter, setPriceFilter] = useState<FilterState>(createFilterState());
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+  const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 0]);
+  const [ageRange, setAgeRange] = useState<[number, number]>([0, 0]);
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
+  const [rangesInitialized, setRangesInitialized] = useState(false);
+
+  // Initialize slider ranges once data loads
+  useEffect(() => {
+    if (properties.length > 0 && !rangesInitialized) {
+      setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
+      setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
+      setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
+      setRangesInitialized(true);
+    }
+  }, [properties.length, dataRanges, rangesInitialized]);
 
   // Compute counts per filter category
   const counts = useMemo(() => {
     const rooms = new Map<string, number>();
-    const sizes = new Map<string, number>();
-    const prices = new Map<string, number>();
     const parking = new Map<string, number>();
     const neighborhoods = new Map<string, number>();
 
     for (const p of properties) {
       const r = getRoomsLabel(p.rooms);
       rooms.set(r, (rooms.get(r) || 0) + 1);
-      const s = getSizeRange(p.surfaceTotal);
-      sizes.set(s, (sizes.get(s) || 0) + 1);
-      const pr = getPriceRange(p.price);
-      prices.set(pr, (prices.get(pr) || 0) + 1);
       const pk = getParkingLabel(p.parking);
       parking.set(pk, (parking.get(pk) || 0) + 1);
       neighborhoods.set(p.neighborhood, (neighborhoods.get(p.neighborhood) || 0) + 1);
     }
 
-    return { rooms, sizes, prices, parking, neighborhoods };
+    return { rooms, parking, neighborhoods };
   }, [properties]);
 
   const roomsOptions = useMemo(() => buildOptionsWithCounts(ROOMS_KEYS, counts.rooms), [counts.rooms]);
-  const sizeOptions = useMemo(() => buildOptionsWithCounts(SIZE_KEYS, counts.sizes), [counts.sizes]);
-  const priceOptions = useMemo(() => buildOptionsWithCounts(PRICE_KEYS, counts.prices), [counts.prices]);
   const parkingOptions = useMemo(() => buildOptionsWithCounts(PARKING_KEYS, counts.parking), [counts.parking]);
 
-  // Group neighborhoods by province (now using normalized data when available)
+  // Group neighborhoods by province
   const neighborhoodsByProvince = useMemo(() => {
     const provMap = new Map<string, { value: string; label: string; count: number }[]>();
     const provCounts = new Map<string, number>();
@@ -165,14 +187,20 @@ const PropertyList = () => {
     if (roomsFilter.included.size > 0 || roomsFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     }
-    if (sizeFilter.included.size > 0 || sizeFilter.excluded.size > 0) {
-      result = result.filter((p) => applyFilter(getSizeRange(p.surfaceTotal), sizeFilter));
-    }
-    if (priceFilter.included.size > 0 || priceFilter.excluded.size > 0) {
-      result = result.filter((p) => applyFilter(getPriceRange(p.price), priceFilter));
-    }
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
+    }
+    // Range filters
+    if (rangesInitialized) {
+      if (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) {
+        result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+      }
+      if (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) {
+        result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && p.surfaceTotal <= surfaceRange[1]);
+      }
+      if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) {
+        result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && p.ageYears <= ageRange[1]);
+      }
     }
     if (showOnlyDeals) {
       result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
@@ -189,7 +217,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, roomsFilter, sizeFilter, priceFilter, parkingFilter, sortBy, showOnlyDeals]);
+  }, [properties, search, neighborhoodFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
@@ -264,15 +292,46 @@ const PropertyList = () => {
             </div>
           </div>
 
+          {/* Range sliders */}
+          {rangesInitialized && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <RangeSliderFilter
+                title="Precio USD"
+                min={dataRanges.priceMin}
+                max={dataRanges.priceMax}
+                value={priceRange}
+                onChange={setPriceRange}
+                step={5000}
+                formatValue={formatPrice}
+              />
+              <RangeSliderFilter
+                title="Superficie m²"
+                min={dataRanges.surfaceMin}
+                max={dataRanges.surfaceMax}
+                value={surfaceRange}
+                onChange={setSurfaceRange}
+                step={5}
+                unit=" m²"
+              />
+              <RangeSliderFilter
+                title="Antigüedad (años)"
+                min={dataRanges.ageMin}
+                max={dataRanges.ageMax}
+                value={ageRange}
+                onChange={setAgeRange}
+                step={1}
+                unit=" años"
+              />
+            </div>
+          )}
+
           {/* Chip filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MultiFilter title="Precio USD" options={priceOptions} state={priceFilter} onChange={setPriceFilter} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <MultiFilter title="Ambientes" options={roomsOptions} state={roomsFilter} onChange={setRoomsFilter} />
-            <MultiFilter title="Superficie" options={sizeOptions} state={sizeFilter} onChange={setSizeFilter} />
             <MultiFilter title="Cocheras" options={parkingOptions} state={parkingFilter} onChange={setParkingFilter} />
           </div>
 
-          {/* Barrio dropdown multi-select */}
+          {/* Barrio dropdown */}
           <NeighborhoodDropdown
             groups={neighborhoodsByProvince}
             state={neighborhoodFilter}

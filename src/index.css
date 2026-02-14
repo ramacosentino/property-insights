@@ -7,55 +7,55 @@
 
 @layer base {
   :root {
-    --background: 220 25% 6%;
-    --foreground: 210 20% 90%;
+    --background: 220 20% 97%;
+    --foreground: 220 25% 12%;
 
-    --card: 220 22% 10%;
-    --card-foreground: 210 20% 90%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 12%;
 
-    --popover: 220 22% 10%;
-    --popover-foreground: 210 20% 90%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 12%;
 
-    --primary: 190 90% 50%;
-    --primary-foreground: 220 25% 6%;
+    --primary: 200 85% 42%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 16%;
-    --secondary-foreground: 210 20% 85%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 20% 30%;
 
-    --muted: 220 18% 14%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 215 12% 48%;
 
-    --accent: 155 70% 45%;
-    --accent-foreground: 220 25% 6%;
+    --accent: 155 65% 38%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 18% 18%;
-    --input: 220 18% 18%;
-    --ring: 190 90% 50%;
+    --border: 220 14% 88%;
+    --input: 220 14% 88%;
+    --ring: 200 85% 42%;
 
     --radius: 1rem;
 
     /* Custom analytics tokens */
-    --opportunity: 190 90% 50%;
-    --opportunity-foreground: 220 25% 6%;
-    --expensive: 155 70% 45%;
-    --expensive-foreground: 220 25% 6%;
+    --opportunity: 200 85% 42%;
+    --opportunity-foreground: 0 0% 100%;
+    --expensive: 155 65% 38%;
+    --expensive-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
-    --warning-foreground: 220 25% 6%;
-    --highlight-row: 190 90% 50% / 0.08;
-    --glass: 220 22% 10% / 0.7;
-    --glass-border: 220 18% 22%;
+    --warning-foreground: 220 25% 10%;
+    --highlight-row: 200 85% 42% / 0.08;
+    --glass: 0 0% 100% / 0.85;
+    --glass-border: 220 14% 88%;
 
-    --sidebar-background: 220 25% 8%;
-    --sidebar-foreground: 210 20% 85%;
-    --sidebar-primary: 190 90% 50%;
-    --sidebar-primary-foreground: 220 25% 6%;
-    --sidebar-accent: 220 20% 14%;
-    --sidebar-accent-foreground: 210 20% 85%;
-    --sidebar-border: 220 18% 18%;
-    --sidebar-ring: 190 90% 50%;
+    --sidebar-background: 220 20% 97%;
+    --sidebar-foreground: 220 20% 30%;
+    --sidebar-primary: 200 85% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 94%;
+    --sidebar-accent-foreground: 220 20% 30%;
+    --sidebar-border: 220 14% 88%;
+    --sidebar-ring: 200 85% 42%;
 
     --font-mono: 'JetBrains Mono', monospace;
     --font-sans: 'Satoshi', system-ui, sans-serif;
@@ -119,12 +119,12 @@
     box-shadow: 0 0 20px -5px hsl(var(--opportunity) / 0.3);
   }
   .text-gradient-opportunity {
-    background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(190 80% 70%));
+    background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(200 75% 55%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   .text-gradient-expensive {
-    background: linear-gradient(135deg, hsl(var(--expensive)), hsl(155 60% 65%));
+    background: linear-gradient(135deg, hsl(var(--expensive)), hsl(155 55% 50%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
