@@ -119,8 +119,7 @@ Deno.serve(async (req) => {
       const { data: uncached, error } = await supabase
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
-        .or("lat.is.null,norm_locality.is.null")
-        .not("lat", "eq", 0)
+        .is("lat", null)
         .limit(25);
 
       if (error) {
