@@ -32,9 +32,30 @@ function getParkingLabel(parking: number | null): string {
   return "3+ cocheras";
 }
 
+function getBedroomsLabel(bedrooms: number | null): string {
+  if (!bedrooms) return "Sin dato";
+  if (bedrooms === 1) return "1 dorm";
+  if (bedrooms === 2) return "2 dorm";
+  if (bedrooms === 3) return "3 dorm";
+  if (bedrooms === 4) return "4 dorm";
+  return "5+ dorm";
+}
+
+function getBathroomsLabel(bathrooms: number | null): string {
+  if (!bathrooms) return "Sin dato";
+  if (bathrooms === 1) return "1 baño";
+  if (bathrooms === 2) return "2 baños";
+  if (bathrooms === 3) return "3 baños";
+  return "4+ baños";
+}
+
 const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
 const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
 const PROPERTY_TYPE_KEYS = ["departamento", "casa", "ph", "terreno"];
+const BEDROOMS_KEYS = ["1 dorm", "2 dorm", "3 dorm", "4 dorm", "5+ dorm"];
+const BATHROOMS_KEYS = ["1 baño", "2 baños", "3 baños", "4+ baños"];
+const DISPOSITION_KEYS = ["Frente", "Contrafrente", "Interno", "Lateral"];
+const ORIENTATION_KEYS = ["Norte", "Sur", "Este", "Oeste", "Noreste", "Noroeste", "Sudeste", "Sudoeste"];
 
 function buildOptionsWithCounts(
   keys: string[],
@@ -86,12 +107,14 @@ const PropertyList = () => {
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 5000;
   const AGE_CAP = 50;
+  const EXPENSES_CAP = 500000;
 
   // Compute data ranges for sliders
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);
     const surfaces = properties.map((p) => p.surfaceTotal).filter((s): s is number => s !== null && s > 0);
     const ages = properties.map((p) => p.ageYears).filter((a): a is number => a !== null && a >= 0);
+    const expenses = properties.map((p) => p.expenses).filter((e): e is number => e !== null && e > 0);
     return {
       priceMin: prices.length ? Math.min(...prices) : 0,
       priceMax: PRICE_CAP,
@@ -99,6 +122,8 @@ const PropertyList = () => {
       surfaceMax: SURFACE_CAP,
       ageMin: ages.length ? Math.min(...ages) : 0,
       ageMax: AGE_CAP,
+      expensesMin: expenses.length ? Math.min(...expenses) : 0,
+      expensesMax: EXPENSES_CAP,
     };
   }, [properties]);
 
@@ -107,9 +132,14 @@ const PropertyList = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 0]);
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 0]);
+  const [expensesRange, setExpensesRange] = useState<[number, number]>([0, 0]);
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<FilterState>(createFilterState());
+  const [bedroomsFilter, setBedroomsFilter] = useState<FilterState>(createFilterState());
+  const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
+  const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
+  const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
   const [rangesInitialized, setRangesInitialized] = useState(false);
@@ -120,6 +150,7 @@ const PropertyList = () => {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
       setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
+      setExpensesRange([dataRanges.expensesMin, dataRanges.expensesMax]);
       setRangesInitialized(true);
     }
   }, [properties.length, dataRanges, rangesInitialized]);
@@ -130,6 +161,10 @@ const PropertyList = () => {
     const parking = new Map<string, number>();
     const neighborhoods = new Map<string, number>();
     const propTypes = new Map<string, number>();
+    const bedrooms = new Map<string, number>();
+    const bathrooms = new Map<string, number>();
+    const dispositions = new Map<string, number>();
+    const orientations = new Map<string, number>();
 
     for (const p of properties) {
       const r = getRoomsLabel(p.rooms);
@@ -139,14 +174,24 @@ const PropertyList = () => {
       neighborhoods.set(p.neighborhood, (neighborhoods.get(p.neighborhood) || 0) + 1);
       const tk = p.propertyType || "otro";
       propTypes.set(tk, (propTypes.get(tk) || 0) + 1);
+      const bk = getBedroomsLabel(p.bedrooms);
+      bedrooms.set(bk, (bedrooms.get(bk) || 0) + 1);
+      const btk = getBathroomsLabel(p.bathrooms);
+      bathrooms.set(btk, (bathrooms.get(btk) || 0) + 1);
+      if (p.disposition) dispositions.set(p.disposition, (dispositions.get(p.disposition) || 0) + 1);
+      if (p.orientation) orientations.set(p.orientation, (orientations.get(p.orientation) || 0) + 1);
     }
 
-    return { rooms, parking, neighborhoods, propTypes };
+    return { rooms, parking, neighborhoods, propTypes, bedrooms, bathrooms, dispositions, orientations };
   }, [properties]);
 
   const roomsOptions = useMemo(() => buildOptionsWithCounts(ROOMS_KEYS, counts.rooms), [counts.rooms]);
   const parkingOptions = useMemo(() => buildOptionsWithCounts(PARKING_KEYS, counts.parking), [counts.parking]);
   const propertyTypeOptions = useMemo(() => buildOptionsWithCounts(PROPERTY_TYPE_KEYS, counts.propTypes), [counts.propTypes]);
+  const bedroomsOptions = useMemo(() => buildOptionsWithCounts(BEDROOMS_KEYS, counts.bedrooms), [counts.bedrooms]);
+  const bathroomsOptions = useMemo(() => buildOptionsWithCounts(BATHROOMS_KEYS, counts.bathrooms), [counts.bathrooms]);
+  const dispositionOptions = useMemo(() => buildOptionsWithCounts(DISPOSITION_KEYS, counts.dispositions), [counts.dispositions]);
+  const orientationOptions = useMemo(() => buildOptionsWithCounts(ORIENTATION_KEYS, counts.orientations), [counts.orientations]);
 
   // Group neighborhoods by province
   const neighborhoodsByProvince = useMemo(() => {
@@ -204,6 +249,18 @@ const PropertyList = () => {
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
     }
+    if (bedroomsFilter.included.size > 0 || bedroomsFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(getBedroomsLabel(p.bedrooms), bedroomsFilter));
+    }
+    if (bathroomsFilter.included.size > 0 || bathroomsFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(getBathroomsLabel(p.bathrooms), bathroomsFilter));
+    }
+    if (dispositionFilter.included.size > 0 || dispositionFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(p.disposition || "", dispositionFilter));
+    }
+    if (orientationFilter.included.size > 0 || orientationFilter.excluded.size > 0) {
+      result = result.filter((p) => applyFilter(p.orientation || "", orientationFilter));
+    }
     // Range filters
     if (rangesInitialized) {
       if (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) {
@@ -214,6 +271,9 @@ const PropertyList = () => {
       }
       if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) {
         result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && (ageRange[1] >= AGE_CAP || p.ageYears <= ageRange[1]));
+      }
+      if (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) {
+        result = result.filter((p) => p.expenses !== null && p.expenses >= expensesRange[0] && (expensesRange[1] >= EXPENSES_CAP || p.expenses <= expensesRange[1]));
       }
     }
     if (showOnlyDeals) {
@@ -231,7 +291,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
+  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
@@ -308,7 +368,7 @@ const PropertyList = () => {
 
           {/* Range sliders */}
           {rangesInitialized && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               <RangeSliderFilter
                 title="Precio USD"
                 min={dataRanges.priceMin}
@@ -339,13 +399,27 @@ const PropertyList = () => {
                 unit=" años"
                 cappedMax
               />
+              <RangeSliderFilter
+                title="Expensas ARS"
+                min={dataRanges.expensesMin}
+                max={dataRanges.expensesMax}
+                value={expensesRange}
+                onChange={setExpensesRange}
+                step={5000}
+                formatValue={formatPrice}
+                cappedMax
+              />
             </div>
           )}
 
           {/* Chip filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <MultiFilter title="Ambientes" options={roomsOptions} state={roomsFilter} onChange={setRoomsFilter} />
+            <MultiFilter title="Dormitorios" options={bedroomsOptions} state={bedroomsFilter} onChange={setBedroomsFilter} />
+            <MultiFilter title="Baños" options={bathroomsOptions} state={bathroomsFilter} onChange={setBathroomsFilter} />
             <MultiFilter title="Cocheras" options={parkingOptions} state={parkingFilter} onChange={setParkingFilter} />
+            <MultiFilter title="Disposición" options={dispositionOptions} state={dispositionFilter} onChange={setDispositionFilter} />
+            <MultiFilter title="Orientación" options={orientationOptions} state={orientationFilter} onChange={setOrientationFilter} />
           </div>
 
           {/* Barrio dropdown */}

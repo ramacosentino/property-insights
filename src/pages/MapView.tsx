@@ -24,9 +24,30 @@ function getParkingLabel(parking: number | null): string {
   return "3+ cocheras";
 }
 
+function getBedroomsLabel(bedrooms: number | null): string {
+  if (!bedrooms) return "Sin dato";
+  if (bedrooms === 1) return "1 dorm";
+  if (bedrooms === 2) return "2 dorm";
+  if (bedrooms === 3) return "3 dorm";
+  if (bedrooms === 4) return "4 dorm";
+  return "5+ dorm";
+}
+
+function getBathroomsLabel(bathrooms: number | null): string {
+  if (!bathrooms) return "Sin dato";
+  if (bathrooms === 1) return "1 baño";
+  if (bathrooms === 2) return "2 baños";
+  if (bathrooms === 3) return "3 baños";
+  return "4+ baños";
+}
+
 const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
 const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
 const PROPERTY_TYPE_KEYS = ["departamento", "casa", "ph", "terreno"];
+const BEDROOMS_KEYS = ["1 dorm", "2 dorm", "3 dorm", "4 dorm", "5+ dorm"];
+const BATHROOMS_KEYS = ["1 baño", "2 baños", "3 baños", "4+ baños"];
+const DISPOSITION_KEYS = ["Frente", "Contrafrente", "Interno", "Lateral"];
+const ORIENTATION_KEYS = ["Norte", "Sur", "Este", "Oeste", "Noreste", "Noroeste", "Sudeste", "Sudoeste"];
 
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "Benavidez": [-34.42, -58.68],
@@ -206,6 +227,10 @@ const MapView = () => {
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<FilterState>(createFilterState());
+  const [bedroomsFilter, setBedroomsFilter] = useState<FilterState>(createFilterState());
+  const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
+  const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
+  const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
   // View mode: "opportunities" or "all"
   const [viewMode, setViewMode] = useState<"opportunities" | "all">("opportunities");
   // Dynamic opportunity threshold (%)
@@ -218,11 +243,13 @@ const MapView = () => {
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 5000;
   const AGE_CAP = 50;
+  const EXPENSES_CAP = 500000;
 
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);
     const surfaces = properties.map((p) => p.surfaceTotal).filter((s): s is number => s !== null && s > 0);
     const ages = properties.map((p) => p.ageYears).filter((a): a is number => a !== null && a >= 0);
+    const expenses = properties.map((p) => p.expenses).filter((e): e is number => e !== null && e > 0);
     return {
       priceMin: prices.length ? Math.min(...prices) : 0,
       priceMax: PRICE_CAP,
@@ -230,12 +257,15 @@ const MapView = () => {
       surfaceMax: SURFACE_CAP,
       ageMin: ages.length ? Math.min(...ages) : 0,
       ageMax: AGE_CAP,
+      expensesMin: expenses.length ? Math.min(...expenses) : 0,
+      expensesMax: EXPENSES_CAP,
     };
   }, [properties]);
 
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [surfaceRange, setSurfaceRange] = useState<[number, number]>([0, 0]);
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 0]);
+  const [expensesRange, setExpensesRange] = useState<[number, number]>([0, 0]);
   const [rangesInitialized, setRangesInitialized] = useState(false);
 
   useEffect(() => {
@@ -243,25 +273,32 @@ const MapView = () => {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
       setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
+      setExpensesRange([dataRanges.expensesMin, dataRanges.expensesMax]);
       setRangesInitialized(true);
     }
   }, [properties.length, dataRanges, rangesInitialized]);
 
-  const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter, propertyTypeFilter].reduce(
+  const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter, propertyTypeFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0
   ) + (rangesInitialized && (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) ? 1 : 0)
     + (rangesInitialized && (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) ? 1 : 0)
-    + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0);
+    + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0)
+    + (rangesInitialized && (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) ? 1 : 0);
 
   const clearAllFilters = () => {
     setRoomsFilter(createFilterState());
     setParkingFilter(createFilterState());
     setNeighborhoodFilter(createFilterState());
     setPropertyTypeFilter(createFilterState());
+    setBedroomsFilter(createFilterState());
+    setBathroomsFilter(createFilterState());
+    setDispositionFilter(createFilterState());
+    setOrientationFilter(createFilterState());
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
       setAgeRange([dataRanges.ageMin, dataRanges.ageMax]);
+      setExpensesRange([dataRanges.expensesMin, dataRanges.expensesMax]);
     }
   };
 
@@ -294,6 +331,14 @@ const MapView = () => {
       result = result.filter((p) => applyFilter(getRoomsLabel(p.rooms), roomsFilter));
     if (parkingFilter.included.size > 0 || parkingFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(getParkingLabel(p.parking), parkingFilter));
+    if (bedroomsFilter.included.size > 0 || bedroomsFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getBedroomsLabel(p.bedrooms), bedroomsFilter));
+    if (bathroomsFilter.included.size > 0 || bathroomsFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(getBathroomsLabel(p.bathrooms), bathroomsFilter));
+    if (dispositionFilter.included.size > 0 || dispositionFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(p.disposition || "", dispositionFilter));
+    if (orientationFilter.included.size > 0 || orientationFilter.excluded.size > 0)
+      result = result.filter((p) => applyFilter(p.orientation || "", orientationFilter));
     // Range filters (when at cap, include everything above)
     if (rangesInitialized) {
       if (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax)
@@ -302,9 +347,11 @@ const MapView = () => {
         result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && (surfaceRange[1] >= SURFACE_CAP || p.surfaceTotal <= surfaceRange[1]));
       if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax)
         result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && (ageRange[1] >= AGE_CAP || p.ageYears <= ageRange[1]));
+      if (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax)
+        result = result.filter((p) => p.expenses !== null && p.expenses >= expensesRange[0] && (expensesRange[1] >= EXPENSES_CAP || p.expenses <= expensesRange[1]));
     }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, ageRange, expensesRange, rangesInitialized, dataRanges]);
 
   const mappedProperties = filteredProperties;
 
@@ -838,7 +885,11 @@ const MapView = () => {
   const filtersContent = (
     <div className="flex flex-col gap-4">
       <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+      <MapFilterRow title="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
+      <MapFilterRow title="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
       <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+      <MapFilterRow title="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+      <MapFilterRow title="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
       <NeighborhoodDropdown
         groups={neighborhoodsByProvince}
         state={neighborhoodFilter}
@@ -878,6 +929,16 @@ const MapView = () => {
             unit=" años"
             cappedMax
           />
+          <RangeSliderFilter
+            title="Expensas ARS"
+            min={dataRanges.expensesMin}
+            max={dataRanges.expensesMax}
+            value={expensesRange}
+            onChange={setExpensesRange}
+            step={5000}
+            formatValue={formatPrice}
+            cappedMax
+          />
         </div>
       )}
     </div>
@@ -892,6 +953,10 @@ const MapView = () => {
             <div className="flex items-center gap-4 flex-wrap">
               <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
               <div className="w-px h-5 bg-border" />
+              <MapFilterRow title="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
+              <div className="w-px h-5 bg-border" />
+              <MapFilterRow title="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
+              <div className="w-px h-5 bg-border" />
               <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
               <div className="w-px h-5 bg-border" />
               <div className="w-56">
@@ -905,8 +970,13 @@ const MapView = () => {
               <div className="w-px h-5 bg-border" />
               <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
             </div>
+            <div className="flex items-center gap-4 flex-wrap">
+              <MapFilterRow title="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+              <div className="w-px h-5 bg-border" />
+              <MapFilterRow title="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
+            </div>
             {rangesInitialized && (
-              <div className="grid grid-cols-3 gap-6 max-w-2xl">
+              <div className="grid grid-cols-4 gap-6 max-w-3xl">
                 <RangeSliderFilter
                   title="Precio USD"
                   min={dataRanges.priceMin}
@@ -935,6 +1005,16 @@ const MapView = () => {
                   onChange={setAgeRange}
                   step={1}
                   unit=" años"
+                  cappedMax
+                />
+                <RangeSliderFilter
+                  title="Expensas ARS"
+                  min={dataRanges.expensesMin}
+                  max={dataRanges.expensesMax}
+                  value={expensesRange}
+                  onChange={setExpensesRange}
+                  step={5000}
+                  formatValue={formatPrice}
                   cappedMax
                 />
               </div>
