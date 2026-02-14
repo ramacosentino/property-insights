@@ -263,7 +263,7 @@ const MapView = () => {
   };
 
   const totalProperties = properties.length;
-  const geocodedCount = geocodedCoords.size;
+  const geocodedCount = properties.filter((p) => geocodedCoords.has(p.address || p.location)).length;
   const progressPct = totalProperties > 0 ? Math.round((geocodedCount / totalProperties) * 100) : 0;
 
   const allPrices = useMemo(() => properties.filter((p) => p.pricePerM2Total).map((p) => p.pricePerM2Total!), [properties]);
