@@ -149,6 +149,7 @@ Deno.serve(async (req) => {
 
     let addresses: any[] = [];
     let autonomousMode = false;
+    let fallbackMode = false;
 
     try {
       const body = await req.json();
@@ -180,21 +181,37 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Step 3: If no pending, check for not_found addresses to retry with fallback
       if (!uncached || uncached.length === 0) {
-        console.log("All addresses geocoded. Nothing to do.");
-        return new Response(
-          JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        const { data: notFound, error: nfError } = await supabase
+          .from("geocoded_addresses")
+          .select("address, neighborhood, province")
+          .eq("source", "not_found")
+          .limit(30);
+
+        if (nfError || !notFound || notFound.length === 0) {
+          console.log("All addresses geocoded. Nothing to do.");
+          return new Response(
+            JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log(`Retrying ${notFound.length} not_found addresses with fallback query`);
+        fallbackMode = true;
+        addresses = notFound.map((row: any) => ({
+          address: row.address,
+          neighborhood: row.neighborhood,
+          province: row.province,
+        }));
+      } else {
+        console.log(`Found ${uncached.length} pending addresses to geocode`);
+        addresses = uncached.map((row: any) => ({
+          address: row.address,
+          neighborhood: row.neighborhood,
+          province: row.province,
+        }));
       }
-
-      console.log(`Found ${uncached.length} pending addresses to geocode`);
-
-      addresses = uncached.map((row: any) => ({
-        address: row.address,
-        neighborhood: row.neighborhood,
-        province: row.province,
-      }));
     }
 
     // In client mode, insert missing addresses into the table
@@ -256,9 +273,16 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
-      // Build a clean query - normalize address then append Argentina
-      const cleanAddr = cleanAddress(item.address);
-      const query = `${cleanAddr}, Argentina`;
+      // In fallback mode, use neighborhood + city instead of the full noisy address
+      let query: string;
+      if (fallbackMode && (item.neighborhood || item.province)) {
+        const parts = [item.neighborhood, item.province].filter(Boolean);
+        query = `${parts.join(", ")}, Argentina`;
+        console.log(`Fallback query for "${item.address}": "${query}"`);
+      } else {
+        const cleanAddr = cleanAddress(item.address);
+        query = `${cleanAddr}, Argentina`;
+      }
 
       try {
         const params = new URLSearchParams({
@@ -324,7 +348,7 @@ Deno.serve(async (req) => {
               province: item.province,
               lat: 0,
               lng: 0,
-              source: "not_found",
+              source: fallbackMode ? "not_found_final" : "not_found",
             }, { onConflict: "address" });
             results.push({ ...item, lat: null, lng: null, source: "not_found" });
             notFoundCount++;
@@ -356,7 +380,7 @@ Deno.serve(async (req) => {
             norm_locality: normalized.norm_locality,
             norm_province: normalized.norm_province,
             raw_address_details: addressDetails,
-            source: "locationiq",
+            source: fallbackMode ? "locationiq_fallback" : "locationiq",
           }, { onConflict: "address" });
 
           results.push({ ...item, lat, lng, ...normalized, source: "locationiq" });
@@ -368,7 +392,7 @@ Deno.serve(async (req) => {
             province: item.province,
             lat: 0,
             lng: 0,
-            source: "not_found",
+            source: fallbackMode ? "not_found_final" : "not_found",
           }, { onConflict: "address" });
 
           results.push({ ...item, lat: null, lng: null, source: "not_found" });
