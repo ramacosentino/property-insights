@@ -84,6 +84,7 @@ const PropertyList = () => {
 
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 5000;
+  const AGE_CAP = 50;
 
   // Compute data ranges for sliders
   const dataRanges = useMemo(() => {
@@ -96,7 +97,7 @@ const PropertyList = () => {
       surfaceMin: surfaces.length ? Math.min(...surfaces) : 0,
       surfaceMax: SURFACE_CAP,
       ageMin: ages.length ? Math.min(...ages) : 0,
-      ageMax: ages.length ? Math.max(...ages) : 100,
+      ageMax: AGE_CAP,
     };
   }, [properties]);
 
@@ -203,7 +204,7 @@ const PropertyList = () => {
         result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && (surfaceRange[1] >= SURFACE_CAP || p.surfaceTotal <= surfaceRange[1]));
       }
       if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) {
-        result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && p.ageYears <= ageRange[1]);
+        result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && (ageRange[1] >= AGE_CAP || p.ageYears <= ageRange[1]));
       }
     }
     if (showOnlyDeals) {
@@ -327,6 +328,7 @@ const PropertyList = () => {
                 onChange={setAgeRange}
                 step={1}
                 unit=" años"
+                cappedMax
               />
             </div>
           )}

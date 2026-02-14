@@ -215,6 +215,7 @@ const MapView = () => {
   // Range filters
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 5000;
+  const AGE_CAP = 50;
 
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);
@@ -226,7 +227,7 @@ const MapView = () => {
       surfaceMin: surfaces.length ? Math.min(...surfaces) : 0,
       surfaceMax: SURFACE_CAP,
       ageMin: ages.length ? Math.min(...ages) : 0,
-      ageMax: ages.length ? Math.max(...ages) : 100,
+      ageMax: AGE_CAP,
     };
   }, [properties]);
 
@@ -295,7 +296,7 @@ const MapView = () => {
       if (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax)
         result = result.filter((p) => p.surfaceTotal !== null && p.surfaceTotal >= surfaceRange[0] && (surfaceRange[1] >= SURFACE_CAP || p.surfaceTotal <= surfaceRange[1]));
       if (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax)
-        result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && p.ageYears <= ageRange[1]);
+        result = result.filter((p) => p.ageYears !== null && p.ageYears >= ageRange[0] && (ageRange[1] >= AGE_CAP || p.ageYears <= ageRange[1]));
     }
     return result;
   }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, roomsFilter, parkingFilter, priceRange, surfaceRange, ageRange, rangesInitialized, dataRanges]);
@@ -633,10 +634,10 @@ const MapView = () => {
   const maxMedian = mappedNeighborhoods.length ? Math.max(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
 
   const headerFilters = (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex items-center gap-2 px-2">
       <button
         onClick={() => isMobile ? setMobileFiltersOpen(true) : setShowFilters(!showFilters)}
-        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium transition-all border ${
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium transition-all border shrink-0 ${
           showFilters || mobileFiltersOpen || activeFilterCount > 0 ? "border-primary/30 text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"
         }`}
       >
@@ -645,7 +646,7 @@ const MapView = () => {
       </button>
 
       {/* View mode toggle */}
-      <div className="flex items-center rounded-full border border-border overflow-hidden">
+      <div className="flex items-center rounded-full border border-border overflow-hidden shrink-0">
         <button
           onClick={() => setViewMode("opportunities")}
           className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
@@ -667,7 +668,7 @@ const MapView = () => {
       </div>
 
       {activeFilterCount > 0 && (
-        <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border">
+        <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border shrink-0">
           <X className="h-3 w-3" /> Limpiar
         </button>
       )}
@@ -869,6 +870,7 @@ const MapView = () => {
             onChange={setAgeRange}
             step={1}
             unit=" años"
+            cappedMax
           />
         </div>
       )}
@@ -925,6 +927,7 @@ const MapView = () => {
                   onChange={setAgeRange}
                   step={1}
                   unit=" años"
+                  cappedMax
                 />
               </div>
             )}
