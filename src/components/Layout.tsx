@@ -12,10 +12,9 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const location = useLocation();
   const { isDark, toggle } = useTheme();
 
-  const navItems = [
+  const mainNav = [
     { path: "/", label: "Mapa", icon: Map },
     { path: "/propiedades", label: "Propiedades", icon: List },
-    { path: "/configuracion", label: "Config", icon: Settings },
   ];
 
   return (
@@ -36,7 +35,8 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
             </div>
           )}
           <nav className="flex items-center gap-1 md:gap-2">
-            {navItems.map((item) => {
+            {/* Main nav */}
+            {mainNav.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
@@ -53,6 +53,22 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
                 </Link>
               );
             })}
+
+            {/* Separator */}
+            <div className="w-px h-5 bg-border mx-1" />
+
+            {/* Setup tools */}
+            <Link
+              to="/configuracion"
+              className={`p-1.5 md:p-2 rounded-full transition-all ${
+                location.pathname === "/configuracion"
+                  ? "bg-primary/15 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+              title="Configuración"
+            >
+              <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Link>
             <button
               onClick={toggle}
               className="p-1.5 md:p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
