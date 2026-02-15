@@ -316,9 +316,19 @@ const MapView = () => {
   const geocodedCount = properties.filter((p) => geocodedCoords.has(p.address || p.location)).length;
   const progressPct = totalProperties > 0 ? Math.round((geocodedCount / totalProperties) * 100) : 0;
 
-  const allPrices = useMemo(() => properties.filter((p) => p.pricePerM2Total).map((p) => p.pricePerM2Total!), [properties]);
-  const minPrice = useMemo(() => allPrices.length ? Math.min(...allPrices) : 0, [allPrices]);
-  const maxPrice = useMemo(() => allPrices.length ? Math.max(...allPrices) : 0, [allPrices]);
+  const allPrices = useMemo(() => {
+    const prices = properties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0).map((p) => p.pricePerM2Total!);
+    return prices.sort((a, b) => a - b);
+  }, [properties]);
+  // Use percentiles (p5/p95) to avoid outliers compressing the color scale
+  const minPrice = useMemo(() => {
+    if (allPrices.length === 0) return 0;
+    return allPrices[Math.floor(allPrices.length * 0.05)];
+  }, [allPrices]);
+  const maxPrice = useMemo(() => {
+    if (allPrices.length === 0) return 0;
+    return allPrices[Math.floor(allPrices.length * 0.95)];
+  }, [allPrices]);
 
   const allMappedProperties = useMemo(
     () => properties.filter((p) => geocodedCoords.has(p.address || p.location) || NEIGHBORHOOD_COORDS[p.neighborhood]),
@@ -635,13 +645,14 @@ const MapView = () => {
           radius: CIRCLE_RADIUS_METERS * radiusFactor,
           color: "transparent",
           fillColor: color,
-          fillOpacity: 0.25,
+          fillOpacity: 0.05,
           weight: 0,
           interactive: false,
         });
-        (marker as any)._baseOpacity = 0.25;
+        (marker as any)._baseOpacity = 0.05;
         marker.addTo(diffuse);
       });
+      
 
       const dealDotColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
       const dealDotBorder = isDark ? "rgba(255,255,255,0.3)" : "white";
