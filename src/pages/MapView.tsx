@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import ReactDOM from "react-dom";
 import Layout from "@/components/Layout";
 import { getRoomsLabel } from "@/lib/propertyData";
 import { useProperties } from "@/hooks/useProperties";
@@ -225,6 +226,7 @@ const MapView = () => {
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [statsGroupBy, setStatsGroupBy] = useState<"city" | "neighborhood">("city");
   const [hoveredStatName, setHoveredStatName] = useState<string | null>(null);
+  const [hoveredStatPos, setHoveredStatPos] = useState({ top: 0, right: 0 });
   const [showFilters, setShowFilters] = useState(false);
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
@@ -888,39 +890,45 @@ const MapView = () => {
           const breakdown = (statsGroupBy === "city" ? typeBreakdownMap.city : typeBreakdownMap.neighborhood).get(p.name);
           const isHovered = hoveredStatName === p.name;
           return (
-            <div key={p.name} className="relative">
-              <button
-                onClick={() => {
-                  setSelectedProvince(p.name);
-                  if (isMobile) setMobileSheet("full");
-                }}
-                onMouseEnter={() => setHoveredStatName(p.name)}
-                onMouseLeave={() => setHoveredStatName(null)}
-                className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
-              >
-                <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
-                <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
-              </button>
-              {isHovered && breakdown && breakdown.length > 0 && (
-                <div
-                  className="absolute right-0 top-0 -translate-x-[calc(100%+8px)] translate-x-0 z-50 glass-card rounded-lg border border-border shadow-lg p-2 min-w-[180px]"
-                  style={{ transform: "translateX(calc(-100% - 8px))" }}
-                  onMouseEnter={() => setHoveredStatName(p.name)}
-                  onMouseLeave={() => setHoveredStatName(null)}
-                >
-                  <p className="text-[10px] font-medium text-foreground mb-1.5 truncate">{p.name}</p>
-                  {breakdown.map((b) => (
-                    <div key={b.type} className="flex justify-between text-[10px] py-0.5 gap-3">
-                      <span className="text-muted-foreground capitalize truncate">{b.type} <span className="opacity-60">({b.count})</span></span>
-                      <span className="font-mono text-foreground whitespace-nowrap">${b.median.toLocaleString()}/m²</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <button
+              key={p.name}
+              onClick={() => {
+                setSelectedProvince(p.name);
+                if (isMobile) setMobileSheet("full");
+              }}
+              onMouseEnter={(e) => {
+                setHoveredStatName(p.name);
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredStatPos({ top: rect.top, right: rect.right });
+              }}
+              onMouseLeave={() => setHoveredStatName(null)}
+              className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
+            >
+              <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
+              <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
+            </button>
           );
         })}
       </div>
+      {hoveredStatName && (() => {
+        const breakdown = (statsGroupBy === "city" ? typeBreakdownMap.city : typeBreakdownMap.neighborhood).get(hoveredStatName);
+        if (!breakdown || breakdown.length === 0) return null;
+        return ReactDOM.createPortal(
+          <div
+            className="fixed z-[9999] glass-card rounded-lg border border-border shadow-xl p-2.5 min-w-[190px] pointer-events-none"
+            style={{ top: hoveredStatPos.top, right: window.innerWidth - hoveredStatPos.right + 260 }}
+          >
+            <p className="text-[10px] font-medium text-foreground mb-1.5 truncate">{hoveredStatName}</p>
+            {breakdown.map((b) => (
+              <div key={b.type} className="flex justify-between text-[10px] py-0.5 gap-3">
+                <span className="text-muted-foreground capitalize truncate">{b.type} <span className="opacity-60">({b.count})</span></span>
+                <span className="font-mono text-foreground whitespace-nowrap">${b.median.toLocaleString()}/m²</span>
+              </div>
+            ))}
+          </div>,
+          document.body
+        );
+      })()}
     </>
   );
 
