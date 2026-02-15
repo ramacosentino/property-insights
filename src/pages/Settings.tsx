@@ -93,7 +93,7 @@ const Settings = () => {
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                           log.source === "manual" ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
                         }`}>
-                          {log.source === "manual" ? "Manual" : log.source === "job" ? "Job" : "API"}
+                          {log.source === "manual" ? "Manual" : "Automática"}
                         </span>
                         <span className={`text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
                       </div>
@@ -119,7 +119,7 @@ const Settings = () => {
                         </div>
                         <div>
                           <span className="text-muted-foreground">Fuente:</span>{" "}
-                          <span>{log.source === "manual" ? "Carga manual (UI)" : "API externa"}</span>
+                          <span>{log.source === "manual" ? "Carga manual (UI)" : "Carga automática (API)"}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Archivo:</span>{" "}

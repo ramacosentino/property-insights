@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
       const { data, error } = await supabase
         .from("upload_logs")
-        .insert({ source: source || "manual", filename: filename || null, status: "running", file_url: fileUrl })
+        .insert({ source: source || "api", filename: filename || null, status: "running", file_url: fileUrl })
         .select("id")
         .single();
 

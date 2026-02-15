@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    const { csv, delimiter = ";", source = "manual", filename, log_id } = await req.json();
+    const { csv, delimiter = ";", source = "api", filename, log_id } = await req.json();
 
     if (!csv || typeof csv !== "string") {
       return new Response(
