@@ -16,12 +16,32 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    const { action, source, filename, log_id, status } = await req.json();
+    const { action, source, filename, log_id, status, csv } = await req.json();
 
     if (action === "create_log") {
+      // Store CSV if provided
+      let fileUrl: string | null = null;
+      if (csv && typeof csv === "string") {
+        try {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+          const safeName = (filename || "upload").replace(/[^a-zA-Z0-9._-]/g, "_");
+          const storagePath = `${timestamp}_${safeName}`;
+          const { error: storageError } = await supabase.storage
+            .from("upload-csvs")
+            .upload(storagePath, csv, { contentType: "text/csv", upsert: false });
+          if (!storageError) {
+            fileUrl = storagePath;
+          } else {
+            console.error("CSV storage error:", storageError.message);
+          }
+        } catch (e) {
+          console.error("CSV storage exception:", e);
+        }
+      }
+
       const { data, error } = await supabase
         .from("upload_logs")
-        .insert({ source: source || "manual", filename: filename || null, status: "running" })
+        .insert({ source: source || "manual", filename: filename || null, status: "running", file_url: fileUrl })
         .select("id")
         .single();
 

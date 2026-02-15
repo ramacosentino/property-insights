@@ -41,9 +41,9 @@ const CsvUploadButton = () => {
       const csv = await file.text();
       const chunks = splitCsvIntoChunks(csv);
 
-      // Create log entry
+      // Create log entry (also stores the full CSV)
       const { data: logData } = await supabase.functions.invoke("upload-log", {
-        body: { action: "create_log", source: "manual", filename: file.name },
+        body: { action: "create_log", source: "manual", filename: file.name, csv },
       });
       const logId = logData?.id;
 

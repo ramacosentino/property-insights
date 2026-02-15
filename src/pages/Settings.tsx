@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface UploadLog {
@@ -16,6 +16,7 @@ interface UploadLog {
   errors: string[] | null;
   error_message: string | null;
   filename: string | null;
+  file_url: string | null;
 }
 
 const statusConfig: Record<string, { icon: React.ReactNode; label: string; className: string }> = {
@@ -92,7 +93,7 @@ const Settings = () => {
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                           log.source === "manual" ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
                         }`}>
-                          {log.source === "manual" ? "Manual" : "API"}
+                          {log.source === "manual" ? "Manual" : log.source === "job" ? "Job" : "API"}
                         </span>
                         <span className={`text-xs font-medium ${cfg.className}`}>{cfg.label}</span>
                       </div>
@@ -125,6 +126,19 @@ const Settings = () => {
                           <span>{log.filename || "—"}</span>
                         </div>
                       </div>
+                      {log.file_url && (
+                        <div className="mt-2">
+                          <button
+                            onClick={async () => {
+                              const { data } = await supabase.storage.from("upload-csvs").createSignedUrl(log.file_url!, 3600);
+                              if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                            }}
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <Download className="h-3 w-3" /> Descargar CSV original
+                          </button>
+                        </div>
+                      )}
                       {log.errors && log.errors.length > 0 && (
                         <div className="mt-2">
                           <p className="text-xs text-destructive font-medium mb-1">Errores:</p>

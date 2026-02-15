@@ -188,6 +188,24 @@ Deno.serve(async (req) => {
 
     console.log(`Upload complete: ${inserted} processed, ${skipped} skipped, ${errors.length} batch errors`);
 
+    // Store CSV file in storage bucket
+    let fileUrl: string | null = null;
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const safeName = (filename || "upload").replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `${timestamp}_${safeName}`;
+      const { error: storageError } = await supabase.storage
+        .from("upload-csvs")
+        .upload(storagePath, csv, { contentType: "text/csv", upsert: false });
+      if (!storageError) {
+        fileUrl = storagePath;
+      } else {
+        console.error("CSV storage error:", storageError.message);
+      }
+    } catch (e) {
+      console.error("CSV storage exception:", e);
+    }
+
     // Log to upload_logs if log_id provided (update existing) or create new
     const logData = {
       finished_at: new Date().toISOString(),
@@ -198,6 +216,7 @@ Deno.serve(async (req) => {
       skipped,
       errors: errors.length > 0 ? errors : null,
       filename: filename || null,
+      file_url: fileUrl,
     };
 
     if (log_id) {
@@ -210,16 +229,19 @@ Deno.serve(async (req) => {
 
       if (existing) {
         const prevErrors = (existing.errors as string[]) || [];
+        const updatePayload: Record<string, unknown> = {
+          finished_at: logData.finished_at,
+          processed: (existing.processed || 0) + inserted,
+          skipped: (existing.skipped || 0) + skipped,
+          total_rows: (existing.total_rows || 0) + dataRows.length,
+          status: errors.length > 0 ? "partial" : logData.status,
+          errors: [...prevErrors, ...errors].length > 0 ? [...prevErrors, ...errors] : null,
+        };
+        // Only set file_url on first chunk (avoid overwriting)
+        if (fileUrl) updatePayload.file_url = fileUrl;
         await supabase
           .from("upload_logs")
-          .update({
-            finished_at: logData.finished_at,
-            processed: (existing.processed || 0) + inserted,
-            skipped: (existing.skipped || 0) + skipped,
-            total_rows: (existing.total_rows || 0) + dataRows.length,
-            status: errors.length > 0 ? "partial" : logData.status,
-            errors: [...prevErrors, ...errors].length > 0 ? [...prevErrors, ...errors] : null,
-          })
+          .update(updatePayload)
           .eq("id", log_id);
       }
     } else {
