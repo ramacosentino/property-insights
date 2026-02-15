@@ -224,6 +224,7 @@ const MapView = () => {
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [statsGroupBy, setStatsGroupBy] = useState<"city" | "neighborhood">("city");
+  const [hoveredStatName, setHoveredStatName] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
@@ -740,6 +741,41 @@ const MapView = () => {
     return result.sort((a, b) => b.count - a.count);
   }, [properties]);
 
+  // Breakdown by property type per group (city or neighborhood)
+  const typeBreakdownMap = useMemo(() => {
+    const calcMedian = (arr: number[]) => {
+      const s = [...arr].sort((a, b) => a - b);
+      const m = Math.floor(s.length / 2);
+      return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    };
+    const buildMap = (keyFn: (p: typeof properties[0]) => string) => {
+      const outer = new Map<string, Map<string, number[]>>();
+      for (const p of properties) {
+        if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
+        const group = keyFn(p);
+        const ptype = p.propertyType || "Sin tipo";
+        if (!outer.has(group)) outer.set(group, new Map());
+        const inner = outer.get(group)!;
+        if (!inner.has(ptype)) inner.set(ptype, []);
+        inner.get(ptype)!.push(p.pricePerM2Total);
+      }
+      const result = new Map<string, { type: string; median: number; count: number }[]>();
+      for (const [group, types] of outer) {
+        const breakdown: { type: string; median: number; count: number }[] = [];
+        for (const [type, prices] of types) {
+          breakdown.push({ type, median: Math.round(calcMedian(prices)), count: prices.length });
+        }
+        breakdown.sort((a, b) => b.count - a.count);
+        result.set(group, breakdown);
+      }
+      return result;
+    };
+    return {
+      city: buildMap((p) => p.city || "Sin ciudad"),
+      neighborhood: buildMap((p) => p.neighborhood || "Sin barrio"),
+    };
+  }, [properties]);
+
   const activeMedianStats = statsGroupBy === "city" ? provinceStats : neighborhoodMedianStats;
 
   const minMedian = mappedNeighborhoods.length ? Math.min(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
@@ -847,20 +883,43 @@ const MapView = () => {
           </button>
         </div>
       </div>
-      <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
-        {activeMedianStats.map((p) => (
-          <button
-            key={p.name}
-            onClick={() => {
-              setSelectedProvince(p.name);
-              if (isMobile) setMobileSheet("full");
-            }}
-            className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
-          >
-            <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
-            <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
-          </button>
-        ))}
+       <div className="overflow-y-auto flex-1 min-h-0 pr-1 custom-scroll">
+        {activeMedianStats.map((p) => {
+          const breakdown = (statsGroupBy === "city" ? typeBreakdownMap.city : typeBreakdownMap.neighborhood).get(p.name);
+          const isHovered = hoveredStatName === p.name;
+          return (
+            <div key={p.name} className="relative">
+              <button
+                onClick={() => {
+                  setSelectedProvince(p.name);
+                  if (isMobile) setMobileSheet("full");
+                }}
+                onMouseEnter={() => setHoveredStatName(p.name)}
+                onMouseLeave={() => setHoveredStatName(null)}
+                className="w-full flex justify-between text-xs py-1.5 border-b border-border/50 last:border-0 gap-3 hover:bg-secondary/30 transition-colors rounded px-1 -mx-1 text-left"
+              >
+                <span className="text-foreground truncate">{p.name} <span className="text-muted-foreground">({p.count})</span></span>
+                <span className="font-mono text-primary whitespace-nowrap">${p.medianPricePerSqm.toLocaleString()}/m²</span>
+              </button>
+              {isHovered && breakdown && breakdown.length > 0 && (
+                <div
+                  className="absolute right-0 top-0 -translate-x-[calc(100%+8px)] translate-x-0 z-50 glass-card rounded-lg border border-border shadow-lg p-2 min-w-[180px]"
+                  style={{ transform: "translateX(calc(-100% - 8px))" }}
+                  onMouseEnter={() => setHoveredStatName(p.name)}
+                  onMouseLeave={() => setHoveredStatName(null)}
+                >
+                  <p className="text-[10px] font-medium text-foreground mb-1.5 truncate">{p.name}</p>
+                  {breakdown.map((b) => (
+                    <div key={b.type} className="flex justify-between text-[10px] py-0.5 gap-3">
+                      <span className="text-muted-foreground capitalize truncate">{b.type} <span className="opacity-60">({b.count})</span></span>
+                      <span className="font-mono text-foreground whitespace-nowrap">${b.median.toLocaleString()}/m²</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </>
   );
