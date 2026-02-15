@@ -643,18 +643,17 @@ const MapView = () => {
         marker.addTo(diffuse);
       });
 
-      const dealDotColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
-      const dealDotBorder = isDark ? "rgba(255,255,255,0.3)" : "white";
-      const dealIcon = L.divIcon({
-        className: "",
-        html: `<div style="width:7px;height:7px;background:${dealDotColor};border:1.5px solid ${dealDotBorder};border-radius:50%;box-shadow:0 1px 4px ${isDark ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.15)"};"></div>`,
-        iconSize: [7, 7],
-        iconAnchor: [3.5, 3.5],
-      });
-
       dealProperties.forEach((p) => {
         const coords = getCoord(p);
-        L.marker(coords, { icon: dealIcon })
+        const dotColor = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+        const dotBorder = isDark ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.8)";
+        const dotIcon = L.divIcon({
+          className: "",
+          html: `<div style="width:9px;height:9px;background:${dotColor};border:1.5px solid ${dotBorder};border-radius:50%;box-shadow:0 1px 4px ${isDark ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.15)"};"></div>`,
+          iconSize: [9, 9],
+          iconAnchor: [4.5, 4.5],
+        });
+        L.marker(coords, { icon: dotIcon })
           .bindPopup(
             `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
               ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
