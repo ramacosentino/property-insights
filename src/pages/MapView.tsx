@@ -487,13 +487,26 @@ const MapView = () => {
         let size = "small";
         if (count > 50) size = "large";
         else if (count > 20) size = "medium";
+
+        // Compute average price from child markers to color the cluster
+        const children = cluster.getAllChildMarkers();
+        let sum = 0, cnt = 0;
+        for (const m of children) {
+          if (m._ppm2 != null && m._ppm2 > 0) { sum += m._ppm2; cnt++; }
+        }
+        const avgPrice = cnt > 0 ? sum / cnt : 0;
+        const cMin = (children[0] as any)?._colorMin ?? 0;
+        const cMax = (children[0] as any)?._colorMax ?? 1;
+        const clusterColor = getPropertyColor(avgPrice, cMin, cMax);
+
+        const dim = size === "large" ? 44 : size === "medium" ? 36 : 28;
         return L.divIcon({
           html: `<div style="
-            background: hsl(200, 85%, 42%);
+            background: ${clusterColor};
             color: white;
             border-radius: 50%;
-            width: ${size === "large" ? 44 : size === "medium" ? 36 : 28}px;
-            height: ${size === "large" ? 44 : size === "medium" ? 36 : 28}px;
+            width: ${dim}px;
+            height: ${dim}px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -504,7 +517,7 @@ const MapView = () => {
             border: 2px solid white;
           ">${count}</div>`,
           className: "",
-          iconSize: L.point(size === "large" ? 44 : size === "medium" ? 36 : 28, size === "large" ? 44 : size === "medium" ? 36 : 28),
+          iconSize: L.point(dim, dim),
         });
       },
     });
@@ -585,7 +598,10 @@ const MapView = () => {
           iconAnchor: [isDeal ? 5 : 3.5, isDeal ? 5 : 3.5],
         });
 
-        const marker = L.marker(coords, { icon });
+        const marker = L.marker(coords, { icon }) as any;
+        marker._ppm2 = p.pricePerM2Total ?? 0;
+        marker._colorMin = minPrice;
+        marker._colorMax = maxPrice;
         marker.bindPopup(
           `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
             ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
