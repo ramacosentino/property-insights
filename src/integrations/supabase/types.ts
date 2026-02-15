@@ -162,6 +162,7 @@ export type Database = {
         Row: {
           error_message: string | null
           errors: string[] | null
+          file_url: string | null
           filename: string | null
           finished_at: string | null
           id: string
@@ -175,6 +176,7 @@ export type Database = {
         Insert: {
           error_message?: string | null
           errors?: string[] | null
+          file_url?: string | null
           filename?: string | null
           finished_at?: string | null
           id?: string
@@ -188,6 +190,7 @@ export type Database = {
         Update: {
           error_message?: string | null
           errors?: string[] | null
+          file_url?: string | null
           filename?: string | null
           finished_at?: string | null
           id?: string
