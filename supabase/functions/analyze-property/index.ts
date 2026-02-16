@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
 
   try {
     const { property_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
+    console.log("Received renovation_costs:", JSON.stringify(renovation_costs));
 
     if (!property_id) {
       return new Response(
