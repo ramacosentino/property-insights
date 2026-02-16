@@ -6,6 +6,8 @@ import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info } from "lucide-react";
+import NeighborhoodSection from "@/components/NeighborhoodSection";
+import { NeighborhoodStats } from "@/lib/propertyData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,10 +20,12 @@ interface AnalysisResult {
   estado_general: string;
 }
 
-const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
+const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighborhoodStats }: {
   property: Property;
   onAnalyze: (id: string) => void;
   isAnalyzing: boolean;
+  allProperties: Property[];
+  neighborhoodStats: Map<string, NeighborhoodStats>;
 }) => {
   // Check if property already has analysis data from DB
   const raw = property as any;
@@ -238,6 +242,13 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
             )}
           </div>
 
+          {/* Neighborhood Section */}
+          <NeighborhoodSection
+            property={property}
+            allProperties={allProperties}
+            neighborhoodStats={neighborhoodStats}
+          />
+
           {/* Re-analyze button */}
           <button
             onClick={() => onAnalyze(property.id)}
@@ -377,6 +388,8 @@ const MisProyectos = () => {
                 property={p}
                 onAnalyze={handleAnalyze}
                 isAnalyzing={analyzingIds.has(p.id)}
+                allProperties={properties}
+                neighborhoodStats={data?.neighborhoodStats ?? new Map()}
               />
             ))}
           </div>
