@@ -167,7 +167,7 @@ const RenovationCostsSection = () => {
             <Tooltip>
               <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
               <TooltipContent side="top" className="max-w-[300px] text-xs">
-                Si usás superficie cubierta y los m² cubiertos son menores a la mitad de los totales, se usa <strong>m² totales ÷ 2</strong> como base. Una casa chica en terreno grande probablemente necesite ampliación.
+                Solo aplica para propiedades con estado <strong>Refacción parcial o completa</strong> (score &lt; 0.7). Si usás superficie cubierta y los m² cubiertos son menores a la mitad de los totales, se usa <strong>m² totales ÷ 2</strong> como base. Una casa chica en terreno grande probablemente necesite ampliación.
               </TooltipContent>
             </Tooltip>
           </div>
