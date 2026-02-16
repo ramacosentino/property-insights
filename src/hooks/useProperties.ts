@@ -40,6 +40,15 @@ function median(values: number[]): number {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+function computeIQRBounds(values: number[], multiplier = 4): { lower: number; upper: number } {
+  if (values.length < 3) return { lower: -Infinity, upper: Infinity };
+  const sorted = [...values].sort((a, b) => a - b);
+  const q1 = sorted[Math.floor(sorted.length * 0.25)];
+  const q3 = sorted[Math.floor(sorted.length * 0.75)];
+  const iqr = q3 - q1;
+  return { lower: q1 - multiplier * iqr, upper: q3 + multiplier * iqr };
+}
+
 function computeStats(rows: DBPropertyRow[]): {
   properties: Property[];
   neighborhoodStats: Map<string, NeighborhoodStats>;
@@ -77,10 +86,37 @@ function computeStats(rows: DBPropertyRow[]): {
     pricePerM2Covered: r.price_per_m2_covered,
   }));
 
-  // Neighborhood stats
+  // --- IQR outlier detection per neighborhood + propertyType ---
+  const groupKey = (p: { neighborhood: string; propertyType: string | null }) =>
+    `${p.neighborhood}|||${p.propertyType || ""}`;
+
+  const groupValues = new Map<string, number[]>();
+  for (const p of rawProperties) {
+    if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
+    const key = groupKey(p);
+    if (!groupValues.has(key)) groupValues.set(key, []);
+    groupValues.get(key)!.push(p.pricePerM2Total);
+  }
+
+  const groupBounds = new Map<string, { lower: number; upper: number }>();
+  for (const [key, values] of groupValues) {
+    groupBounds.set(key, computeIQRBounds(values, 4));
+  }
+
+  const isOutlier = (p: typeof rawProperties[0]): boolean => {
+    if (!p.pricePerM2Total || p.pricePerM2Total <= 0) return false;
+    const bounds = groupBounds.get(groupKey(p));
+    if (!bounds) return false;
+    return p.pricePerM2Total < bounds.lower || p.pricePerM2Total > bounds.upper;
+  };
+
+  const outlierIds = new Set(rawProperties.filter(isOutlier).map((p) => p.id));
+
+  // --- Neighborhood stats (excluding outliers) ---
   const neighborhoodMap = new Map<string, number[]>();
   for (const p of rawProperties) {
     if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
+    if (outlierIds.has(p.id)) continue;
     if (!neighborhoodMap.has(p.neighborhood)) neighborhoodMap.set(p.neighborhood, []);
     neighborhoodMap.get(p.neighborhood)!.push(p.pricePerM2Total);
   }
@@ -100,17 +136,28 @@ function computeStats(rows: DBPropertyRow[]): {
     });
   }
 
-  // Top 10% by price
-  const withPrice = rawProperties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0);
+  // --- Neighborhood + type median (excluding outliers) for opportunity score ---
+  const groupMedians = new Map<string, number>();
+  for (const [key, values] of groupValues) {
+    const bounds = groupBounds.get(key)!;
+    const filtered = values.filter((v) => v >= bounds.lower && v <= bounds.upper);
+    if (filtered.length > 0) groupMedians.set(key, median(filtered));
+  }
+
+  // --- Top 10% by price (excluding outliers) ---
+  const withPrice = rawProperties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0 && !outlierIds.has(p.id));
   const sortedByPrice = [...withPrice].sort((a, b) => (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0));
   const top10Percent = Math.ceil(sortedByPrice.length * 0.1);
   const topIds = new Set(sortedByPrice.slice(0, top10Percent).map((p) => p.id));
 
   const properties: Property[] = rawProperties.map((p) => {
-    const stats = neighborhoodStats.get(p.neighborhood);
-    const neighborhoodMedian = stats?.medianPricePerSqm || p.pricePerM2Total || 0;
+    const key = groupKey(p);
+    const typeMedian = groupMedians.get(key);
+    const neighborhoodMedian = typeMedian ?? neighborhoodStats.get(p.neighborhood)?.medianPricePerSqm ?? 0;
     const ppm2 = p.pricePerM2Total || 0;
-    const opportunityScore = neighborhoodMedian > 0 ? ((neighborhoodMedian - ppm2) / neighborhoodMedian) * 100 : 0;
+    const opportunityScore = neighborhoodMedian > 0 && !outlierIds.has(p.id)
+      ? ((neighborhoodMedian - ppm2) / neighborhoodMedian) * 100
+      : 0;
 
     return {
       ...p,
