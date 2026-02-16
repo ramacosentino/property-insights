@@ -151,19 +151,25 @@ function computeStats(rows: DBPropertyRow[]): {
   const topIds = new Set(sortedByPrice.slice(0, top10Percent).map((p) => p.id));
 
   const properties: Property[] = rawProperties.map((p) => {
-    const key = groupKey(p);
-    const typeMedian = groupMedians.get(key);
-    const neighborhoodMedian = typeMedian ?? neighborhoodStats.get(p.neighborhood)?.medianPricePerSqm ?? 0;
-    const ppm2 = p.pricePerM2Total || 0;
-    const opportunityScore = neighborhoodMedian > 0 && !outlierIds.has(p.id)
-      ? ((neighborhoodMedian - ppm2) / neighborhoodMedian) * 100
-      : 0;
+    const hasPriceData = p.pricePerM2Total != null && p.pricePerM2Total > 0;
+    const isOlr = outlierIds.has(p.id);
+    const canScore = hasPriceData && !isOlr;
+
+    let opportunityScore = 0;
+    if (canScore) {
+      const key = groupKey(p);
+      const typeMedian = groupMedians.get(key);
+      const neighborhoodMedian = typeMedian ?? neighborhoodStats.get(p.neighborhood)?.medianPricePerSqm ?? 0;
+      if (neighborhoodMedian > 0) {
+        opportunityScore = ((neighborhoodMedian - p.pricePerM2Total!) / neighborhoodMedian) * 100;
+      }
+    }
 
     return {
       ...p,
       opportunityScore,
-      isTopOpportunity: topIds.has(p.id),
-      isNeighborhoodDeal: opportunityScore > 40,
+      isTopOpportunity: canScore && topIds.has(p.id),
+      isNeighborhoodDeal: canScore && opportunityScore > 40,
     };
   });
 
