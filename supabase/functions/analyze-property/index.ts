@@ -311,7 +311,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
         .neq("id", property_id);
 
       // Fallback to city if <10 comparables in neighborhood
-      if (!comparables || comparables.length < 10) {
+      if (!comparables || comparables.length < 3) {
         console.log(`Only ${comparables?.length || 0} in neighborhood, falling back to city...`);
         const { data: cityComparables } = await supabase
           .from("properties")
@@ -323,12 +323,12 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
           .gt("price_per_m2_total", 0)
           .neq("id", property_id);
 
-        if (cityComparables && cityComparables.length >= 10) {
+        if (cityComparables && cityComparables.length >= 3) {
           comparables = cityComparables;
         }
       }
 
-      if (comparables && comparables.length >= 10) {
+      if (comparables && comparables.length >= 3) {
         const prices = comparables.map((c: any) => Number(c.price_per_m2_total));
         comparablesCount = prices.length;
 
