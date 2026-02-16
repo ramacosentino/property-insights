@@ -325,10 +325,11 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     let renovSurface: number | null;
     if (useCovered) {
       const covered = prop.surface_covered ? Number(prop.surface_covered) : null;
-      if (covered && surfaceTotal && min_surface_enabled && covered < surfaceTotal / 2) {
+      // Min surface floor only applies for refacción parcial/completa (score < 0.7)
+      if (covered && surfaceTotal && min_surface_enabled && score < 0.7 && covered < surfaceTotal / 2) {
         // Min surface floor: if covered < total/2, use total/2 (likely needs expansion)
         renovSurface = Math.round(surfaceTotal / 2);
-        console.log(`Min surface floor applied: covered=${covered}, total/2=${renovSurface}`);
+        console.log(`Min surface floor applied: covered=${covered}, total/2=${renovSurface} (score=${score} < 0.7)`);
       } else {
         renovSurface = covered || surfaceTotal;
       }

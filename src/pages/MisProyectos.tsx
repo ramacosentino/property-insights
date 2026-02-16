@@ -162,15 +162,23 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
                   </div>
                 );
               })()}
-              {raw.oportunidad_neta != null && (
+              {raw.oportunidad_neta != null && (() => {
+                // Calculate breakdown for display
+                const precio = raw.price || 0;
+                const valorPot = raw.valor_potencial_total || 0;
+                const renovCost = valorPot - precio - raw.oportunidad_neta;
+
+                return (
                 <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
                   <div className="flex items-center gap-1 mb-1">
                     <Wrench className="h-3 w-3 text-muted-foreground" />
                     <span className="text-[10px] text-muted-foreground font-medium">Ganancia Neta Est.</span>
                     <Tooltip>
                       <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[240px] text-xs">
-                        Ganancia estimada = Valor potencial renovado − Precio actual − Costo de refacción. Configurá los costos en Configuración.
+                      <TooltipContent side="top" className="max-w-[280px] text-xs space-y-1">
+                        <p className="font-semibold">Valor potencial − Precio − Refacción</p>
+                        <p>USD {valorPot.toLocaleString()} − USD {precio.toLocaleString()} − USD {Math.round(renovCost).toLocaleString()}</p>
+                        <p className="text-muted-foreground">= USD {raw.oportunidad_neta.toLocaleString()}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -181,7 +189,8 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
                   </span>
                   <p className="text-[9px] text-muted-foreground mt-0.5">potencial − precio − renov.</p>
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
 
