@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/lib/propertyData";
 import { TrendingDown, ExternalLink, Star } from "lucide-react";
+import FlagLocationButton from "@/components/FlagLocationButton";
+import ManualLocationDialog from "@/components/ManualLocationDialog";
 
 interface PropertyCardProps {
   property: Property;
@@ -8,6 +11,8 @@ interface PropertyCardProps {
 }
 
 const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [manualAddress, setManualAddress] = useState("");
   const isHighlighted = property.isTopOpportunity || property.isNeighborhoodDeal;
 
   return (
@@ -94,8 +99,26 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
               </Badge>
             )}
           </div>
+
+          {property.address && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <FlagLocationButton
+                address={property.address}
+                onManualCorrection={(addr) => {
+                  setManualAddress(addr);
+                  setManualDialogOpen(true);
+                }}
+              />
+            </div>
+          )}
         </>
       )}
+
+      <ManualLocationDialog
+        open={manualDialogOpen}
+        onOpenChange={setManualDialogOpen}
+        address={manualAddress}
+      />
     </div>
   );
 };
