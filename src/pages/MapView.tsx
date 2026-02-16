@@ -1,4 +1,6 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import FlagLocationButton from "@/components/FlagLocationButton";
+import ManualLocationDialog from "@/components/ManualLocationDialog";
 import ReactDOM from "react-dom";
 import Layout from "@/components/Layout";
 import { getRoomsLabel } from "@/lib/propertyData";
@@ -1028,6 +1030,11 @@ const MapView = () => {
                 </div>
               ) : null}
             </div>
+            {p.address && (
+              <div className="mt-2 pt-2 border-t border-border/30">
+                <FlagLocationButton address={p.address} compact />
+              </div>
+            )}
           </div>
         ))}
       </div>
