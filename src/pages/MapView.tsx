@@ -635,6 +635,7 @@ const MapView = () => {
             ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
             ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
             <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+            ${p.address ? `<br/><a href="#" onclick="event.preventDefault();fetch('${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flag-address',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},body:JSON.stringify({address:'${p.address.replace(/'/g, "\\'")}'})}).then(()=>{this.textContent='✓ Reportada';this.style.color='#888';this.onclick=null;});" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
           </div>`
         );
         cluster.addLayer(marker);
@@ -689,6 +690,7 @@ const MapView = () => {
               ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
               ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
               <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+              ${p.address ? `<br/><a href="#" onclick="event.preventDefault();fetch('${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flag-address',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},body:JSON.stringify({address:'${p.address.replace(/'/g, "\\'")}'})}).then(()=>{this.textContent='✓ Reportada';this.style.color='#888';this.onclick=null;});" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
             </div>`
           )
           .addTo(deals);
