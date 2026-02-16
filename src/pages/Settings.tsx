@@ -38,6 +38,9 @@ const DEFAULT_RENOVATION_COSTS = [
 ];
 
 const STORAGE_KEY = "renovation_costs";
+const SURFACE_TYPE_KEY = "renovation_surface_type";
+
+export type SurfaceType = "total" | "covered";
 
 function loadRenovationCosts(): typeof DEFAULT_RENOVATION_COSTS {
   try {
@@ -51,10 +54,18 @@ export function getRenovationCosts() {
   return loadRenovationCosts();
 }
 
+export function getSurfaceType(): SurfaceType {
+  try {
+    const saved = localStorage.getItem(SURFACE_TYPE_KEY);
+    if (saved === "covered") return "covered";
+  } catch {}
+  return "total";
+}
+
 const RenovationCostsSection = () => {
   const { toast } = useToast();
   const [costs, setCosts] = useState(loadRenovationCosts);
-
+  const [surfaceType, setSurfaceType] = useState<SurfaceType>(getSurfaceType);
   const handleChange = (index: number, value: string) => {
     const num = parseInt(value, 10);
     if (isNaN(num) || num < 0) return;
@@ -67,13 +78,16 @@ const RenovationCostsSection = () => {
 
   const handleSave = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(costs));
-    toast({ title: "✅ Costos guardados", description: "Los costos de refacción se actualizaron." });
+    localStorage.setItem(SURFACE_TYPE_KEY, surfaceType);
+    toast({ title: "✅ Costos guardados", description: `Costos de refacción actualizados (superficie ${surfaceType === "total" ? "total" : "cubierta"}).` });
   };
 
   const handleReset = () => {
     setCosts(DEFAULT_RENOVATION_COSTS);
+    setSurfaceType("total");
     localStorage.removeItem(STORAGE_KEY);
-    toast({ title: "Valores restaurados", description: "Se restauraron los costos por defecto." });
+    localStorage.removeItem(SURFACE_TYPE_KEY);
+    toast({ title: "Valores restaurados", description: "Se restauraron los costos y superficie por defecto." });
   };
 
   const [open, setOpen] = useState(false);
@@ -96,6 +110,38 @@ const RenovationCostsSection = () => {
 
       {open && (
       <div className="px-5 pb-5 space-y-4">
+
+      {/* Surface type toggle */}
+      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
+        <div>
+          <span className="text-sm text-foreground font-medium">Superficie para cálculos</span>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            Define si los costos de refacción y comparables se calculan sobre m² totales o cubiertos.
+          </p>
+        </div>
+        <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
+          <button
+            onClick={() => setSurfaceType("total")}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
+              surfaceType === "total"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Total
+          </button>
+          <button
+            onClick={() => setSurfaceType("covered")}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
+              surfaceType === "covered"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Cubierta
+          </button>
+        </div>
+      </div>
 
       <div className="space-y-2">
         {costs.map((tier, i) => (

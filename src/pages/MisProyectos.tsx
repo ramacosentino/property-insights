@@ -10,6 +10,7 @@ import NeighborhoodSection from "@/components/NeighborhoodSection";
 import { NeighborhoodStats } from "@/lib/propertyData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { getSurfaceType } from "@/pages/Settings";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AnalysisResult {
@@ -314,7 +315,7 @@ const MisProyectos = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze-property", {
-        body: { property_id: propertyId },
+        body: { property_id: propertyId, surface_type: getSurfaceType() },
       });
 
       if (error) throw error;
