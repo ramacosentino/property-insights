@@ -324,8 +324,8 @@ const MisProyectos = () => {
           title: "✅ Análisis completado",
           description: `Score: ${data.analysis.score_multiplicador}x — ${data.analysis.estado_general}`,
         });
-        // Refresh properties to get updated data
-        queryClient.invalidateQueries({ queryKey: ["properties"] });
+        // Force refresh properties to get updated data
+        await queryClient.refetchQueries({ queryKey: ["properties"] });
       } else {
         throw new Error(data?.error || "Analysis failed");
       }
