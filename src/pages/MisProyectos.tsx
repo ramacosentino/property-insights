@@ -55,6 +55,60 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
             <p className="text-sm text-foreground mt-0.5">{raw.estado_general}</p>
           </div>
 
+          {/* Valor Potencial */}
+          {raw.valor_potencial_total != null && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold text-primary">Valor Potencial (renovado)</span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-bold text-foreground">
+                  USD {raw.valor_potencial_total.toLocaleString()}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  USD {raw.valor_potencial_m2?.toLocaleString()}/m² · {raw.comparables_count} comp.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Opportunity Indicators */}
+          {(raw.oportunidad_ajustada != null || raw.oportunidad_neta != null) && (
+            <div className="grid grid-cols-2 gap-2">
+              {raw.oportunidad_ajustada != null && (
+                <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Target className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground font-medium">Oportunidad Ajustada</span>
+                  </div>
+                  <span className={`text-base font-bold font-mono ${
+                    raw.oportunidad_ajustada > 20 ? "text-green-500"
+                    : raw.oportunidad_ajustada > 0 ? "text-foreground"
+                    : "text-red-500"
+                  }`}>
+                    {raw.oportunidad_ajustada > 0 ? "+" : ""}{raw.oportunidad_ajustada.toFixed(1)}
+                  </span>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">descuento × calidad</p>
+                </div>
+              )}
+              {raw.oportunidad_neta != null && (
+                <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Wrench className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground font-medium">Ganancia Neta Est.</span>
+                  </div>
+                  <span className={`text-base font-bold font-mono ${
+                    raw.oportunidad_neta > 0 ? "text-green-500" : "text-red-500"
+                  }`}>
+                    {raw.oportunidad_neta > 0 ? "+" : ""}USD {(raw.oportunidad_neta / 1000).toFixed(0)}K
+                  </span>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">potencial − precio − renov.</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Informe */}
           <div>
             <span className="text-xs text-muted-foreground font-medium">Informe</span>
@@ -118,7 +172,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
             {isAnalyzing ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Analizando con IA... (esto toma ~1 min)
+                Analizando... unos segundos
               </>
             ) : (
               <>
@@ -147,8 +201,8 @@ const MisProyectos = () => {
     setAnalyzingIds((prev) => new Set([...prev, propertyId]));
 
     toast({
-      title: "🤖 Análisis iniciado",
-      description: "Scrapeando publicación y analizando con IA... (~1 min)",
+      title: "🤖 Analizando...",
+      description: "Esto puede demorar unos segundos.",
     });
 
     try {
