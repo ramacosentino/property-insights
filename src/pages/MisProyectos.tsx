@@ -326,8 +326,7 @@ const MisProyectos = () => {
       const costs = getRenovationCosts();
       const renovationCosts: Record<string, number> = {};
       costs.forEach(c => {
-        const key = isFinite(c.minScore) ? `${c.minScore}` : "-999";
-        renovationCosts[key] = c.costPerM2;
+        renovationCosts[`${c.minScore}`] = c.costPerM2;
       });
       const { data, error } = await supabase.functions.invoke("analyze-property", {
         body: { property_id: propertyId, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts },
