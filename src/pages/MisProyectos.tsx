@@ -5,7 +5,8 @@ import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench } from "lucide-react";
+import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -31,28 +32,45 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
       <PropertyCard property={property} />
 
       {hasAnalysis ? (
+        <TooltipProvider delayDuration={200}>
         <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 space-y-3 -mt-1">
-          {/* Score */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-medium">Score Multiplicador</span>
-            <span className={`text-lg font-bold font-mono ${
-              raw.score_multiplicador >= 1.1 ? "text-green-500"
-              : raw.score_multiplicador <= 0.9 ? "text-red-500"
-              : "text-foreground"
-            }`}>
-              {raw.score_multiplicador >= 1.0 ? (
-                <TrendingUp className="inline h-4 w-4 mr-1" />
-              ) : (
-                <TrendingDown className="inline h-4 w-4 mr-1" />
-              )}
-              {raw.score_multiplicador.toFixed(2)}x
-            </span>
-          </div>
-
-          {/* Estado */}
-          <div>
-            <span className="text-xs text-muted-foreground font-medium">Estado General</span>
-            <p className="text-sm text-foreground mt-0.5">{raw.estado_general}</p>
+          {/* Estado + x Valor — side by side */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground font-medium">Estado General</span>
+                <Tooltip>
+                  <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-xs">
+                    Evaluación del estado físico, terminaciones y luminosidad de la propiedad según IA.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <p className="text-sm text-foreground mt-0.5">{raw.estado_general}</p>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-1 justify-end">
+                <span className="text-xs text-muted-foreground font-medium">x Valor</span>
+                <Tooltip>
+                  <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-xs">
+                    Multiplicador de valor: 1.0 = promedio. Mayor a 1 = mejor que el promedio. Se usa para ajustar el precio estimado post-renovación.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <span className={`text-lg font-bold font-mono ${
+                raw.score_multiplicador >= 1.1 ? "text-green-500"
+                : raw.score_multiplicador <= 0.9 ? "text-red-500"
+                : "text-foreground"
+              }`}>
+                {raw.score_multiplicador >= 1.0 ? (
+                  <TrendingUp className="inline h-4 w-4 mr-1" />
+                ) : (
+                  <TrendingDown className="inline h-4 w-4 mr-1" />
+                )}
+                {raw.score_multiplicador.toFixed(2)}x
+              </span>
+            </div>
           </div>
 
           {/* Valor Potencial */}
@@ -61,6 +79,12 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
               <div className="flex items-center gap-1.5">
                 <DollarSign className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs font-semibold text-primary">Valor Potencial (renovado)</span>
+                <Tooltip>
+                  <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] text-xs">
+                    Precio estimado si la propiedad estuviera en condiciones premium. Se calcula con el cuartil superior (Q3) del USD/m² de propiedades comparables (mismo tipo, tamaño similar, misma zona).
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="flex items-baseline justify-between">
                 <span className="text-xl font-bold text-foreground">
@@ -77,17 +101,14 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
           {(raw.oportunidad_ajustada != null || raw.oportunidad_neta != null) && (
             <div className="grid grid-cols-2 gap-2">
               {raw.oportunidad_ajustada != null && (() => {
-                // Normalize to 0-10 scale (raw range is roughly -40 to 40)
                 const clamped = Math.max(-40, Math.min(40, raw.oportunidad_ajustada));
-                const score10 = Math.round(((clamped + 40) / 80) * 100) / 10; // 0.0 to 10.0
+                const score10 = Math.round(((clamped + 40) / 80) * 100) / 10;
                 const scoreLabel = score10 >= 8 ? "Excelente" : score10 >= 6 ? "Buena" : score10 >= 4 ? "Regular" : "Baja";
                 const scoreColor = score10 >= 8 ? "text-green-500" : score10 >= 6 ? "text-primary" : score10 >= 4 ? "text-yellow-500" : "text-red-500";
 
-                // Derive % below median from oportunidad_ajustada / score
                 const scoreMult = raw.score_multiplicador || 1;
                 const pctBelow = Math.round(raw.oportunidad_ajustada / scoreMult);
 
-                // Business-friendly description
                 const priceDesc = pctBelow > 30 ? "Precio muy por debajo del mercado"
                   : pctBelow > 15 ? "Precio competitivo, debajo del mercado"
                   : pctBelow > 0 ? "Precio cercano al mercado"
@@ -116,6 +137,12 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
                     <div className="flex items-center gap-1 mb-1">
                       <Target className="h-3 w-3 text-muted-foreground" />
                       <span className="text-[10px] text-muted-foreground font-medium">Oportunidad</span>
+                      <Tooltip>
+                        <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[240px] text-xs">
+                          Combina qué tan barata está la propiedad vs. el mercado con su estado físico. 10 = muy barata y en gran estado. 0 = cara y en mal estado.
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                     <div className="flex items-baseline gap-1.5">
                       <span className={`text-lg font-bold font-mono ${scoreColor}`}>
@@ -135,6 +162,12 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
                   <div className="flex items-center gap-1 mb-1">
                     <Wrench className="h-3 w-3 text-muted-foreground" />
                     <span className="text-[10px] text-muted-foreground font-medium">Ganancia Neta Est.</span>
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[240px] text-xs">
+                        Ganancia estimada = Valor potencial renovado − Precio actual − Costo de refacción. Configurá los costos en Configuración.
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                   <span className={`text-base font-bold font-mono ${
                     raw.oportunidad_neta > 0 ? "text-green-500" : "text-red-500"
@@ -149,7 +182,15 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
 
           {/* Informe */}
           <div>
-            <span className="text-xs text-muted-foreground font-medium">Informe</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground font-medium">Informe</span>
+              <Tooltip>
+                <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-xs">
+                  Resumen generado por IA sobre el estado, características y valor relativo de la propiedad.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <p className="text-xs text-foreground/80 mt-0.5 leading-relaxed">{raw.informe_breve}</p>
           </div>
 
@@ -157,7 +198,15 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
           <div className="grid grid-cols-2 gap-3">
             {raw.highlights && raw.highlights.length > 0 && (
               <div>
-                <span className="text-[10px] text-green-500 font-medium uppercase tracking-wider">Highlights</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-green-500 font-medium uppercase tracking-wider">Highlights</span>
+                  <Tooltip>
+                    <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px] text-xs">
+                      Aspectos positivos detectados por la IA en la publicación y fotos.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <ul className="mt-1 space-y-0.5">
                   {raw.highlights.map((h: string, i: number) => (
                     <li key={i} className="text-[11px] text-foreground/70 flex items-start gap-1">
@@ -169,7 +218,15 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
             )}
             {raw.lowlights && raw.lowlights.length > 0 && (
               <div>
-                <span className="text-[10px] text-red-400 font-medium uppercase tracking-wider">Lowlights</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-red-400 font-medium uppercase tracking-wider">Lowlights</span>
+                  <Tooltip>
+                    <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px] text-xs">
+                      Aspectos negativos o riesgos detectados por la IA.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <ul className="mt-1 space-y-0.5">
                   {raw.lowlights.map((l: string, i: number) => (
                     <li key={i} className="text-[11px] text-foreground/70 flex items-start gap-1">
@@ -200,6 +257,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
             )}
           </button>
         </div>
+        </TooltipProvider>
       ) : (
         <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 -mt-1">
           <button
