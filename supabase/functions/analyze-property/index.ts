@@ -187,13 +187,20 @@ IMPORTANTE:
 - La MAYORÍA debe estar entre 0.85 y 1.15
 - Solo casos excepcionales merecen >1.25 o <0.70
 - Si ves problemas, mencionálos sin suavizar
+- CRÍTICO: el estado_general DEBE ser consistente con el score:
+  • score ≥ 1.0 → "Excelente"
+  • score 0.90–0.99 → "Buen estado"
+  • score 0.80–0.89 → "Aceptable"
+  • score 0.70–0.79 → "Necesita mejoras"
+  • score 0.60–0.69 → "Refacción parcial"
+  • score < 0.60 → "Refacción completa"
 
 RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
 {
-    "estado_general": "Descripción del estado (ej: Muy buen estado, Regular, etc)",
+    "estado_general": "Debe coincidir con el rango del score (ver tabla arriba)",
     "highlights": ["Punto positivo 1", "Punto positivo 2", "..."],
     "lowlights": ["Punto negativo 1", "Punto negativo 2", "..."],
-    "score_multiplicador": 1.15,
+    "score_multiplicador": 0.85,
     "informe_breve": "Resumen de 2-3 oraciones sobre la propiedad, su estado y valor relativo."
 }`;
 
@@ -282,7 +289,21 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     const highlights = Array.isArray(analysis.highlights) ? analysis.highlights : [];
     const lowlights = Array.isArray(analysis.lowlights) ? analysis.lowlights : [];
     const informe = typeof analysis.informe_breve === "string" ? analysis.informe_breve : "";
-    const estado = typeof analysis.estado_general === "string" ? analysis.estado_general : "Sin datos";
+
+    // Enforce consistency between score and estado_general
+    const enforceEstado = (s: number): string => {
+      if (s >= 1.0) return "Excelente";
+      if (s >= 0.9) return "Buen estado";
+      if (s >= 0.8) return "Aceptable";
+      if (s >= 0.7) return "Necesita mejoras";
+      if (s >= 0.6) return "Refacción parcial";
+      return "Refacción completa";
+    };
+    const estado = enforceEstado(score);
+    const aiEstado = typeof analysis.estado_general === "string" ? analysis.estado_general : "";
+    if (aiEstado && aiEstado !== estado) {
+      console.log(`Estado corrected: AI said "${aiEstado}" but score ${score} maps to "${estado}"`);
+    }
 
     // 6. Calculate Valor Potencial from comparables
     console.log("Querying comparables...");

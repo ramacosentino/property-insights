@@ -127,68 +127,62 @@ const RenovationCostsSection = () => {
       {open && (
       <div className="px-5 pb-5 space-y-4">
 
-      {/* Surface type toggle */}
-      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
-        <div className="flex items-center gap-1">
-          <span className="text-sm text-foreground font-medium">Superficie para costos</span>
-          <Tooltip>
-            <TooltipTrigger><Info className="h-3.5 w-3.5 text-muted-foreground/50" /></TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[280px] text-xs">
-              Define sobre qué superficie se calculan los costos de refacción. <strong>Total</strong>: usa los m² totales del terreno/propiedad. <strong>Cubierta</strong>: usa solo los m² cubiertos (techados). Los comparables y valor potencial siempre usan superficie total.
-            </TooltipContent>
-          </Tooltip>
+      {/* Toggles side by side */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Surface type toggle */}
+        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-foreground font-medium">Superficie</span>
+            <Tooltip>
+              <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[260px] text-xs">
+                Define sobre qué superficie se calculan los costos de refacción. <strong>Total</strong>: m² totales. <strong>Cubierta</strong>: solo m² techados. Comparables y valor potencial siempre usan total.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex items-center gap-0.5 rounded-full border border-border p-0.5">
+            <button
+              onClick={() => setSurfaceType("total")}
+              className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-all ${
+                surfaceType === "total" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Total
+            </button>
+            <button
+              onClick={() => setSurfaceType("covered")}
+              className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-all ${
+                surfaceType === "covered" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Cubierta
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
-          <button
-            onClick={() => setSurfaceType("total")}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
-              surfaceType === "total"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Total
-          </button>
-          <button
-            onClick={() => setSurfaceType("covered")}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
-              surfaceType === "covered"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Cubierta
-          </button>
-        </div>
-      </div>
 
-      {/* Min surface logic toggle */}
-      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
-        <div className="flex items-center gap-1 flex-1 mr-3">
-          <span className="text-sm text-foreground font-medium">Piso mínimo de superficie</span>
-          <Tooltip>
-            <TooltipTrigger><Info className="h-3.5 w-3.5 text-muted-foreground/50" /></TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[300px] text-xs">
-              Si está activo y usás superficie cubierta: cuando los m² cubiertos son menores a la mitad de los m² totales, se usa <strong>m² totales ÷ 2</strong> como base para el costo de refacción. ¿Por qué? Una casa muy chica en un terreno grande probablemente requiera ampliación como parte de la refacción, por lo que el costo real será mayor al de solo refaccionar los m² cubiertos actuales.
-            </TooltipContent>
-          </Tooltip>
-          <p className="text-[10px] text-muted-foreground ml-2">
-            {surfaceType === "covered" ? "Activo solo con superficie cubierta" : "Solo aplica con superficie cubierta"}
-          </p>
+        {/* Min surface logic toggle */}
+        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-foreground font-medium">Piso mínimo</span>
+            <Tooltip>
+              <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[300px] text-xs">
+                Si usás superficie cubierta y los m² cubiertos son menores a la mitad de los totales, se usa <strong>m² totales ÷ 2</strong> como base. Una casa chica en terreno grande probablemente necesite ampliación.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <button
+            onClick={() => setMinSurfaceEnabled(!minSurfaceEnabled)}
+            disabled={surfaceType !== "covered"}
+            className={`relative w-9 h-[18px] rounded-full transition-all ${
+              minSurfaceEnabled && surfaceType === "covered" ? "bg-primary" : "bg-muted-foreground/30"
+            } ${surfaceType !== "covered" ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            <span className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white transition-transform ${
+              minSurfaceEnabled ? "translate-x-[18px]" : ""
+            }`} />
+          </button>
         </div>
-        <button
-          onClick={() => setMinSurfaceEnabled(!minSurfaceEnabled)}
-          disabled={surfaceType !== "covered"}
-          className={`relative w-10 h-5 rounded-full transition-all ${
-            minSurfaceEnabled && surfaceType === "covered"
-              ? "bg-primary"
-              : "bg-muted-foreground/30"
-          } ${surfaceType !== "covered" ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
-        >
-          <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-            minSurfaceEnabled ? "translate-x-5" : ""
-          }`} />
-        </button>
       </div>
 
       <div className="space-y-2">
@@ -208,6 +202,40 @@ const RenovationCostsSection = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Glossary */}
+      <div className="rounded-lg border border-border/50 p-3 space-y-2">
+        <div className="flex items-center gap-1">
+          <Info className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-semibold text-foreground">Glosario de estados</span>
+        </div>
+        <div className="grid gap-1.5 text-[11px]">
+          <div className="flex gap-2">
+            <span className="font-medium text-green-500 w-28 flex-shrink-0">Excelente (≥ 1.0)</span>
+            <span className="text-muted-foreground">A estrenar o recién reformado. Terminaciones premium, luminosidad destacada. No requiere inversión.</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-medium text-emerald-400 w-28 flex-shrink-0">Buen estado (0.9–0.99)</span>
+            <span className="text-muted-foreground">Bien mantenido, limpio, sin problemas visibles. Solo detalles estéticos menores (pintura, pequeños arreglos).</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-medium text-foreground w-28 flex-shrink-0">Aceptable (0.8–0.89)</span>
+            <span className="text-muted-foreground">Uso normal, terminaciones estándar. Puede necesitar actualización de cocina/baño, pintura general.</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-medium text-yellow-500 w-28 flex-shrink-0">Necesita mejoras (0.7–0.79)</span>
+            <span className="text-muted-foreground">Pintura deteriorada, pisos gastados, instalaciones viejas. Requiere inversión moderada en actualización.</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-medium text-orange-500 w-28 flex-shrink-0">Refacción parcial (0.6–0.69)</span>
+            <span className="text-muted-foreground">Baños y/o cocina obsoletos, instalaciones eléctricas/sanitarias a renovar. Estructura sólida pero interiores deteriorados.</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-medium text-red-500 w-28 flex-shrink-0">Refacción completa (&lt; 0.6)</span>
+            <span className="text-muted-foreground">Requiere intervención total: instalaciones, pisos, paredes, aberturas. Posibles problemas de humedad o estructura. Puede incluir ampliación.</span>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-2 justify-end">
