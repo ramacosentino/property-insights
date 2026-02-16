@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import FlagLocationButton from "@/components/FlagLocationButton";
+import { usePreselection, togglePreselection, isPreselected } from "@/hooks/usePreselection";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
 import ReactDOM from "react-dom";
 import Layout from "@/components/Layout";
@@ -223,6 +224,13 @@ const MapView = () => {
   const isMobile = useIsMobile();
   const { data, isLoading } = useProperties();
   const properties = data?.properties ?? [];
+  const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
+
+  // Expose toggle for raw HTML popups
+  useEffect(() => {
+    (window as any).__togglePreselection = togglePreselection;
+    (window as any).__isPreselected = isPreselected;
+  }, []);
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
@@ -634,8 +642,11 @@ const MapView = () => {
             ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
             ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
             ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
-            <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
-            ${p.address ? `<br/><a href="#" onclick="event.preventDefault();fetch('${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flag-address',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},body:JSON.stringify({address:'${p.address.replace(/'/g, "\\'")}'})}).then(()=>{this.textContent='✓ Reportada';this.style.color='#888';this.onclick=null;});" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+              <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+              <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${p.id}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
+            </div>
+            ${p.address ? `<a href="#" onclick="event.preventDefault();fetch('${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flag-address',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},body:JSON.stringify({address:'${p.address.replace(/'/g, "\\'")}'})}).then(()=>{this.textContent='✓ Reportada';this.style.color='#888';this.onclick=null;});" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
           </div>`
         );
         cluster.addLayer(marker);
@@ -689,8 +700,11 @@ const MapView = () => {
               ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
               ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
               ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
-              <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
-              ${p.address ? `<br/><a href="#" onclick="event.preventDefault();fetch('${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flag-address',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},body:JSON.stringify({address:'${p.address.replace(/'/g, "\\'")}'})}).then(()=>{this.textContent='✓ Reportada';this.style.color='#888';this.onclick=null;});" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
+              <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+                <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${p.id}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
+              </div>
+              ${p.address ? `<a href="#" onclick="event.preventDefault();fetch('${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flag-address',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},body:JSON.stringify({address:'${p.address.replace(/'/g, "\\'")}'})}).then(()=>{this.textContent='✓ Reportada';this.style.color='#888';this.onclick=null;});" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
             </div>`
           )
           .addTo(deals);
@@ -978,9 +992,20 @@ const MapView = () => {
                 {p.propertyType && <span className="text-[10px] text-muted-foreground capitalize">{p.propertyType}</span>}
                 <span className="text-[11px] text-foreground line-clamp-2 block">{p.location}</span>
               </div>
-              <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors shrink-0">
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); togglePreselect(p.id); }}
+                  className={`p-1 rounded-full transition-colors ${
+                    isPreselectedHook(p.id) ? "text-yellow-500" : "text-muted-foreground hover:text-yellow-500"
+                  }`}
+                  title={isPreselectedHook(p.id) ? "Quitar de preselección" : "Agregar a preselección"}
+                >
+                  <Star className={`h-3 w-3 ${isPreselectedHook(p.id) ? "fill-yellow-500" : ""}`} />
+                </button>
+                <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             </div>
             {!p.price || !p.pricePerM2Total ? (
               <div className="flex items-center gap-1.5 mb-2">

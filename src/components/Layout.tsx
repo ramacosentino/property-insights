@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { Map, List, BarChart3, Sun, Moon, Settings } from "lucide-react";
+import { Map, List, BarChart3, Sun, Moon, Settings, Star } from "lucide-react";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
+import { usePreselection } from "@/hooks/usePreselection";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,10 +12,12 @@ interface LayoutProps {
 const Layout = ({ children, headerContent }: LayoutProps) => {
   const location = useLocation();
   const { isDark, toggle } = useTheme();
+  const { count: preselectionCount } = usePreselection();
 
   const mainNav = [
     { path: "/", label: "Mapa", icon: Map },
     { path: "/propiedades", label: "Propiedades", icon: List },
+    { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badge: preselectionCount },
   ];
 
   return (
@@ -50,6 +53,11 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
                 >
                   <item.icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   {item.label}
+                  {item.badge && item.badge > 0 ? (
+                    <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary leading-none">
+                      {item.badge}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}

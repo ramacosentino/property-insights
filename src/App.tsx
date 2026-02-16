@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MapView from "./pages/MapView";
 import PropertyList from "./pages/PropertyList";
+import MisProyectos from "./pages/MisProyectos";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -19,6 +20,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<MapView />} />
           <Route path="/propiedades" element={<PropertyList />} />
+          <Route path="/mis-proyectos" element={<MisProyectos />} />
           <Route path="/configuracion" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

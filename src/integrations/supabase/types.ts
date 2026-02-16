@@ -70,10 +70,14 @@ export type Database = {
           currency: string | null
           description: string | null
           disposition: string | null
+          estado_general: string | null
           expenses: number | null
           external_id: string
+          highlights: string[] | null
           id: string
+          informe_breve: string | null
           location: string | null
+          lowlights: string[] | null
           luminosity: string | null
           neighborhood: string | null
           orientation: string | null
@@ -83,6 +87,7 @@ export type Database = {
           price_per_m2_total: number | null
           property_type: string | null
           rooms: number | null
+          score_multiplicador: number | null
           scraped_at: string | null
           street: string | null
           surface_covered: number | null
@@ -102,10 +107,14 @@ export type Database = {
           currency?: string | null
           description?: string | null
           disposition?: string | null
+          estado_general?: string | null
           expenses?: number | null
           external_id: string
+          highlights?: string[] | null
           id?: string
+          informe_breve?: string | null
           location?: string | null
+          lowlights?: string[] | null
           luminosity?: string | null
           neighborhood?: string | null
           orientation?: string | null
@@ -115,6 +124,7 @@ export type Database = {
           price_per_m2_total?: number | null
           property_type?: string | null
           rooms?: number | null
+          score_multiplicador?: number | null
           scraped_at?: string | null
           street?: string | null
           surface_covered?: number | null
@@ -134,10 +144,14 @@ export type Database = {
           currency?: string | null
           description?: string | null
           disposition?: string | null
+          estado_general?: string | null
           expenses?: number | null
           external_id?: string
+          highlights?: string[] | null
           id?: string
+          informe_breve?: string | null
           location?: string | null
+          lowlights?: string[] | null
           luminosity?: string | null
           neighborhood?: string | null
           orientation?: string | null
@@ -147,6 +161,7 @@ export type Database = {
           price_per_m2_total?: number | null
           property_type?: string | null
           rooms?: number | null
+          score_multiplicador?: number | null
           scraped_at?: string | null
           street?: string | null
           surface_covered?: number | null
