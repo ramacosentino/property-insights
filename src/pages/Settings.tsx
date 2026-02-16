@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -76,17 +76,26 @@ const RenovationCostsSection = () => {
     toast({ title: "Valores restaurados", description: "Se restauraron los costos por defecto." });
   };
 
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="glass-card rounded-xl border border-border p-5 space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="glass-card rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 flex items-center gap-2 text-left hover:bg-secondary/30 transition-all"
+      >
         <Wrench className="h-5 w-5 text-primary" />
-        <div>
+        <div className="flex-1">
           <h3 className="text-base font-semibold">Costos de refacción por m²</h3>
           <p className="text-xs text-muted-foreground">
             Estos valores se usan para estimar la Ganancia Neta en el análisis de propiedades.
           </p>
         </div>
-      </div>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+      <div className="px-5 pb-5 space-y-4">
 
       <div className="space-y-2">
         {costs.map((tier, i) => (
@@ -122,6 +131,8 @@ const RenovationCostsSection = () => {
           Guardar
         </button>
       </div>
+      </div>
+      )}
     </div>
   );
 };
@@ -130,6 +141,7 @@ const Settings = () => {
   const [logs, setLogs] = useState<UploadLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -168,15 +180,27 @@ const Settings = () => {
         <RenovationCostsSection />
 
         {/* Upload history */}
-        <div>
-          <h3 className="text-base font-semibold mb-3">Historial de cargas</h3>
+        <div className="glass-card rounded-xl border border-border overflow-hidden">
+          <button
+            onClick={() => setHistoryOpen(!historyOpen)}
+            className="w-full px-5 py-4 flex items-center gap-2 text-left hover:bg-secondary/30 transition-all"
+          >
+            <Clock className="h-5 w-5 text-primary" />
+            <div className="flex-1">
+              <h3 className="text-base font-semibold">Historial de cargas</h3>
+              <p className="text-xs text-muted-foreground">Registro de todas las importaciones de CSV</p>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${historyOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {historyOpen && (
+          <div className="px-5 pb-5">
           {loading ? (
-            <div className="flex items-center justify-center py-20">
+            <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-20 text-muted-foreground">
-              <Clock className="h-10 w-10 mx-auto mb-3 opacity-50" />
+            <div className="text-center py-12 text-muted-foreground">
               <p>No hay cargas registradas aún</p>
             </div>
           ) : (
@@ -186,8 +210,7 @@ const Settings = () => {
                 const isExpanded = expandedId === log.id;
 
                 return (
-                  <div key={log.id}
-                    className="glass-card rounded-xl border border-border overflow-hidden">
+                  <div key={log.id} className="rounded-lg border border-border overflow-hidden">
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : log.id)}
                       className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-secondary/30 transition-all"
@@ -261,6 +284,8 @@ const Settings = () => {
                 );
               })}
             </div>
+          )}
+          </div>
           )}
         </div>
       </div>
