@@ -76,22 +76,43 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
           {/* Opportunity Indicators */}
           {(raw.oportunidad_ajustada != null || raw.oportunidad_neta != null) && (
             <div className="grid grid-cols-2 gap-2">
-              {raw.oportunidad_ajustada != null && (
-                <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
-                  <div className="flex items-center gap-1 mb-1">
-                    <Target className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground font-medium">Oportunidad Ajustada</span>
+              {raw.oportunidad_ajustada != null && (() => {
+                // Normalize to 0-10 scale (raw range is roughly -40 to 40)
+                const clamped = Math.max(-40, Math.min(40, raw.oportunidad_ajustada));
+                const score10 = Math.round(((clamped + 40) / 80) * 100) / 10; // 0.0 to 10.0
+                const scoreLabel = score10 >= 8 ? "Excelente" : score10 >= 6 ? "Buena" : score10 >= 4 ? "Regular" : "Baja";
+                const scoreColor = score10 >= 8 ? "text-green-500" : score10 >= 6 ? "text-primary" : score10 >= 4 ? "text-yellow-500" : "text-red-500";
+
+                // Build description from components
+                const pricePerM2 = property.pricePerM2Total;
+                const pctBelow = pricePerM2 && raw.valor_potencial_m2
+                  ? Math.round(((raw.valor_potencial_m2 - pricePerM2) / raw.valor_potencial_m2) * 100)
+                  : null;
+                const descParts: string[] = [];
+                if (pctBelow != null) {
+                  descParts.push(pctBelow > 0 ? `${pctBelow}% debajo de la mediana` : `${Math.abs(pctBelow)}% sobre la mediana`);
+                }
+                descParts.push(`estado ${raw.score_multiplicador?.toFixed(2)}x`);
+
+                return (
+                  <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Target className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground font-medium">Oportunidad</span>
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className={`text-lg font-bold font-mono ${scoreColor}`}>
+                        {score10.toFixed(1)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">/10</span>
+                      <span className={`text-[10px] font-medium ml-auto ${scoreColor}`}>{scoreLabel}</span>
+                    </div>
+                    <p className="text-[9px] text-muted-foreground mt-1 leading-relaxed">
+                      {descParts.join(" · ")}
+                    </p>
                   </div>
-                  <span className={`text-base font-bold font-mono ${
-                    raw.oportunidad_ajustada > 20 ? "text-green-500"
-                    : raw.oportunidad_ajustada > 0 ? "text-foreground"
-                    : "text-red-500"
-                  }`}>
-                    {raw.oportunidad_ajustada > 0 ? "+" : ""}{raw.oportunidad_ajustada.toFixed(1)}
-                  </span>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">descuento × calidad</p>
-                </div>
-              )}
+                );
+              })()}
               {raw.oportunidad_neta != null && (
                 <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
                   <div className="flex items-center gap-1 mb-1">
