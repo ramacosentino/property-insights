@@ -31,6 +31,11 @@ interface DBPropertyRow {
   luminosity: string | null;
   price_per_m2_total: number | null;
   price_per_m2_covered: number | null;
+  score_multiplicador: number | null;
+  informe_breve: string | null;
+  highlights: string[] | null;
+  lowlights: string[] | null;
+  estado_general: string | null;
 }
 
 function median(values: number[]): number {
@@ -84,6 +89,11 @@ function computeStats(rows: DBPropertyRow[]): {
     luminosity: r.luminosity,
     pricePerM2Total: r.price_per_m2_total,
     pricePerM2Covered: r.price_per_m2_covered,
+    score_multiplicador: r.score_multiplicador,
+    informe_breve: r.informe_breve,
+    highlights: r.highlights,
+    lowlights: r.lowlights,
+    estado_general: r.estado_general,
   }));
 
   // --- IQR outlier detection per neighborhood + propertyType ---
