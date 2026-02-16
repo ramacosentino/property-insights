@@ -292,44 +292,45 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     let oportunidadAjustada: number | null = null;
     let oportunidadNeta: number | null = null;
 
+    // Comparables & valor potencial ALWAYS use surface_total / price_per_m2_total
+    // Only renovation cost uses the surface_type toggle
     const useCovered = surface_type === "covered";
-    const surfaceValue = useCovered
-      ? (prop.surface_covered ? Number(prop.surface_covered) : null)
-      : (prop.surface_total ? Number(prop.surface_total) : null);
-    const pricePerM2 = useCovered
-      ? (prop.price_per_m2_covered ? Number(prop.price_per_m2_covered) : null)
-      : (prop.price_per_m2_total ? Number(prop.price_per_m2_total) : null);
-    const surfaceField = useCovered ? "surface_covered" : "surface_total";
-    const pricePerM2Field = useCovered ? "price_per_m2_covered" : "price_per_m2_total";
+    const surfaceTotal = prop.surface_total ? Number(prop.surface_total) : null;
+    const pricePerM2 = prop.price_per_m2_total ? Number(prop.price_per_m2_total) : null;
+    
+    // Surface for renovation cost calculation only
+    const renovSurface = useCovered
+      ? (prop.surface_covered ? Number(prop.surface_covered) : surfaceTotal)
+      : surfaceTotal;
 
-    console.log(`Using surface_type: ${surface_type}, surface: ${surfaceValue}, pricePerM2: ${pricePerM2}`);
+    console.log(`surface_type: ${surface_type}, surfaceTotal: ${surfaceTotal}, renovSurface: ${renovSurface}, pricePerM2: ${pricePerM2}`);
 
-    if (surfaceValue && surfaceValue > 0 && prop.property_type) {
-      const surfaceMin = surfaceValue * 0.6;
-      const surfaceMax = surfaceValue * 1.4;
+    if (surfaceTotal && surfaceTotal > 0 && prop.property_type) {
+      const surfaceMin = surfaceTotal * 0.6;
+      const surfaceMax = surfaceTotal * 1.4;
 
       // Try neighborhood first
       let { data: comparables } = await supabase
         .from("properties")
-        .select(pricePerM2Field)
+        .select("price_per_m2_total")
         .eq("property_type", prop.property_type)
         .eq("neighborhood", prop.neighborhood)
-        .gte(surfaceField, surfaceMin)
-        .lte(surfaceField, surfaceMax)
-        .gt(pricePerM2Field, 0)
+        .gte("surface_total", surfaceMin)
+        .lte("surface_total", surfaceMax)
+        .gt("price_per_m2_total", 0)
         .neq("id", property_id);
 
-      // Fallback to city if <10 comparables in neighborhood
+      // Fallback to city if <3 comparables in neighborhood
       if (!comparables || comparables.length < 3) {
         console.log(`Only ${comparables?.length || 0} in neighborhood, falling back to city...`);
         const { data: cityComparables } = await supabase
           .from("properties")
-          .select(pricePerM2Field)
+          .select("price_per_m2_total")
           .eq("property_type", prop.property_type)
           .eq("city", prop.city)
-          .gte(surfaceField, surfaceMin)
-          .lte(surfaceField, surfaceMax)
-          .gt(pricePerM2Field, 0)
+          .gte("surface_total", surfaceMin)
+          .lte("surface_total", surfaceMax)
+          .gt("price_per_m2_total", 0)
           .neq("id", property_id);
 
         if (cityComparables && cityComparables.length >= 3) {
@@ -338,12 +339,12 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       }
 
       if (comparables && comparables.length >= 3) {
-        const prices = comparables.map((c: any) => Number(c[pricePerM2Field]));
+        const prices = comparables.map((c: any) => Number(c.price_per_m2_total));
         comparablesCount = prices.length;
 
         // Q3 = upper quartile → premium m2 value
         valorPotencialM2 = Math.round(q3(prices));
-        valorPotencialTotal = Math.round(valorPotencialM2 * surfaceValue);
+        valorPotencialTotal = Math.round(valorPotencialM2 * surfaceTotal);
 
         console.log(`Comparables: ${comparablesCount}, Q3 USD/m²: ${valorPotencialM2}, Valor potencial: USD ${valorPotencialTotal}`);
 
@@ -363,7 +364,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
             const currentPrice = prop.price ? Number(prop.price) : 0;
             if (currentPrice > 0 && valorPotencialTotal > 0) {
               const renovCostPerM2 = estimateRenovationCostPerM2(score);
-              const renovCostTotal = renovCostPerM2 * surfaceValue;
+              const renovCostTotal = renovCostPerM2 * (renovSurface || surfaceTotal);
               // Net gain = potential value - current price - renovation cost
               oportunidadNeta = Math.round(valorPotencialTotal - currentPrice - renovCostTotal);
 
