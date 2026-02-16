@@ -34,8 +34,8 @@ const DEFAULT_RENOVATION_COSTS = [
   { label: "Buen estado (0.9 – 0.99)", minScore: 0.9, maxScore: 0.99, costPerM2: 100 },
   { label: "Aceptable (0.8 – 0.89)", minScore: 0.8, maxScore: 0.89, costPerM2: 200 },
   { label: "Necesita mejoras (0.7 – 0.79)", minScore: 0.7, maxScore: 0.79, costPerM2: 350 },
-  { label: "Refacción parcial (0.6 – 0.69)", minScore: 0.6, maxScore: 0.69, costPerM2: 500 },
-  { label: "Refacción completa (< 0.6)", minScore: -Infinity, maxScore: 0.59, costPerM2: 700 },
+  { label: "Refacción parcial (0.55 – 0.69)", minScore: 0.55, maxScore: 0.69, costPerM2: 500 },
+  { label: "Refacción completa (< 0.55)", minScore: -Infinity, maxScore: 0.54, costPerM2: 700 },
 ];
 
 const STORAGE_KEY = "renovation_costs";
@@ -228,11 +228,11 @@ const RenovationCostsSection = () => {
             <span className="text-muted-foreground">Pintura deteriorada, pisos gastados, instalaciones viejas. Requiere inversión moderada en actualización.</span>
           </div>
           <div className="flex gap-2">
-            <span className="font-medium text-orange-500 w-28 flex-shrink-0">Refacción parcial (0.6–0.69)</span>
+            <span className="font-medium text-orange-500 w-28 flex-shrink-0">Refacción parcial (0.55–0.69)</span>
             <span className="text-muted-foreground">Baños y/o cocina obsoletos, instalaciones eléctricas/sanitarias a renovar. Estructura sólida pero interiores deteriorados.</span>
           </div>
           <div className="flex gap-2">
-            <span className="font-medium text-red-500 w-28 flex-shrink-0">Refacción completa (&lt; 0.6)</span>
+            <span className="font-medium text-red-500 w-28 flex-shrink-0">Refacción completa (&lt; 0.55)</span>
             <span className="text-muted-foreground">Requiere intervención total: instalaciones, pisos, paredes, aberturas. Posibles problemas de humedad o estructura. Puede incluir ampliación.</span>
           </div>
         </div>
