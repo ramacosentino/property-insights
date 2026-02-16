@@ -83,16 +83,33 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
                 const scoreLabel = score10 >= 8 ? "Excelente" : score10 >= 6 ? "Buena" : score10 >= 4 ? "Regular" : "Baja";
                 const scoreColor = score10 >= 8 ? "text-green-500" : score10 >= 6 ? "text-primary" : score10 >= 4 ? "text-yellow-500" : "text-red-500";
 
-                // Build description from components
-                const pricePerM2 = property.pricePerM2Total;
-                const pctBelow = pricePerM2 && raw.valor_potencial_m2
-                  ? Math.round(((raw.valor_potencial_m2 - pricePerM2) / raw.valor_potencial_m2) * 100)
-                  : null;
-                const descParts: string[] = [];
-                if (pctBelow != null) {
-                  descParts.push(pctBelow > 0 ? `${pctBelow}% debajo de la mediana` : `${Math.abs(pctBelow)}% sobre la mediana`);
-                }
-                descParts.push(`estado ${raw.score_multiplicador?.toFixed(2)}x`);
+                // Derive % below median from oportunidad_ajustada / score
+                const scoreMult = raw.score_multiplicador || 1;
+                const pctBelow = Math.round(raw.oportunidad_ajustada / scoreMult);
+
+                // Business-friendly description
+                const priceDesc = pctBelow > 30 ? "Precio muy por debajo del mercado"
+                  : pctBelow > 15 ? "Precio competitivo, debajo del mercado"
+                  : pctBelow > 0 ? "Precio cercano al mercado"
+                  : "Precio por encima del mercado";
+
+                const stateDesc = scoreMult >= 1.1 ? "en excelente estado"
+                  : scoreMult >= 0.9 ? "en buen estado"
+                  : scoreMult >= 0.8 ? "necesita mejoras menores"
+                  : scoreMult >= 0.7 ? "requiere refacción parcial"
+                  : "necesita refacción completa";
+
+                const conclusion = pctBelow > 15 && scoreMult >= 0.9
+                  ? "Oportunidad directa, lista para comprar."
+                  : pctBelow > 15 && scoreMult < 0.9
+                  ? "Barata pero con inversión en obra."
+                  : pctBelow > 0 && scoreMult >= 1.0
+                  ? "Buen estado, precio justo."
+                  : pctBelow <= 0
+                  ? "Precio alto para la zona."
+                  : "Valor competitivo post-renovación.";
+
+                const desc = `${priceDesc}, ${stateDesc}. ${conclusion}`;
 
                 return (
                   <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
@@ -108,7 +125,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing }: {
                       <span className={`text-[10px] font-medium ml-auto ${scoreColor}`}>{scoreLabel}</span>
                     </div>
                     <p className="text-[9px] text-muted-foreground mt-1 leading-relaxed">
-                      {descParts.join(" · ")}
+                      {desc}
                     </p>
                   </div>
                 );
