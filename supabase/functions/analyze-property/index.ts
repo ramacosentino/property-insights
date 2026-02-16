@@ -23,17 +23,19 @@ function getRenovationCostPerM2(score: number, customCosts?: Record<string, numb
   if (!customCosts || Object.keys(customCosts).length === 0) {
     return defaultRenovationCostPerM2(score);
   }
-  // Parse thresholds and sort descending
+  // Parse thresholds, filter invalid, sort descending by threshold
   const thresholds = Object.entries(customCosts)
-    .map(([k, v]) => ({ min: parseFloat(k), cost: v }))
-    .filter(t => !isNaN(t.min))
+    .map(([k, v]) => ({ min: parseFloat(k), cost: Number(v) }))
+    .filter(t => !isNaN(t.min) && isFinite(t.min) && !isNaN(t.cost))
     .sort((a, b) => b.min - a.min);
-  
+
+  if (thresholds.length === 0) return defaultRenovationCostPerM2(score);
+
   for (const t of thresholds) {
     if (score >= t.min) return t.cost;
   }
-  // Below all thresholds → last entry (lowest threshold)
-  return thresholds.length > 0 ? thresholds[thresholds.length - 1].cost : defaultRenovationCostPerM2(score);
+  // Score below all thresholds → use the lowest threshold's cost (last in sorted array)
+  return thresholds[thresholds.length - 1].cost;
 }
 
 /** Calculate Q3 (75th percentile) of an array */

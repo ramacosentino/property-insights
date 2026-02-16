@@ -30,12 +30,12 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; class
 
 // Default renovation costs per m² by score range
 const DEFAULT_RENOVATION_COSTS = [
-  { label: "Excelente (≥ 1.0)", minScore: 1.0, maxScore: 999, costPerM2: 0 },
-  { label: "Buen estado (0.9 – 0.99)", minScore: 0.9, maxScore: 0.99, costPerM2: 100 },
-  { label: "Aceptable (0.8 – 0.89)", minScore: 0.8, maxScore: 0.89, costPerM2: 200 },
-  { label: "Necesita mejoras (0.7 – 0.79)", minScore: 0.7, maxScore: 0.79, costPerM2: 350 },
-  { label: "Refacción parcial (0.55 – 0.69)", minScore: 0.55, maxScore: 0.69, costPerM2: 500 },
-  { label: "Refacción completa (< 0.55)", minScore: -999, maxScore: 0.54, costPerM2: 700 },
+  { label: "Excelente (≥ 1.0)", minScore: 1.0, costPerM2: 0 },
+  { label: "Buen estado (0.9 – 0.99)", minScore: 0.9, costPerM2: 100 },
+  { label: "Aceptable (0.8 – 0.89)", minScore: 0.8, costPerM2: 200 },
+  { label: "Necesita mejoras (0.7 – 0.79)", minScore: 0.7, costPerM2: 350 },
+  { label: "Refacción parcial (0.55 – 0.69)", minScore: 0.55, costPerM2: 500 },
+  { label: "Refacción completa (< 0.55)", minScore: 0, costPerM2: 700 },
 ];
 
 const STORAGE_KEY = "renovation_costs";
@@ -47,7 +47,15 @@ export type SurfaceType = "total" | "covered";
 function loadRenovationCosts(): typeof DEFAULT_RENOVATION_COSTS {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migrate: ensure all entries have valid finite minScore, strip maxScore
+      return parsed.map((item: any, i: number) => ({
+        label: DEFAULT_RENOVATION_COSTS[i]?.label || item.label,
+        minScore: (typeof item.minScore === "number" && isFinite(item.minScore) && item.minScore >= 0) ? item.minScore : DEFAULT_RENOVATION_COSTS[i]?.minScore ?? 0,
+        costPerM2: typeof item.costPerM2 === "number" ? item.costPerM2 : DEFAULT_RENOVATION_COSTS[i]?.costPerM2 ?? 0,
+      }));
+    }
   } catch {}
   return DEFAULT_RENOVATION_COSTS;
 }
