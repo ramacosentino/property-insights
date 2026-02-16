@@ -8,14 +8,32 @@ const corsHeaders = {
 
 const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-/** Estimate renovation cost per m² based on score_multiplicador */
-function estimateRenovationCostPerM2(score: number): number {
+/** Estimate renovation cost per m² based on score_multiplicador (defaults) */
+function defaultRenovationCostPerM2(score: number): number {
   if (score >= 1.0) return 0;
   if (score >= 0.9) return 100;
   if (score >= 0.8) return 200;
   if (score >= 0.7) return 350;
   if (score >= 0.55) return 500;
   return 700;
+}
+
+/** Get renovation cost using user-configured costs or defaults */
+function getRenovationCostPerM2(score: number, customCosts?: Record<string, number>): number {
+  if (!customCosts || Object.keys(customCosts).length === 0) {
+    return defaultRenovationCostPerM2(score);
+  }
+  // Parse thresholds and sort descending
+  const thresholds = Object.entries(customCosts)
+    .map(([k, v]) => ({ min: parseFloat(k), cost: v }))
+    .filter(t => !isNaN(t.min))
+    .sort((a, b) => b.min - a.min);
+  
+  for (const t of thresholds) {
+    if (score >= t.min) return t.cost;
+  }
+  // Below all thresholds → last entry (lowest threshold)
+  return thresholds.length > 0 ? thresholds[thresholds.length - 1].cost : defaultRenovationCostPerM2(score);
 }
 
 /** Calculate Q3 (75th percentile) of an array */
@@ -58,7 +76,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { property_id, surface_type = "total", min_surface_enabled = true } = await req.json();
+    const { property_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
 
     if (!property_id) {
       return new Response(
@@ -397,7 +415,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
             // Indicador 2: Oportunidad Neta (with renovation cost)
             const currentPrice = prop.price ? Number(prop.price) : 0;
             if (currentPrice > 0 && valorPotencialTotal > 0) {
-              const renovCostPerM2 = estimateRenovationCostPerM2(score);
+              const renovCostPerM2 = getRenovationCostPerM2(score, renovation_costs);
               const renovCostTotal = renovCostPerM2 * (renovSurface || surfaceTotal);
               // Net gain = potential value - current price - renovation cost
               oportunidadNeta = Math.round(valorPotencialTotal - currentPrice - renovCostTotal);

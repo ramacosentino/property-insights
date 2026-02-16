@@ -10,7 +10,7 @@ import NeighborhoodSection from "@/components/NeighborhoodSection";
 import { NeighborhoodStats } from "@/lib/propertyData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { getSurfaceType, getMinSurfaceEnabled } from "@/pages/Settings";
+import { getSurfaceType, getMinSurfaceEnabled, getRenovationCosts } from "@/pages/Settings";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AnalysisResult {
@@ -323,8 +323,13 @@ const MisProyectos = () => {
     });
 
     try {
+      const costs = getRenovationCosts();
+      const renovationCosts: Record<string, number> = {};
+      costs.forEach(c => {
+        renovationCosts[`${c.minScore}`] = c.costPerM2;
+      });
       const { data, error } = await supabase.functions.invoke("analyze-property", {
-        body: { property_id: propertyId, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled() },
+        body: { property_id: propertyId, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts },
       });
 
       if (error) throw error;
