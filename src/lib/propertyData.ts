@@ -30,6 +30,18 @@ export interface Property {
   luminosity: string | null;
   pricePerM2Total: number | null;
   pricePerM2Covered: number | null;
+  // AI analysis
+  score_multiplicador?: number | null;
+  informe_breve?: string | null;
+  highlights?: string[] | null;
+  lowlights?: string[] | null;
+  estado_general?: string | null;
+  // Potential value & opportunity
+  valor_potencial_m2?: number | null;
+  valor_potencial_total?: number | null;
+  comparables_count?: number | null;
+  oportunidad_ajustada?: number | null;
+  oportunidad_neta?: number | null;
   // Computed
   opportunityScore: number;
   isTopOpportunity: boolean;

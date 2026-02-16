@@ -36,6 +36,11 @@ interface DBPropertyRow {
   highlights: string[] | null;
   lowlights: string[] | null;
   estado_general: string | null;
+  valor_potencial_m2: number | null;
+  valor_potencial_total: number | null;
+  comparables_count: number | null;
+  oportunidad_ajustada: number | null;
+  oportunidad_neta: number | null;
 }
 
 function median(values: number[]): number {
@@ -94,6 +99,11 @@ function computeStats(rows: DBPropertyRow[]): {
     highlights: r.highlights,
     lowlights: r.lowlights,
     estado_general: r.estado_general,
+    valor_potencial_m2: r.valor_potencial_m2,
+    valor_potencial_total: r.valor_potencial_total,
+    comparables_count: r.comparables_count,
+    oportunidad_ajustada: r.oportunidad_ajustada,
+    oportunidad_neta: r.oportunidad_neta,
   }));
 
   // --- IQR outlier detection per neighborhood + propertyType ---
