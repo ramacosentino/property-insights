@@ -4,6 +4,7 @@ import { Property } from "@/lib/propertyData";
 import { TrendingDown, ExternalLink, Star } from "lucide-react";
 import FlagLocationButton from "@/components/FlagLocationButton";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
+import { usePreselection } from "@/hooks/usePreselection";
 
 interface PropertyCardProps {
   property: Property;
@@ -13,7 +14,9 @@ interface PropertyCardProps {
 const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [manualAddress, setManualAddress] = useState("");
+  const { isSelected, toggle } = usePreselection();
   const isHighlighted = property.isTopOpportunity || property.isNeighborhoodDeal;
+  const isPinned = isSelected(property.id);
 
   return (
     <div
@@ -35,14 +38,25 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
             {property.neighborhood}, {property.city}
           </p>
         </div>
-        <a
-          href={property.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0 p-1.5 rounded-full hover:bg-secondary"
-        >
-          <ExternalLink className="h-4 w-4" />
-        </a>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggle(property.id); }}
+            className={`p-1.5 rounded-full transition-colors ${
+              isPinned ? "text-yellow-500 hover:text-yellow-600" : "text-muted-foreground hover:text-yellow-500"
+            }`}
+            title={isPinned ? "Quitar de preselección" : "Agregar a preselección"}
+          >
+            <Star className={`h-4 w-4 ${isPinned ? "fill-yellow-500" : ""}`} />
+          </button>
+          <a
+            href={property.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-full hover:bg-secondary"
+          >
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
