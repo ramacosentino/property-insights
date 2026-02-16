@@ -8,6 +8,31 @@ const corsHeaders = {
 
 const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+/** Estimate renovation cost per m² based on score_multiplicador */
+function estimateRenovationCostPerM2(score: number): number {
+  if (score >= 1.0) return 0;
+  if (score >= 0.9) return 100;
+  if (score >= 0.8) return 200;
+  if (score >= 0.7) return 350;
+  if (score >= 0.6) return 500;
+  return 700;
+}
+
+/** Calculate Q3 (75th percentile) of an array */
+function q3(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.floor(sorted.length * 0.75);
+  return sorted[Math.min(idx, sorted.length - 1)];
+}
+
+/** Calculate median of an array */
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -65,7 +90,7 @@ Deno.serve(async (req) => {
 
     console.log(`Analyzing property ${property_id}: ${prop.url}`);
 
-    // 2. Scrape with Firecrawl (markdown + screenshot + links)
+    // 2. Scrape with Firecrawl
     console.log("Scraping with Firecrawl...");
     const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
@@ -96,7 +121,7 @@ Deno.serve(async (req) => {
 
     console.log(`Scraped: ${markdown.length} chars markdown, screenshot: ${!!screenshot}`);
 
-    // 3. Build prompt (same as Python script)
+    // 3. Build prompt
     const prompt = `Eres un tasador inmobiliario experto en Argentina con 20 años de experiencia.
 
 INFORMACIÓN DE LA PROPIEDAD (de nuestra base de datos):
@@ -179,7 +204,6 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       { role: "system", content: "Eres un tasador inmobiliario experto. Respondé SOLO con JSON válido, sin markdown ni explicaciones." },
     ];
 
-    // Build user message with image if available
     if (screenshot) {
       messages.push({
         role: "user",
@@ -208,7 +232,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error(`AI gateway error ${aiResponse.status}:`, errorText);
-      
+
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ success: false, error: "Rate limit exceeded. Intentá de nuevo en unos minutos." }),
@@ -217,11 +241,11 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       }
       if (aiResponse.status === 402) {
         return new Response(
-          JSON.stringify({ success: false, error: "Créditos de IA agotados. Agregá créditos en Settings > Workspace > Usage." }),
+          JSON.stringify({ success: false, error: "Créditos de IA agotados." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
       return new Response(
         JSON.stringify({ success: false, error: `AI analysis failed: ${aiResponse.status}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -230,13 +254,12 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
 
     const aiData = await aiResponse.json();
     const aiText = aiData.choices?.[0]?.message?.content || "";
-    
+
     console.log("AI response:", aiText.substring(0, 200));
 
     // 5. Parse JSON from AI response
     const jsonMatch = aiText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("Could not extract JSON from AI response");
       return new Response(
         JSON.stringify({ success: false, error: "AI did not return valid JSON" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -246,15 +269,13 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     let analysis: any;
     try {
       analysis = JSON.parse(jsonMatch[0]);
-    } catch (e) {
-      console.error("JSON parse error:", e);
+    } catch {
       return new Response(
         JSON.stringify({ success: false, error: "AI returned malformed JSON" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Validate and sanitize
     const score = typeof analysis.score_multiplicador === "number"
       ? Math.round(analysis.score_multiplicador * 100) / 100
       : 1.0;
@@ -263,7 +284,90 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     const informe = typeof analysis.informe_breve === "string" ? analysis.informe_breve : "";
     const estado = typeof analysis.estado_general === "string" ? analysis.estado_general : "Sin datos";
 
-    // 6. Update property in DB
+    // 6. Calculate Valor Potencial from comparables
+    console.log("Querying comparables...");
+    let valorPotencialM2: number | null = null;
+    let valorPotencialTotal: number | null = null;
+    let comparablesCount = 0;
+    let oportunidadAjustada: number | null = null;
+    let oportunidadNeta: number | null = null;
+
+    const surfaceTotal = prop.surface_total ? Number(prop.surface_total) : null;
+    const pricePerM2 = prop.price_per_m2_total ? Number(prop.price_per_m2_total) : null;
+
+    if (surfaceTotal && surfaceTotal > 0 && prop.property_type) {
+      const surfaceMin = surfaceTotal * 0.6;
+      const surfaceMax = surfaceTotal * 1.4;
+
+      // Try neighborhood first
+      let { data: comparables } = await supabase
+        .from("properties")
+        .select("price_per_m2_total")
+        .eq("property_type", prop.property_type)
+        .eq("neighborhood", prop.neighborhood)
+        .gte("surface_total", surfaceMin)
+        .lte("surface_total", surfaceMax)
+        .gt("price_per_m2_total", 0)
+        .neq("id", property_id);
+
+      // Fallback to city if <10 comparables in neighborhood
+      if (!comparables || comparables.length < 10) {
+        console.log(`Only ${comparables?.length || 0} in neighborhood, falling back to city...`);
+        const { data: cityComparables } = await supabase
+          .from("properties")
+          .select("price_per_m2_total")
+          .eq("property_type", prop.property_type)
+          .eq("city", prop.city)
+          .gte("surface_total", surfaceMin)
+          .lte("surface_total", surfaceMax)
+          .gt("price_per_m2_total", 0)
+          .neq("id", property_id);
+
+        if (cityComparables && cityComparables.length >= 10) {
+          comparables = cityComparables;
+        }
+      }
+
+      if (comparables && comparables.length >= 10) {
+        const prices = comparables.map((c: any) => Number(c.price_per_m2_total));
+        comparablesCount = prices.length;
+
+        // Q3 = upper quartile → premium m2 value
+        valorPotencialM2 = Math.round(q3(prices));
+        valorPotencialTotal = Math.round(valorPotencialM2 * surfaceTotal);
+
+        console.log(`Comparables: ${comparablesCount}, Q3 USD/m²: ${valorPotencialM2}, Valor potencial: USD ${valorPotencialTotal}`);
+
+        // Calculate opportunity indicators if we have price data
+        if (pricePerM2 && pricePerM2 > 0) {
+          const med = median(prices);
+
+          if (med > 0) {
+            // % below median (can be negative if above median)
+            const pctBelowMedian = ((med - pricePerM2) / med) * 100;
+
+            // Indicador 1: Oportunidad Ajustada (simple)
+            // Higher = better opportunity. Discount × quality multiplier
+            oportunidadAjustada = Math.round(pctBelowMedian * score * 100) / 100;
+
+            // Indicador 2: Oportunidad Neta (with renovation cost)
+            const currentPrice = prop.price ? Number(prop.price) : 0;
+            if (currentPrice > 0 && valorPotencialTotal > 0) {
+              const renovCostPerM2 = estimateRenovationCostPerM2(score);
+              const renovCostTotal = renovCostPerM2 * surfaceTotal;
+              // Net gain = potential value - current price - renovation cost
+              oportunidadNeta = Math.round(valorPotencialTotal - currentPrice - renovCostTotal);
+
+              console.log(`Renov cost: USD ${renovCostPerM2}/m² (${renovCostTotal} total), Oportunidad neta: USD ${oportunidadNeta}`);
+            }
+          }
+        }
+      } else {
+        console.log(`Insufficient comparables: ${comparables?.length || 0} (need ≥10)`);
+      }
+    }
+
+    // 7. Update property in DB
     const { error: updateError } = await supabase
       .from("properties")
       .update({
@@ -272,6 +376,11 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
         highlights,
         lowlights,
         estado_general: estado,
+        valor_potencial_m2: valorPotencialM2,
+        valor_potencial_total: valorPotencialTotal,
+        comparables_count: comparablesCount,
+        oportunidad_ajustada: oportunidadAjustada,
+        oportunidad_neta: oportunidadNeta,
       })
       .eq("id", property_id);
 
@@ -283,12 +392,23 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       );
     }
 
-    console.log(`Analysis saved for ${property_id}: score=${score}`);
+    console.log(`Analysis saved for ${property_id}: score=${score}, valorPotencial=${valorPotencialTotal}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        analysis: { score_multiplicador: score, informe_breve: informe, highlights, lowlights, estado_general: estado },
+        analysis: {
+          score_multiplicador: score,
+          informe_breve: informe,
+          highlights,
+          lowlights,
+          estado_general: estado,
+          valor_potencial_m2: valorPotencialM2,
+          valor_potencial_total: valorPotencialTotal,
+          comparables_count: comparablesCount,
+          oportunidad_ajustada: oportunidadAjustada,
+          oportunidad_neta: oportunidadNeta,
+        },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

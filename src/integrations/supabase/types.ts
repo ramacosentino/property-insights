@@ -66,6 +66,7 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           city: string | null
+          comparables_count: number | null
           created_at: string
           currency: string | null
           description: string | null
@@ -80,6 +81,8 @@ export type Database = {
           lowlights: string[] | null
           luminosity: string | null
           neighborhood: string | null
+          oportunidad_ajustada: number | null
+          oportunidad_neta: number | null
           orientation: string | null
           parking: number | null
           price: number | null
@@ -96,6 +99,8 @@ export type Database = {
           toilettes: number | null
           updated_at: string
           url: string | null
+          valor_potencial_m2: number | null
+          valor_potencial_total: number | null
         }
         Insert: {
           address?: string | null
@@ -103,6 +108,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string | null
+          comparables_count?: number | null
           created_at?: string
           currency?: string | null
           description?: string | null
@@ -117,6 +123,8 @@ export type Database = {
           lowlights?: string[] | null
           luminosity?: string | null
           neighborhood?: string | null
+          oportunidad_ajustada?: number | null
+          oportunidad_neta?: number | null
           orientation?: string | null
           parking?: number | null
           price?: number | null
@@ -133,6 +141,8 @@ export type Database = {
           toilettes?: number | null
           updated_at?: string
           url?: string | null
+          valor_potencial_m2?: number | null
+          valor_potencial_total?: number | null
         }
         Update: {
           address?: string | null
@@ -140,6 +150,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string | null
+          comparables_count?: number | null
           created_at?: string
           currency?: string | null
           description?: string | null
@@ -154,6 +165,8 @@ export type Database = {
           lowlights?: string[] | null
           luminosity?: string | null
           neighborhood?: string | null
+          oportunidad_ajustada?: number | null
+          oportunidad_neta?: number | null
           orientation?: string | null
           parking?: number | null
           price?: number | null
@@ -170,6 +183,8 @@ export type Database = {
           toilettes?: number | null
           updated_at?: string
           url?: string | null
+          valor_potencial_m2?: number | null
+          valor_potencial_total?: number | null
         }
         Relationships: []
       }
