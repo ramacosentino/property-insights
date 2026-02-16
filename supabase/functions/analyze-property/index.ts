@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { property_id, surface_type = "total" } = await req.json();
+    const { property_id, surface_type = "total", min_surface_enabled = true } = await req.json();
 
     if (!property_id) {
       return new Response(
@@ -299,11 +299,21 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     const pricePerM2 = prop.price_per_m2_total ? Number(prop.price_per_m2_total) : null;
     
     // Surface for renovation cost calculation only
-    const renovSurface = useCovered
-      ? (prop.surface_covered ? Number(prop.surface_covered) : surfaceTotal)
-      : surfaceTotal;
+    let renovSurface: number | null;
+    if (useCovered) {
+      const covered = prop.surface_covered ? Number(prop.surface_covered) : null;
+      if (covered && surfaceTotal && min_surface_enabled && covered < surfaceTotal / 2) {
+        // Min surface floor: if covered < total/2, use total/2 (likely needs expansion)
+        renovSurface = Math.round(surfaceTotal / 2);
+        console.log(`Min surface floor applied: covered=${covered}, total/2=${renovSurface}`);
+      } else {
+        renovSurface = covered || surfaceTotal;
+      }
+    } else {
+      renovSurface = surfaceTotal;
+    }
 
-    console.log(`surface_type: ${surface_type}, surfaceTotal: ${surfaceTotal}, renovSurface: ${renovSurface}, pricePerM2: ${pricePerM2}`);
+    console.log(`surface_type: ${surface_type}, min_surface: ${min_surface_enabled}, surfaceTotal: ${surfaceTotal}, renovSurface: ${renovSurface}, pricePerM2: ${pricePerM2}`);
 
     if (surfaceTotal && surfaceTotal > 0 && prop.property_type) {
       const surfaceMin = surfaceTotal * 0.6;

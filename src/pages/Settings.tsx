@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,6 +40,7 @@ const DEFAULT_RENOVATION_COSTS = [
 
 const STORAGE_KEY = "renovation_costs";
 const SURFACE_TYPE_KEY = "renovation_surface_type";
+const MIN_SURFACE_KEY = "renovation_min_surface_enabled";
 
 export type SurfaceType = "total" | "covered";
 
@@ -62,10 +64,20 @@ export function getSurfaceType(): SurfaceType {
   return "total";
 }
 
+export function getMinSurfaceEnabled(): boolean {
+  try {
+    const saved = localStorage.getItem(MIN_SURFACE_KEY);
+    if (saved === "true") return true;
+    if (saved === "false") return false;
+  } catch {}
+  return true; // enabled by default
+}
+
 const RenovationCostsSection = () => {
   const { toast } = useToast();
   const [costs, setCosts] = useState(loadRenovationCosts);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>(getSurfaceType);
+  const [minSurfaceEnabled, setMinSurfaceEnabled] = useState(getMinSurfaceEnabled);
   const handleChange = (index: number, value: string) => {
     const num = parseInt(value, 10);
     if (isNaN(num) || num < 0) return;
@@ -79,20 +91,24 @@ const RenovationCostsSection = () => {
   const handleSave = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(costs));
     localStorage.setItem(SURFACE_TYPE_KEY, surfaceType);
+    localStorage.setItem(MIN_SURFACE_KEY, String(minSurfaceEnabled));
     toast({ title: "✅ Costos guardados", description: `Costos de refacción actualizados (superficie ${surfaceType === "total" ? "total" : "cubierta"}).` });
   };
 
   const handleReset = () => {
     setCosts(DEFAULT_RENOVATION_COSTS);
     setSurfaceType("total");
+    setMinSurfaceEnabled(true);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(SURFACE_TYPE_KEY);
+    localStorage.removeItem(MIN_SURFACE_KEY);
     toast({ title: "Valores restaurados", description: "Se restauraron los costos y superficie por defecto." });
   };
 
   const [open, setOpen] = useState(false);
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="glass-card rounded-xl border border-border overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
@@ -113,11 +129,14 @@ const RenovationCostsSection = () => {
 
       {/* Surface type toggle */}
       <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
-        <div>
-          <span className="text-sm text-foreground font-medium">Superficie para cálculos</span>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            Define si los costos de refacción y comparables se calculan sobre m² totales o cubiertos.
-          </p>
+        <div className="flex items-center gap-1">
+          <span className="text-sm text-foreground font-medium">Superficie para costos</span>
+          <Tooltip>
+            <TooltipTrigger><Info className="h-3.5 w-3.5 text-muted-foreground/50" /></TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[280px] text-xs">
+              Define sobre qué superficie se calculan los costos de refacción. <strong>Total</strong>: usa los m² totales del terreno/propiedad. <strong>Cubierta</strong>: usa solo los m² cubiertos (techados). Los comparables y valor potencial siempre usan superficie total.
+            </TooltipContent>
+          </Tooltip>
         </div>
         <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
           <button
@@ -141,6 +160,35 @@ const RenovationCostsSection = () => {
             Cubierta
           </button>
         </div>
+      </div>
+
+      {/* Min surface logic toggle */}
+      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/30">
+        <div className="flex items-center gap-1 flex-1 mr-3">
+          <span className="text-sm text-foreground font-medium">Piso mínimo de superficie</span>
+          <Tooltip>
+            <TooltipTrigger><Info className="h-3.5 w-3.5 text-muted-foreground/50" /></TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[300px] text-xs">
+              Si está activo y usás superficie cubierta: cuando los m² cubiertos son menores a la mitad de los m² totales, se usa <strong>m² totales ÷ 2</strong> como base para el costo de refacción. ¿Por qué? Una casa muy chica en un terreno grande probablemente requiera ampliación como parte de la refacción, por lo que el costo real será mayor al de solo refaccionar los m² cubiertos actuales.
+            </TooltipContent>
+          </Tooltip>
+          <p className="text-[10px] text-muted-foreground ml-2">
+            {surfaceType === "covered" ? "Activo solo con superficie cubierta" : "Solo aplica con superficie cubierta"}
+          </p>
+        </div>
+        <button
+          onClick={() => setMinSurfaceEnabled(!minSurfaceEnabled)}
+          disabled={surfaceType !== "covered"}
+          className={`relative w-10 h-5 rounded-full transition-all ${
+            minSurfaceEnabled && surfaceType === "covered"
+              ? "bg-primary"
+              : "bg-muted-foreground/30"
+          } ${surfaceType !== "covered" ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+        >
+          <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+            minSurfaceEnabled ? "translate-x-5" : ""
+          }`} />
+        </button>
       </div>
 
       <div className="space-y-2">
@@ -180,6 +228,7 @@ const RenovationCostsSection = () => {
       </div>
       )}
     </div>
+    </TooltipProvider>
   );
 };
 
