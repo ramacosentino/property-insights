@@ -14,7 +14,7 @@ function estimateRenovationCostPerM2(score: number): number {
   if (score >= 0.9) return 100;
   if (score >= 0.8) return 200;
   if (score >= 0.7) return 350;
-  if (score >= 0.6) return 500;
+  if (score >= 0.55) return 500;
   return 700;
 }
 
@@ -183,17 +183,19 @@ FACTORES QUE SUMAN/RESTAN:
    • Instalaciones precarias: -0.10 a -0.15
 
 IMPORTANTE:
-- SÉ CRÍTICO Y REALISTA. No todas las propiedades son "excelentes".
+- SÉ MUY CRÍTICO Y REALISTA. No todas las propiedades son "excelentes".
 - La MAYORÍA debe estar entre 0.85 y 1.15
 - Solo casos excepcionales merecen >1.25 o <0.70
 - Si ves problemas, mencionálos sin suavizar
+- PROPIEDADES EN MAL ESTADO: Si la propiedad está deteriorada, abandonada, necesita demolición parcial, tiene problemas estructurales severos, o es claramente inhabitable sin obras mayores, el score DEBE ser ≤ 0.55 (Refacción completa). No tengas miedo de dar scores de 0.40-0.55 cuando la evidencia lo justifica.
+- Si la descripción o las imágenes muestran una propiedad "a reciclar", "a refaccionar", "ideal para demoler y construir", o similar, eso indica Refacción completa (score ≤ 0.55).
 - CRÍTICO: el estado_general DEBE ser consistente con el score:
   • score ≥ 1.0 → "Excelente"
   • score 0.90–0.99 → "Buen estado"
   • score 0.80–0.89 → "Aceptable"
   • score 0.70–0.79 → "Necesita mejoras"
-  • score 0.60–0.69 → "Refacción parcial"
-  • score < 0.60 → "Refacción completa"
+  • score 0.55–0.69 → "Refacción parcial"
+  • score < 0.55 → "Refacción completa"
 
 RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
 {
@@ -296,7 +298,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       if (s >= 0.9) return "Buen estado";
       if (s >= 0.8) return "Aceptable";
       if (s >= 0.7) return "Necesita mejoras";
-      if (s >= 0.6) return "Refacción parcial";
+      if (s >= 0.55) return "Refacción parcial";
       return "Refacción completa";
     };
     const estado = enforceEstado(score);
