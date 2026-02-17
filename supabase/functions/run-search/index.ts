@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
     // Take top 5% (min 10, max 15)
     const totalCandidates = candidates.length;
     let topCount = Math.ceil(totalCandidates * 0.05);
-    topCount = Math.max(10, Math.min(15, topCount));
+    topCount = Math.max(10, Math.min(20, topCount));
     topCount = Math.min(topCount, totalCandidates);
     const topCandidates = candidates.slice(0, topCount);
 
