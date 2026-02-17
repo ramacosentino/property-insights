@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getSurfaceType, getMinSurfaceEnabled, getRenovationCosts } from "@/pages/Settings";
 import { Search, Loader2, CheckCircle, AlertCircle, RotateCcw, ChevronRight, Filter, Sparkles, History, Trash2, Star, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NeighborhoodDropdown, { ProvinceGroup } from "@/components/NeighborhoodDropdown";
+import { createFilterState, FilterState } from "@/components/MultiFilter";
 
 type SearchStatus = "idle" | "configuring" | "running" | "completed" | "failed";
 
@@ -58,15 +60,17 @@ const FilterStep = ({
   setFilters,
   onStart,
   availableTypes,
-  availableNeighborhoods,
-  availableCities,
+  neighborhoodGroups,
+  neighborhoodFilter,
+  onNeighborhoodChange,
 }: {
   filters: SearchFilters;
   setFilters: (f: SearchFilters) => void;
   onStart: () => void;
   availableTypes: string[];
-  availableNeighborhoods: string[];
-  availableCities: string[];
+  neighborhoodGroups: ProvinceGroup[];
+  neighborhoodFilter: FilterState;
+  onNeighborhoodChange: (s: FilterState) => void;
 }) => {
   const toggleArray = (arr: string[], val: string) =>
     arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
@@ -107,25 +111,11 @@ const FilterStep = ({
 
         {/* Zone */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Zona (barrio)</label>
-          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-lg border border-border p-2">
-            {availableNeighborhoods.slice(0, 50).map((n) => (
-              <button
-                key={n}
-                onClick={() => setFilters({ ...filters, neighborhoods: toggleArray(filters.neighborhoods, n) })}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
-                  filters.neighborhoods.includes(n)
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          {filters.neighborhoods.length > 0 && (
-            <p className="text-[10px] text-primary">{filters.neighborhoods.length} barrio(s) seleccionado(s)</p>
-          )}
+          <NeighborhoodDropdown
+            groups={neighborhoodGroups}
+            state={neighborhoodFilter}
+            onChange={onNeighborhoodChange}
+          />
         </div>
 
         {/* Price Range */}
@@ -366,11 +356,36 @@ const Busqueda = () => {
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
   const [pastSearches, setPastSearches] = useState<SearchRun[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
 
   // Derive available filter values from properties
   const availableTypes = [...new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])].sort();
-  const availableNeighborhoods = [...new Set(properties.map((p) => p.neighborhood).filter((n) => n !== "Sin barrio"))].sort();
-  const availableCities = [...new Set(properties.map((p) => p.city).filter((c) => c !== "Sin ciudad"))].sort();
+
+  // Group neighborhoods by province (same as PropertyList)
+  const neighborhoodGroups = useMemo(() => {
+    const neighborhoodCounts = new Map<string, number>();
+    const provCounts = new Map<string, number>();
+    for (const p of properties) {
+      neighborhoodCounts.set(p.neighborhood, (neighborhoodCounts.get(p.neighborhood) || 0) + 1);
+      const prov = p.city || "Sin ciudad";
+      provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
+    }
+    const provMap = new Map<string, { value: string; label: string; count: number }[]>();
+    for (const [hood, count] of neighborhoodCounts.entries()) {
+      if (hood === "Sin barrio") continue;
+      const sample = properties.find((p) => p.neighborhood === hood);
+      const prov = sample?.city || "Sin ciudad";
+      if (!provMap.has(prov)) provMap.set(prov, []);
+      provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
+    }
+    return Array.from(provMap.entries())
+      .map(([prov, hoods]) => ({
+        province: prov,
+        totalCount: provCounts.get(prov) || 0,
+        neighborhoods: hoods.sort((a, b) => a.value.localeCompare(b.value)),
+      }))
+      .sort((a, b) => b.totalCount - a.totalCount);
+  }, [properties]);
 
   // Load past searches
   useEffect(() => {
@@ -419,10 +434,16 @@ const Busqueda = () => {
   const handleStart = async () => {
     if (!user) return;
 
+    // Sync neighborhood filter state into filters
+    const finalFilters = {
+      ...filters,
+      neighborhoods: Array.from(neighborhoodFilter.included),
+    };
+
     // Create search run in DB
     const { data: run, error } = await supabase
       .from("search_runs")
-      .insert({ user_id: user.id, filters: filters as any, status: "pending" })
+      .insert({ user_id: user.id, filters: finalFilters as any, status: "pending" })
       .select()
       .single();
 
@@ -559,8 +580,9 @@ const Busqueda = () => {
             setFilters={setFilters}
             onStart={handleStart}
             availableTypes={availableTypes}
-            availableNeighborhoods={availableNeighborhoods}
-            availableCities={availableCities}
+            neighborhoodGroups={neighborhoodGroups}
+            neighborhoodFilter={neighborhoodFilter}
+            onNeighborhoodChange={setNeighborhoodFilter}
           />
         )}
 
