@@ -311,6 +311,7 @@ export type Database = {
           updated_at: string
           user_id: string
           valor_potencial_m2: number | null
+          valor_potencial_median_m2: number | null
           valor_potencial_total: number | null
         }
         Insert: {
@@ -328,6 +329,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           valor_potencial_m2?: number | null
+          valor_potencial_median_m2?: number | null
           valor_potencial_total?: number | null
         }
         Update: {
@@ -345,6 +347,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valor_potencial_m2?: number | null
+          valor_potencial_median_m2?: number | null
           valor_potencial_total?: number | null
         }
         Relationships: [

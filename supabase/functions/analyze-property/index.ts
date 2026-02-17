@@ -351,6 +351,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     console.log("Querying comparables...");
     let valorPotencialM2: number | null = null;
     let valorPotencialTotal: number | null = null;
+    let valorPotencialMedianM2: number | null = null;
     let comparablesCount = 0;
     let oportunidadAjustada: number | null = null;
     let oportunidadNeta: number | null = null;
@@ -416,11 +417,16 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
         const prices = comparables.map((c: any) => Number(c.price_per_m2_total));
         comparablesCount = prices.length;
 
-        // Q3 = upper quartile → premium m2 value
-        valorPotencialM2 = Math.round(q3(prices));
+        // Q3 = upper quartile, median = middle value
+        const q3Val = Math.round(q3(prices));
+        const medianVal = Math.round(median(prices));
+        // Average of median and Q3 as the "final" potential value
+        valorPotencialM2 = Math.round((medianVal + q3Val) / 2);
         valorPotencialTotal = Math.round(valorPotencialM2 * surfaceTotal);
+        // Store median separately for range display
+        valorPotencialMedianM2 = medianVal;
 
-        console.log(`Comparables: ${comparablesCount}, Q3 USD/m²: ${valorPotencialM2}, Valor potencial: USD ${valorPotencialTotal}`);
+        console.log(`Comparables: ${comparablesCount}, Median: ${medianVal}, Q3: ${q3Val}, Avg: ${valorPotencialM2}, Valor potencial: USD ${valorPotencialTotal}`);
 
         // Calculate opportunity indicators if we have price data
         if (pricePerM2 && pricePerM2 > 0) {
@@ -462,6 +468,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       estado_general: estado,
       valor_potencial_m2: valorPotencialM2,
       valor_potencial_total: valorPotencialTotal,
+      valor_potencial_median_m2: valorPotencialMedianM2,
       comparables_count: comparablesCount,
       oportunidad_ajustada: oportunidadAjustada,
       oportunidad_neta: oportunidadNeta,
@@ -492,6 +499,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
           estado_general: estado,
           valor_potencial_m2: valorPotencialM2,
           valor_potencial_total: valorPotencialTotal,
+          valor_potencial_median_m2: valorPotencialMedianM2,
           comparables_count: comparablesCount,
           oportunidad_ajustada: oportunidadAjustada,
           oportunidad_neta: oportunidadNeta,
