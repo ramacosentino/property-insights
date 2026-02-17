@@ -43,6 +43,11 @@ Deno.serve(async (req) => {
     if (filters.neighborhoods?.length > 0) {
       query = query.in("neighborhood", filters.neighborhoods);
     }
+    if (filters.excluded_neighborhoods?.length > 0) {
+      for (const excluded of filters.excluded_neighborhoods) {
+        query = query.neq("neighborhood", excluded);
+      }
+    }
     if (filters.cities?.length > 0) {
       query = query.in("city", filters.cities);
     }

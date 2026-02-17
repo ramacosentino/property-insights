@@ -488,6 +488,7 @@ const Busqueda = () => {
     const finalFilters = {
       ...filters,
       neighborhoods: Array.from(neighborhoodFilter.included),
+      excluded_neighborhoods: Array.from(neighborhoodFilter.excluded),
     };
 
     // Create search run in DB
