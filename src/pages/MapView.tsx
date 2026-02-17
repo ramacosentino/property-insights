@@ -327,8 +327,6 @@ const MapView = () => {
   };
 
   const totalProperties = properties.length;
-  const geocodedCount = properties.filter((p) => geocodedCoords.has(p.address || p.location)).length;
-  const progressPct = totalProperties > 0 ? Math.round((geocodedCount / totalProperties) * 100) : 0;
 
   const allPrices = useMemo(() => {
     const prices = properties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0).map((p) => p.pricePerM2Total!);
@@ -1239,41 +1237,18 @@ const MapView = () => {
         {/* ===== DESKTOP: Legend + sidebar ===== */}
         {!isMobile && (
           <>
-            {/* Legend + opportunity threshold - bottom left */}
-            <div className="absolute bottom-4 left-4 glass-card rounded-2xl p-4 z-[1000] w-[260px] space-y-3">
-              {legendContent}
-              <div className="border-t border-border pt-3">
-                {thresholdContent}
-              </div>
-            </div>
-
             {/* Right sidebar */}
             <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all`} style={{ top: showFilters ? `${filterPanelHeight + 16}px` : '16px' }}>
               <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
                 {selectedProvince ? selectedDealsContent : statsListContent}
               </div>
 
-              {/* Geocoding progress */}
-              <div className="glass-card rounded-2xl p-4 shrink-0">
-                <p className="text-xs font-medium text-foreground mb-2">📍 Geocodificación</p>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-mono text-primary">{progressPct}%</span>
+              {/* USD/m² legend + opportunity threshold */}
+              <div className="glass-card rounded-2xl p-4 shrink-0 space-y-3">
+                {legendContent}
+                <div className="border-t border-border pt-3">
+                  {thresholdContent}
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {geocodedCount.toLocaleString()} / {totalProperties.toLocaleString()} propiedades
-                </p>
-                {progressPct < 100 && (
-                  <p className="text-[11px] text-muted-foreground mt-1 opacity-60">Procesando automáticamente...</p>
-                )}
-                {progressPct === 100 && (
-                  <p className="text-[11px] text-primary mt-1">✓ Completo</p>
-                )}
               </div>
             </div>
           </>
