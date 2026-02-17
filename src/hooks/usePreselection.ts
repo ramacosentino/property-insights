@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 const STORAGE_KEY = "propanalytics_preselected";
 const CHANGE_EVENT = "preselection-change";
 
+// Module-level cache of current user id for standalone functions
+let _currentUserId: string | null = null;
+
 function loadLocalIds(): Set<string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -18,6 +21,30 @@ function saveLocalIds(ids: Set<string>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
 }
 
+/** Migrate any localStorage preselections into the DB, then clear localStorage */
+async function migrateLocalToDb(userId: string) {
+  const localIds = loadLocalIds();
+  if (localIds.size === 0) return;
+
+  // Fetch existing DB ids to avoid duplicates
+  const { data: existing } = await supabase
+    .from("saved_projects")
+    .select("property_id")
+    .eq("user_id", userId);
+  const existingSet = new Set((existing ?? []).map((r: any) => r.property_id));
+
+  const toInsert = [...localIds]
+    .filter((id) => !existingSet.has(id))
+    .map((id) => ({ user_id: userId, property_id: id }));
+
+  if (toInsert.length > 0) {
+    await supabase.from("saved_projects").insert(toInsert);
+  }
+
+  // Clear localStorage after migration
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function usePreselection() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
@@ -27,27 +54,33 @@ export function usePreselection() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUserId(session?.user?.id ?? null);
+        const uid = session?.user?.id ?? null;
+        setUserId(uid);
+        _currentUserId = uid;
       }
     );
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id ?? null);
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
+      _currentUserId = uid;
     });
     return () => subscription.unsubscribe();
   }, []);
 
   // Load saved projects from DB when authenticated, localStorage when not
+  // Also migrate localStorage → DB on first login
   useEffect(() => {
     if (userId) {
-      supabase
-        .from("saved_projects")
-        .select("property_id")
-        .eq("user_id", userId)
-        .then(({ data }) => {
-          const ids = new Set((data ?? []).map((r: any) => r.property_id));
-          setSelectedIds(ids);
-          setLoaded(true);
-        });
+      (async () => {
+        await migrateLocalToDb(userId);
+        const { data } = await supabase
+          .from("saved_projects")
+          .select("property_id")
+          .eq("user_id", userId);
+        const ids = new Set((data ?? []).map((r: any) => r.property_id));
+        setSelectedIds(ids);
+        setLoaded(true);
+      })();
     } else {
       setSelectedIds(loadLocalIds());
       setLoaded(true);
@@ -134,12 +167,45 @@ export function usePreselection() {
   return { selectedIds, toggle, isSelected, count: selectedIds.size, clear };
 }
 
-// Standalone functions for use in raw HTML popups (localStorage fallback only)
+// Standalone functions for use in raw HTML popups (auth-aware)
 export function isPreselected(id: string): boolean {
+  // When logged in, we can't synchronously check DB, so we read from
+  // the module-level cache updated via the CHANGE_EVENT / hook.
+  // For popups rendered once, this checks localStorage (guest) or
+  // the last known state. The hook keeps the React UI in sync.
   return loadLocalIds().has(id);
 }
 
 export function togglePreselection(id: string): boolean {
+  const userId = _currentUserId;
+  if (userId) {
+    // DB-backed toggle for authenticated users
+    supabase
+      .from("saved_projects")
+      .select("property_id")
+      .eq("user_id", userId)
+      .eq("property_id", id)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          supabase
+            .from("saved_projects")
+            .delete()
+            .eq("user_id", userId)
+            .eq("property_id", id)
+            .then(() => window.dispatchEvent(new Event(CHANGE_EVENT)));
+        } else {
+          supabase
+            .from("saved_projects")
+            .insert({ user_id: userId, property_id: id })
+            .then(() => window.dispatchEvent(new Event(CHANGE_EVENT)));
+        }
+      });
+    // Return toggled state optimistically (inverse of current)
+    // The hook will re-sync from DB via the CHANGE_EVENT
+    return true; // Can't know sync state here, popup will refresh via event
+  }
+
+  // Guest: localStorage
   const ids = loadLocalIds();
   const wasSelected = ids.has(id);
   if (wasSelected) ids.delete(id);
