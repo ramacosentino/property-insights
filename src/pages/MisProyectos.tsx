@@ -7,7 +7,7 @@ import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info, XCircle, RotateCcw, Archive } from "lucide-react";
+import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info, XCircle, RotateCcw, Archive, ArrowUpDown } from "lucide-react";
 import NeighborhoodSection from "@/components/NeighborhoodSection";
 import { NeighborhoodStats } from "@/lib/propertyData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -23,6 +23,7 @@ interface UserAnalysis {
   estado_general: string | null;
   valor_potencial_m2: number | null;
   valor_potencial_total: number | null;
+  valor_potencial_median_m2: number | null;
   comparables_count: number | null;
   oportunidad_ajustada: number | null;
   oportunidad_neta: number | null;
@@ -52,6 +53,34 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
         </div>
       )}
       <PropertyCard property={property} />
+
+      {/* Extra property details */}
+      <div className="border border-t-0 border-border bg-card px-4 py-2.5 -mt-1 grid grid-cols-3 gap-x-3 gap-y-1.5 text-[11px]">
+        {property.propertyType && (
+          <div><span className="text-muted-foreground">Tipo:</span> <span className="font-medium">{property.propertyType}</span></div>
+        )}
+        {property.surfaceCovered != null && (
+          <div><span className="text-muted-foreground">m² cub:</span> <span className="font-mono font-medium">{property.surfaceCovered}</span></div>
+        )}
+        {property.ageYears != null && (
+          <div><span className="text-muted-foreground">Antig:</span> <span className="font-mono font-medium">{property.ageYears} años</span></div>
+        )}
+        {property.parking != null && property.parking > 0 && (
+          <div><span className="text-muted-foreground">Cocheras:</span> <span className="font-mono font-medium">{property.parking}</span></div>
+        )}
+        {property.expenses != null && property.expenses > 0 && (
+          <div><span className="text-muted-foreground">Expensas:</span> <span className="font-mono font-medium">${property.expenses.toLocaleString()}</span></div>
+        )}
+        {property.disposition && (
+          <div><span className="text-muted-foreground">Disp:</span> <span className="font-medium">{property.disposition}</span></div>
+        )}
+        {property.orientation && (
+          <div><span className="text-muted-foreground">Orient:</span> <span className="font-medium">{property.orientation}</span></div>
+        )}
+        {property.luminosity && (
+          <div><span className="text-muted-foreground">Luz:</span> <span className="font-medium">{property.luminosity}</span></div>
+        )}
+      </div>
 
       {hasAnalysis ? (
         <TooltipProvider delayDuration={200}>
@@ -96,7 +125,17 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
           </div>
 
           {/* Valor Potencial */}
-          {raw.valor_potencial_total != null && (
+          {raw.valor_potencial_total != null && (() => {
+            const medianM2 = raw.valor_potencial_median_m2;
+            // valor_potencial_m2 is now the average of median & Q3
+            const avgM2 = raw.valor_potencial_m2;
+            // Compute Q3 from avg = (median + Q3) / 2 → Q3 = 2*avg - median
+            const q3M2 = medianM2 != null && avgM2 != null ? Math.round(2 * avgM2 - medianM2) : null;
+            const surfaceTotal = property.surfaceTotal || 0;
+            const medianTotal = medianM2 != null && surfaceTotal > 0 ? Math.round(medianM2 * surfaceTotal) : null;
+            const q3Total = q3M2 != null && surfaceTotal > 0 ? Math.round(q3M2 * surfaceTotal) : null;
+
+            return (
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <DollarSign className="h-3.5 w-3.5 text-primary" />
@@ -104,7 +143,7 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
                 <Tooltip>
                   <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[250px] text-xs">
-                    Precio estimado si la propiedad estuviera en condiciones premium. Se calcula con el cuartil superior (Q3) del USD/m² de propiedades comparables.
+                    Rango estimado entre la mediana y el cuartil superior (Q3) del USD/m² de comparables. El valor final es el promedio de ambos.
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -113,11 +152,27 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
                   USD {raw.valor_potencial_total.toLocaleString()}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  USD {raw.valor_potencial_m2?.toLocaleString()}/m² · {raw.comparables_count} comp.
+                  {raw.comparables_count} comp.
                 </span>
               </div>
+              {medianTotal != null && q3Total != null && (
+                <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+                  <span>Rango:</span>
+                  <span className="text-foreground/70">USD {medianTotal.toLocaleString()}</span>
+                  <span>–</span>
+                  <span className="text-foreground/70">USD {q3Total.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+                <span>USD/m²:</span>
+                <span className="text-foreground/70">{medianM2?.toLocaleString() ?? "—"}</span>
+                <span>–</span>
+                <span className="text-foreground/70">{q3M2?.toLocaleString() ?? "—"}</span>
+                <span className="ml-1">(prom: {avgM2?.toLocaleString() ?? "—"})</span>
+              </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* Opportunity Indicators */}
           {(raw.oportunidad_ajustada != null || raw.oportunidad_neta != null) && (
@@ -360,6 +415,7 @@ const MisProyectos = () => {
   const [tab, setTab] = useState<"active" | "discarded">("active");
   const [userAnalyses, setUserAnalyses] = useState<Record<string, UserAnalysis>>({});
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<string>("none");
 
   // Fetch user analyses and discarded state
   useEffect(() => {
@@ -380,6 +436,7 @@ const MisProyectos = () => {
             estado_general: a.estado_general,
             valor_potencial_m2: a.valor_potencial_m2,
             valor_potencial_total: a.valor_potencial_total,
+            valor_potencial_median_m2: (a as any).valor_potencial_median_m2 ?? null,
             comparables_count: a.comparables_count,
             oportunidad_ajustada: a.oportunidad_ajustada,
             oportunidad_neta: a.oportunidad_neta,
@@ -482,7 +539,27 @@ const MisProyectos = () => {
     toast({ title: "Proyecto restaurado" });
   };
 
-  const displayProjects = tab === "active" ? activeProjects : discardedProjects;
+  const baseProjects = tab === "active" ? activeProjects : discardedProjects;
+  
+  const displayProjects = [...baseProjects].sort((a, b) => {
+    const aa = userAnalyses[a.id];
+    const ab = userAnalyses[b.id];
+    switch (sortBy) {
+      case "ganancia":
+        return (ab?.oportunidad_neta ?? -Infinity) - (aa?.oportunidad_neta ?? -Infinity);
+      case "oportunidad": {
+        const scoreA = aa?.oportunidad_ajustada != null ? ((Math.max(-40, Math.min(40, aa.oportunidad_ajustada)) + 40) / 80) * 10 : -1;
+        const scoreB = ab?.oportunidad_ajustada != null ? ((Math.max(-40, Math.min(40, ab.oportunidad_ajustada)) + 40) / 80) * 10 : -1;
+        return scoreB - scoreA;
+      }
+      case "precio":
+        return (a.price ?? Infinity) - (b.price ?? Infinity);
+      case "usdm2":
+        return (a.pricePerM2Total ?? Infinity) - (b.pricePerM2Total ?? Infinity);
+      default:
+        return 0;
+    }
+  });
 
   return (
     <Layout>
@@ -532,6 +609,24 @@ const MisProyectos = () => {
               <Archive className="h-3.5 w-3.5" />
               Descartados ({discardedProjects.length})
             </button>
+          </div>
+        )}
+
+        {/* Sort */}
+        {baseProjects.length > 1 && (
+          <div className="flex items-center gap-2 mb-4">
+            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-xs bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-foreground"
+            >
+              <option value="none">Sin ordenar</option>
+              <option value="ganancia">Ganancia Neta Est. ↓</option>
+              <option value="oportunidad">Oportunidad ↓</option>
+              <option value="precio">Precio ↑</option>
+              <option value="usdm2">USD/m² ↑</option>
+            </select>
           </div>
         )}
 

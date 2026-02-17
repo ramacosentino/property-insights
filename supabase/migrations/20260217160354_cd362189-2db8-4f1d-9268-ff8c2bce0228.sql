@@ -1,0 +1,1 @@
+ALTER TABLE public.user_property_analysis ADD COLUMN valor_potencial_median_m2 numeric DEFAULT NULL;
