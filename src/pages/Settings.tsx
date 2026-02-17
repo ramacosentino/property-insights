@@ -268,6 +268,84 @@ const RenovationCostsSection = () => {
   );
 };
 
+const GeocodingSection = () => {
+  const [stats, setStats] = useState<{ total: number; geocoded: number } | null>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const { count: total } = await supabase
+        .from("properties")
+        .select("*", { count: "exact", head: true });
+      const { count: geocoded } = await supabase
+        .from("geocoded_addresses")
+        .select("*", { count: "exact", head: true })
+        .not("lat", "is", null)
+        .neq("lat", 0);
+      setStats({ total: total ?? 0, geocoded: geocoded ?? 0 });
+    };
+    fetchStats();
+  }, []);
+
+  const progressPct = stats && stats.total > 0 ? Math.round((stats.geocoded / stats.total) * 100) : 0;
+
+  return (
+    <div className="glass-card rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 flex items-center gap-2 text-left hover:bg-secondary/30 transition-all"
+      >
+        <span className="text-lg">📍</span>
+        <div className="flex-1">
+          <h3 className="text-base font-semibold">Geocodificación</h3>
+          <p className="text-xs text-muted-foreground">
+            Estado del proceso de geocodificación de propiedades
+          </p>
+        </div>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="px-5 pb-5 space-y-4">
+          {stats ? (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-500"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+                <span className="text-sm font-mono text-primary font-semibold">{progressPct}%</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-secondary/30 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">Geocodificadas</span>
+                  <span className="block text-lg font-mono font-semibold text-foreground">{stats.geocoded.toLocaleString()}</span>
+                </div>
+                <div className="rounded-lg bg-secondary/30 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">Total propiedades</span>
+                  <span className="block text-lg font-mono font-semibold text-foreground">{stats.total.toLocaleString()}</span>
+                </div>
+              </div>
+              {progressPct < 100 && (
+                <p className="text-xs text-muted-foreground">Las propiedades se geocodifican automáticamente en segundo plano.</p>
+              )}
+              {progressPct === 100 && (
+                <p className="text-xs text-primary font-medium">✓ Todas las propiedades están geocodificadas</p>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Settings = () => {
   const [logs, setLogs] = useState<UploadLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,6 +387,9 @@ const Settings = () => {
 
         {/* Renovation costs */}
         <RenovationCostsSection />
+
+        {/* Geocoding */}
+        <GeocodingSection />
 
         {/* Upload history */}
         <div className="glass-card rounded-xl border border-border overflow-hidden">
