@@ -78,12 +78,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { property_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
+    const { property_id, user_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
     console.log("Received renovation_costs:", JSON.stringify(renovation_costs));
 
     if (!property_id) {
       return new Response(
         JSON.stringify({ success: false, error: "property_id is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!user_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: "user_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -444,25 +451,28 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       }
     }
 
-    // 7. Update property in DB
-    const { error: updateError } = await supabase
-      .from("properties")
-      .update({
-        score_multiplicador: score,
-        informe_breve: informe,
-        highlights,
-        lowlights,
-        estado_general: estado,
-        valor_potencial_m2: valorPotencialM2,
-        valor_potencial_total: valorPotencialTotal,
-        comparables_count: comparablesCount,
-        oportunidad_ajustada: oportunidadAjustada,
-        oportunidad_neta: oportunidadNeta,
-      })
-      .eq("id", property_id);
+    // 7. Save analysis to user_property_analysis (private per user)
+    const analysisData = {
+      user_id,
+      property_id,
+      score_multiplicador: score,
+      informe_breve: informe,
+      highlights,
+      lowlights,
+      estado_general: estado,
+      valor_potencial_m2: valorPotencialM2,
+      valor_potencial_total: valorPotencialTotal,
+      comparables_count: comparablesCount,
+      oportunidad_ajustada: oportunidadAjustada,
+      oportunidad_neta: oportunidadNeta,
+    };
 
-    if (updateError) {
-      console.error("DB update error:", updateError);
+    const { error: upsertError } = await supabase
+      .from("user_property_analysis")
+      .upsert(analysisData, { onConflict: "user_id,property_id" });
+
+    if (upsertError) {
+      console.error("DB upsert error:", upsertError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to save analysis" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

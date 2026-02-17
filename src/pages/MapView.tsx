@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import FlagLocationButton from "@/components/FlagLocationButton";
-import { usePreselection, togglePreselection, isPreselected } from "@/hooks/usePreselection";
+import { usePreselection, togglePreselection, isPreselected, isDiscardedProject } from "@/hooks/usePreselection";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
 import ReactDOM from "react-dom";
 import Layout from "@/components/Layout";
@@ -230,6 +230,7 @@ const MapView = () => {
   useEffect(() => {
     (window as any).__togglePreselection = togglePreselection;
     (window as any).__isPreselected = isPreselected;
+    (window as any).__isDiscardedProject = isDiscardedProject;
   }, []);
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
@@ -627,6 +628,9 @@ const MapView = () => {
         marker._colorMax = maxPrice;
         marker.bindPopup(
           `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
+            ${isDiscardedProject(p.id) ? `<div style="background:hsl(0,84%,60%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+              ✕ Descartado
+            </div><br/>` : ""}
             ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
               ⚠ Poca información
             </div><br/>` : isDeal ? `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
@@ -685,6 +689,9 @@ const MapView = () => {
         L.marker(coords, { icon: dealIcon })
           .bindPopup(
             `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
+              ${isDiscardedProject(p.id) ? `<div style="background:hsl(0,84%,60%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+                ✕ Descartado
+              </div><br/>` : ""}
               ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
                 ⚠ Poca información
               </div><br/>` : `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">

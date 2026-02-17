@@ -218,6 +218,7 @@ export type Database = {
       saved_projects: {
         Row: {
           created_at: string
+          discarded_at: string | null
           id: string
           notes: string | null
           property_id: string
@@ -225,6 +226,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discarded_at?: string | null
           id?: string
           notes?: string | null
           property_id: string
@@ -232,6 +234,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discarded_at?: string | null
           id?: string
           notes?: string | null
           property_id?: string
@@ -291,6 +294,68 @@ export type Database = {
           total_rows?: number | null
         }
         Relationships: []
+      }
+      user_property_analysis: {
+        Row: {
+          comparables_count: number | null
+          created_at: string
+          estado_general: string | null
+          highlights: string[] | null
+          id: string
+          informe_breve: string | null
+          lowlights: string[] | null
+          oportunidad_ajustada: number | null
+          oportunidad_neta: number | null
+          property_id: string
+          score_multiplicador: number | null
+          updated_at: string
+          user_id: string
+          valor_potencial_m2: number | null
+          valor_potencial_total: number | null
+        }
+        Insert: {
+          comparables_count?: number | null
+          created_at?: string
+          estado_general?: string | null
+          highlights?: string[] | null
+          id?: string
+          informe_breve?: string | null
+          lowlights?: string[] | null
+          oportunidad_ajustada?: number | null
+          oportunidad_neta?: number | null
+          property_id: string
+          score_multiplicador?: number | null
+          updated_at?: string
+          user_id: string
+          valor_potencial_m2?: number | null
+          valor_potencial_total?: number | null
+        }
+        Update: {
+          comparables_count?: number | null
+          created_at?: string
+          estado_general?: string | null
+          highlights?: string[] | null
+          id?: string
+          informe_breve?: string | null
+          lowlights?: string[] | null
+          oportunidad_ajustada?: number | null
+          oportunidad_neta?: number | null
+          property_id?: string
+          score_multiplicador?: number | null
+          updated_at?: string
+          user_id?: string
+          valor_potencial_m2?: number | null
+          valor_potencial_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_property_analysis_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

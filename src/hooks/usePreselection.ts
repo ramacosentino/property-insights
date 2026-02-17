@@ -45,8 +45,12 @@ async function migrateLocalToDb(userId: string) {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+// Module-level discarded set for standalone functions
+let _discardedIds: Set<string> = new Set();
+
 export function usePreselection() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -75,14 +79,19 @@ export function usePreselection() {
         await migrateLocalToDb(userId);
         const { data } = await supabase
           .from("saved_projects")
-          .select("property_id")
+          .select("property_id, discarded_at")
           .eq("user_id", userId);
-        const ids = new Set((data ?? []).map((r: any) => r.property_id));
-        setSelectedIds(ids);
+        const allIds = new Set((data ?? []).map((r: any) => r.property_id));
+        const discarded = new Set((data ?? []).filter((r: any) => r.discarded_at).map((r: any) => r.property_id));
+        setSelectedIds(allIds);
+        setDiscardedIds(discarded);
+        _discardedIds = discarded;
         setLoaded(true);
       })();
     } else {
       setSelectedIds(loadLocalIds());
+      setDiscardedIds(new Set());
+      _discardedIds = new Set();
       setLoaded(true);
     }
   }, [userId]);
@@ -136,10 +145,13 @@ export function usePreselection() {
     const handler = () => {
       supabase
         .from("saved_projects")
-        .select("property_id")
+        .select("property_id, discarded_at")
         .eq("user_id", userId)
         .then(({ data }) => {
           setSelectedIds(new Set((data ?? []).map((r: any) => r.property_id)));
+          const discarded = new Set((data ?? []).filter((r: any) => r.discarded_at).map((r: any) => r.property_id));
+          setDiscardedIds(discarded);
+          _discardedIds = discarded;
         });
     };
     window.addEventListener(CHANGE_EVENT, handler);
@@ -164,7 +176,12 @@ export function usePreselection() {
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }, [userId]);
 
-  return { selectedIds, toggle, isSelected, count: selectedIds.size, clear };
+  const isDiscarded = useCallback(
+    (id: string) => discardedIds.has(id),
+    [discardedIds]
+  );
+
+  return { selectedIds, discardedIds, toggle, isSelected, isDiscarded, count: selectedIds.size, clear };
 }
 
 // Standalone functions for use in raw HTML popups (auth-aware)
@@ -213,4 +230,8 @@ export function togglePreselection(id: string): boolean {
   saveLocalIds(ids);
   window.dispatchEvent(new Event(CHANGE_EVENT));
   return !wasSelected;
+}
+
+export function isDiscardedProject(id: string): boolean {
+  return _discardedIds.has(id);
 }
