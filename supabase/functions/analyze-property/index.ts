@@ -111,25 +111,37 @@ Deno.serve(async (req) => {
 
     console.log(`Analyzing property ${property_id}: ${prop.url}`);
 
-    // 2. Scrape with Firecrawl
+    // 2. Scrape with Firecrawl (with retry on timeout)
     console.log("Scraping with Firecrawl...");
-    const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: prop.url,
-        formats: ["markdown", "screenshot", "links"],
-        onlyMainContent: true,
-        waitFor: 3000,
-      }),
-    });
+    let scrapeData: any = null;
+    const waitTimes = [5000, 10000]; // retry with increasing wait
+    for (let attempt = 0; attempt < waitTimes.length; attempt++) {
+      const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${firecrawlKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: prop.url,
+          formats: ["markdown", "screenshot", "links"],
+          onlyMainContent: true,
+          waitFor: waitTimes[attempt],
+        }),
+      });
 
-    const scrapeData = await scrapeResponse.json();
+      scrapeData = await scrapeResponse.json();
 
-    if (!scrapeResponse.ok || !scrapeData.success) {
+      if (scrapeResponse.ok && scrapeData.success) {
+        break; // success
+      }
+
+      const isTimeout = scrapeData?.code === "SCRAPE_TIMEOUT";
+      if (isTimeout && attempt < waitTimes.length - 1) {
+        console.log(`Scrape timeout (attempt ${attempt + 1}), retrying with longer wait...`);
+        continue;
+      }
+
       console.error("Firecrawl error:", JSON.stringify(scrapeData));
       return new Response(
         JSON.stringify({ success: false, error: `Scraping failed: ${scrapeData.error || "Unknown error"}` }),
