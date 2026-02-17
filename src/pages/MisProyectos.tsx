@@ -7,7 +7,7 @@ import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info, XCircle, RotateCcw, Archive, ArrowUpDown } from "lucide-react";
+import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info, Archive, ArrowUpDown } from "lucide-react";
 import NeighborhoodSection from "@/components/NeighborhoodSection";
 import { NeighborhoodStats } from "@/lib/propertyData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -45,42 +45,7 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
 
   return (
     <div className="space-y-0 relative">
-      {isDiscarded && (
-        <div className="absolute top-2 left-2 z-10">
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/20 text-destructive border border-destructive/30">
-            Descartado
-          </span>
-        </div>
-      )}
-      <PropertyCard property={property} />
-
-      {/* Extra property details */}
-      <div className="border border-t-0 border-border bg-card px-4 py-2.5 -mt-1 grid grid-cols-3 gap-x-3 gap-y-1.5 text-[11px]">
-        {property.propertyType && (
-          <div><span className="text-muted-foreground">Tipo:</span> <span className="font-medium">{property.propertyType}</span></div>
-        )}
-        {property.surfaceCovered != null && (
-          <div><span className="text-muted-foreground">m² cub:</span> <span className="font-mono font-medium">{property.surfaceCovered}</span></div>
-        )}
-        {property.ageYears != null && (
-          <div><span className="text-muted-foreground">Antig:</span> <span className="font-mono font-medium">{property.ageYears} años</span></div>
-        )}
-        {property.parking != null && property.parking > 0 && (
-          <div><span className="text-muted-foreground">Cocheras:</span> <span className="font-mono font-medium">{property.parking}</span></div>
-        )}
-        {property.expenses != null && property.expenses > 0 && (
-          <div><span className="text-muted-foreground">Expensas:</span> <span className="font-mono font-medium">${property.expenses.toLocaleString()}</span></div>
-        )}
-        {property.disposition && (
-          <div><span className="text-muted-foreground">Disp:</span> <span className="font-medium">{property.disposition}</span></div>
-        )}
-        {property.orientation && (
-          <div><span className="text-muted-foreground">Orient:</span> <span className="font-medium">{property.orientation}</span></div>
-        )}
-        {property.luminosity && (
-          <div><span className="text-muted-foreground">Luz:</span> <span className="font-medium">{property.luminosity}</span></div>
-        )}
-      </div>
+      <PropertyCard property={property} onDiscard={onDiscard} onRestore={onRestore} isDiscarded={isDiscarded} />
 
       {hasAnalysis ? (
         <TooltipProvider delayDuration={200}>
@@ -342,28 +307,11 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
                 </>
               )}
             </button>
-            {isDiscarded ? (
-              <button
-                onClick={() => onRestore?.(property.id)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-all"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Restaurar
-              </button>
-            ) : (
-              <button
-                onClick={() => onDiscard?.(property.id)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-medium border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all"
-              >
-                <XCircle className="h-3 w-3" />
-                Descartar
-              </button>
-            )}
           </div>
         </div>
         </TooltipProvider>
       ) : (
-        <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 -mt-1 space-y-2">
+        <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 -mt-1">
           <button
             onClick={() => onAnalyze(property.id)}
             disabled={isAnalyzing}
@@ -381,23 +329,6 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
               </>
             )}
           </button>
-          {isDiscarded ? (
-            <button
-              onClick={() => onRestore?.(property.id)}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-all"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Restaurar
-            </button>
-          ) : (
-            <button
-              onClick={() => onDiscard?.(property.id)}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all"
-            >
-              <XCircle className="h-3 w-3" />
-              Descartar
-            </button>
-          )}
         </div>
       )}
     </div>
