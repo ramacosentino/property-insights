@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,7 +7,7 @@ import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info } from "lucide-react";
+import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info, XCircle, RotateCcw, Archive } from "lucide-react";
 import NeighborhoodSection from "@/components/NeighborhoodSection";
 import { NeighborhoodStats } from "@/lib/propertyData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,27 +15,42 @@ import { useToast } from "@/hooks/use-toast";
 import { getSurfaceType, getMinSurfaceEnabled, getRenovationCosts } from "@/pages/Settings";
 import { useQueryClient } from "@tanstack/react-query";
 
-interface AnalysisResult {
-  score_multiplicador: number;
-  informe_breve: string;
-  highlights: string[];
-  lowlights: string[];
-  estado_general: string;
+interface UserAnalysis {
+  score_multiplicador: number | null;
+  informe_breve: string | null;
+  highlights: string[] | null;
+  lowlights: string[] | null;
+  estado_general: string | null;
+  valor_potencial_m2: number | null;
+  valor_potencial_total: number | null;
+  comparables_count: number | null;
+  oportunidad_ajustada: number | null;
+  oportunidad_neta: number | null;
 }
 
-const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighborhoodStats }: {
+const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allProperties, neighborhoodStats, onDiscard, onRestore, isDiscarded }: {
   property: Property;
+  analysis: UserAnalysis | null;
   onAnalyze: (id: string) => void;
   isAnalyzing: boolean;
   allProperties: Property[];
   neighborhoodStats: Map<string, NeighborhoodStats>;
+  onDiscard?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  isDiscarded?: boolean;
 }) => {
-  // Check if property already has analysis data from DB
-  const raw = property as any;
-  const hasAnalysis = raw.score_multiplicador != null;
+  const hasAnalysis = analysis?.score_multiplicador != null;
+  const raw = analysis || {} as any;
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0 relative">
+      {isDiscarded && (
+        <div className="absolute top-2 left-2 z-10">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/20 text-destructive border border-destructive/30">
+            Descartado
+          </span>
+        </div>
+      )}
       <PropertyCard property={property} />
 
       {hasAnalysis ? (
@@ -61,7 +76,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
                 <Tooltip>
                   <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[220px] text-xs">
-                    Multiplicador de valor: 1.0 = promedio. Mayor a 1 = mejor que el promedio. Se usa para ajustar el precio estimado post-renovación.
+                    Multiplicador de valor: 1.0 = promedio. Mayor a 1 = mejor que el promedio.
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -89,7 +104,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
                 <Tooltip>
                   <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[250px] text-xs">
-                    Precio estimado si la propiedad estuviera en condiciones premium. Se calcula con el cuartil superior (Q3) del USD/m² de propiedades comparables (mismo tipo, tamaño similar, misma zona).
+                    Precio estimado si la propiedad estuviera en condiciones premium. Se calcula con el cuartil superior (Q3) del USD/m² de propiedades comparables.
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -147,7 +162,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
                       <Tooltip>
                         <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
                         <TooltipContent side="top" className="max-w-[240px] text-xs">
-                          Combina qué tan barata está la propiedad vs. el mercado con su estado físico. 10 = muy barata y en gran estado. 0 = cara y en mal estado.
+                          Combina qué tan barata está la propiedad vs. el mercado con su estado físico. 10 = muy barata y en gran estado.
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -165,7 +180,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
                 );
               })()}
               {raw.oportunidad_neta != null && (() => {
-                const precio = raw.price || 0;
+                const precio = property.price || 0;
                 const valorPot = raw.valor_potencial_total || 0;
                 const renovCost = Math.round(valorPot - precio - raw.oportunidad_neta);
 
@@ -207,7 +222,7 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
               <Tooltip>
                 <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[220px] text-xs">
-                  Resumen generado por IA sobre el estado, características y valor relativo de la propiedad.
+                  Resumen generado por IA sobre el estado y valor relativo de la propiedad.
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -220,12 +235,6 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
               <div>
                 <div className="flex items-center gap-1">
                   <span className="text-[10px] text-green-500 font-medium uppercase tracking-wider">Highlights</span>
-                  <Tooltip>
-                    <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[200px] text-xs">
-                      Aspectos positivos detectados por la IA en la publicación y fotos.
-                    </TooltipContent>
-                  </Tooltip>
                 </div>
                 <ul className="mt-1 space-y-0.5">
                   {raw.highlights.map((h: string, i: number) => (
@@ -240,12 +249,6 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
               <div>
                 <div className="flex items-center gap-1">
                   <span className="text-[10px] text-red-400 font-medium uppercase tracking-wider">Lowlights</span>
-                  <Tooltip>
-                    <TooltipTrigger><Info className="h-2.5 w-2.5 text-muted-foreground/50" /></TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[200px] text-xs">
-                      Aspectos negativos o riesgos detectados por la IA.
-                    </TooltipContent>
-                  </Tooltip>
                 </div>
                 <ul className="mt-1 space-y-0.5">
                   {raw.lowlights.map((l: string, i: number) => (
@@ -265,28 +268,47 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
             neighborhoodStats={neighborhoodStats}
           />
 
-          {/* Re-analyze button */}
-          <button
-            onClick={() => onAnalyze(property.id)}
-            disabled={isAnalyzing}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50"
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Re-analizando...
-              </>
+          {/* Actions row */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => onAnalyze(property.id)}
+              disabled={isAnalyzing}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Re-analizando...
+                </>
+              ) : (
+                <>
+                  <Search className="h-3 w-3" />
+                  Re-analizar
+                </>
+              )}
+            </button>
+            {isDiscarded ? (
+              <button
+                onClick={() => onRestore?.(property.id)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-all"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Restaurar
+              </button>
             ) : (
-              <>
-                <Search className="h-3 w-3" />
-                Re-analizar
-              </>
+              <button
+                onClick={() => onDiscard?.(property.id)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-medium border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all"
+              >
+                <XCircle className="h-3 w-3" />
+                Descartar
+              </button>
             )}
-          </button>
+          </div>
         </div>
         </TooltipProvider>
       ) : (
-        <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 -mt-1">
+        <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 -mt-1 space-y-2">
           <button
             onClick={() => onAnalyze(property.id)}
             disabled={isAnalyzing}
@@ -304,6 +326,23 @@ const AnalysisCard = ({ property, onAnalyze, isAnalyzing, allProperties, neighbo
               </>
             )}
           </button>
+          {isDiscarded ? (
+            <button
+              onClick={() => onRestore?.(property.id)}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-all"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Restaurar
+            </button>
+          ) : (
+            <button
+              onClick={() => onDiscard?.(property.id)}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all"
+            >
+              <XCircle className="h-3 w-3" />
+              Descartar
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -318,14 +357,57 @@ const MisProyectos = () => {
   const queryClient = useQueryClient();
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const { user, loading: authLoading } = useAuth();
+  const [tab, setTab] = useState<"active" | "discarded">("active");
+  const [userAnalyses, setUserAnalyses] = useState<Record<string, UserAnalysis>>({});
+  const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
+
+  // Fetch user analyses and discarded state
+  useEffect(() => {
+    if (!user) return;
+
+    supabase
+      .from("user_property_analysis")
+      .select("*")
+      .eq("user_id", user.id)
+      .then(({ data: analyses }) => {
+        const map: Record<string, UserAnalysis> = {};
+        (analyses ?? []).forEach((a: any) => {
+          map[a.property_id] = {
+            score_multiplicador: a.score_multiplicador,
+            informe_breve: a.informe_breve,
+            highlights: a.highlights,
+            lowlights: a.lowlights,
+            estado_general: a.estado_general,
+            valor_potencial_m2: a.valor_potencial_m2,
+            valor_potencial_total: a.valor_potencial_total,
+            comparables_count: a.comparables_count,
+            oportunidad_ajustada: a.oportunidad_ajustada,
+            oportunidad_neta: a.oportunidad_neta,
+          };
+        });
+        setUserAnalyses(map);
+      });
+
+    supabase
+      .from("saved_projects")
+      .select("property_id, discarded_at")
+      .eq("user_id", user.id)
+      .not("discarded_at", "is", null)
+      .then(({ data: discarded }) => {
+        setDiscardedIds(new Set((discarded ?? []).map((d: any) => d.property_id)));
+      });
+  }, [user]);
 
   if (!authLoading && !user) {
     return <Navigate to="/auth" replace />;
   }
 
   const preselected = properties.filter((p) => selectedIds.has(p.id));
+  const activeProjects = preselected.filter((p) => !discardedIds.has(p.id));
+  const discardedProjects = preselected.filter((p) => discardedIds.has(p.id));
 
   const handleAnalyze = async (propertyId: string) => {
+    if (!user) return;
     setAnalyzingIds((prev) => new Set([...prev, propertyId]));
 
     toast({
@@ -340,7 +422,7 @@ const MisProyectos = () => {
         renovationCosts[`${c.minScore}`] = c.costPerM2;
       });
       const { data, error } = await supabase.functions.invoke("analyze-property", {
-        body: { property_id: propertyId, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts },
+        body: { property_id: propertyId, user_id: user.id, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts },
       });
 
       if (error) throw error;
@@ -350,8 +432,11 @@ const MisProyectos = () => {
           title: "✅ Análisis completado",
           description: `Score: ${data.analysis.score_multiplicador}x — ${data.analysis.estado_general}`,
         });
-        // Force refresh properties to get updated data
-        await queryClient.refetchQueries({ queryKey: ["properties"] });
+        // Update local analysis cache
+        setUserAnalyses((prev) => ({
+          ...prev,
+          [propertyId]: data.analysis,
+        }));
       } else {
         throw new Error(data?.error || "Analysis failed");
       }
@@ -371,15 +456,43 @@ const MisProyectos = () => {
     }
   };
 
+  const handleDiscard = async (propertyId: string) => {
+    if (!user) return;
+    await supabase
+      .from("saved_projects")
+      .update({ discarded_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .eq("property_id", propertyId);
+    setDiscardedIds((prev) => new Set([...prev, propertyId]));
+    toast({ title: "Proyecto descartado", description: "Podés restaurarlo desde la pestaña Descartados." });
+  };
+
+  const handleRestore = async (propertyId: string) => {
+    if (!user) return;
+    await supabase
+      .from("saved_projects")
+      .update({ discarded_at: null })
+      .eq("user_id", user.id)
+      .eq("property_id", propertyId);
+    setDiscardedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(propertyId);
+      return next;
+    });
+    toast({ title: "Proyecto restaurado" });
+  };
+
+  const displayProjects = tab === "active" ? activeProjects : discardedProjects;
+
   return (
     <Layout>
       <div className="container px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight mb-1">Mis Proyectos</h2>
             <p className="text-muted-foreground">
-              {count > 0
-                ? `${count} propiedad${count !== 1 ? "es" : ""} preseleccionada${count !== 1 ? "s" : ""}`
+              {activeProjects.length > 0
+                ? `${activeProjects.length} activo${activeProjects.length !== 1 ? "s" : ""}${discardedProjects.length > 0 ? ` · ${discardedProjects.length} descartado${discardedProjects.length !== 1 ? "s" : ""}` : ""}`
                 : "Agregá propiedades usando la estrella ⭐ en cualquier vista"}
             </p>
           </div>
@@ -394,28 +507,72 @@ const MisProyectos = () => {
           )}
         </div>
 
+        {/* Tabs */}
+        {(activeProjects.length > 0 || discardedProjects.length > 0) && (
+          <div className="flex gap-1 mb-6 border-b border-border">
+            <button
+              onClick={() => setTab("active")}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                tab === "active"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Star className="h-3.5 w-3.5" />
+              Activos ({activeProjects.length})
+            </button>
+            <button
+              onClick={() => setTab("discarded")}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                tab === "discarded"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Archive className="h-3.5 w-3.5" />
+              Descartados ({discardedProjects.length})
+            </button>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
-        ) : preselected.length === 0 ? (
+        ) : displayProjects.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold text-muted-foreground mb-2">Sin propiedades preseleccionadas</h3>
-            <p className="text-sm text-muted-foreground max-w-md">
-              Navegá el mapa o la lista de propiedades y hacé click en la estrella ⭐ para agregar propiedades a tu preselección.
-            </p>
+            {tab === "active" ? (
+              <>
+                <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground mb-2">Sin propiedades activas</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Navegá el mapa o la lista de propiedades y hacé click en la estrella ⭐ para agregar propiedades a tu preselección.
+                </p>
+              </>
+            ) : (
+              <>
+                <Archive className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground mb-2">Sin proyectos descartados</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Los proyectos que descartes aparecerán acá. Podés restaurarlos en cualquier momento.
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {preselected.map((p) => (
+            {displayProjects.map((p) => (
               <AnalysisCard
                 key={p.id}
                 property={p}
+                analysis={userAnalyses[p.id] || null}
                 onAnalyze={handleAnalyze}
                 isAnalyzing={analyzingIds.has(p.id)}
                 allProperties={properties}
                 neighborhoodStats={data?.neighborhoodStats ?? new Map()}
+                onDiscard={handleDiscard}
+                onRestore={handleRestore}
+                isDiscarded={tab === "discarded"}
               />
             ))}
           </div>

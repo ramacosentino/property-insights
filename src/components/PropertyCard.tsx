@@ -14,18 +14,26 @@ interface PropertyCardProps {
 const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [manualAddress, setManualAddress] = useState("");
-  const { isSelected, toggle } = usePreselection();
+  const { isSelected, isDiscarded, toggle } = usePreselection();
   const isHighlighted = property.isTopOpportunity || property.isNeighborhoodDeal;
   const isPinned = isSelected(property.id);
+  const discarded = isDiscarded(property.id);
 
   return (
     <div
-      className={`rounded-2xl border p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg ${
-        isHighlighted
+      className={`rounded-2xl border p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg relative ${
+        discarded
+          ? "border-destructive/20 bg-card opacity-75"
+          : isHighlighted
           ? "border-primary/30 bg-card"
           : "border-border bg-card"
       }`}
     >
+      {discarded && (
+        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/20 text-destructive border border-destructive/30 z-10">
+          Descartado
+        </span>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
