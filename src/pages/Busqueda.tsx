@@ -4,7 +4,6 @@ import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
-import PropertyCard from "@/components/PropertyCard";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +12,7 @@ import { Search, Loader2, CheckCircle, AlertCircle, RotateCcw, ChevronRight, Fil
 import { Button } from "@/components/ui/button";
 import NeighborhoodDropdown, { ProvinceGroup } from "@/components/NeighborhoodDropdown";
 import { createFilterState, FilterState } from "@/components/MultiFilter";
+import AnalysisCard, { UserAnalysis } from "@/components/AnalysisCard";
 
 type SearchStatus = "idle" | "configuring" | "running" | "completed" | "failed";
 
@@ -282,6 +282,9 @@ const ResultsStep = ({
   onDiscard,
   savedIds,
   discardedIds,
+  analyses,
+  allProperties,
+  neighborhoodStats,
 }: {
   resultProperties: Property[];
   onNewSearch: () => void;
@@ -289,6 +292,9 @@ const ResultsStep = ({
   onDiscard: (id: string) => void;
   savedIds: Set<string>;
   discardedIds: Set<string>;
+  analyses: Record<string, UserAnalysis>;
+  allProperties: Property[];
+  neighborhoodStats: Map<string, import("@/lib/propertyData").NeighborhoodStats>;
 }) => {
   return (
     <div className="space-y-6">
@@ -303,13 +309,18 @@ const ResultsStep = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {resultProperties.map((p, idx) => (
           <div key={p.id} className="relative">
             <div className="absolute -top-2 -left-2 z-10 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
               {idx + 1}
             </div>
-            <PropertyCard property={p} />
+            <AnalysisCard
+              property={p}
+              analysis={analyses[p.id] || null}
+              allProperties={allProperties}
+              neighborhoodStats={neighborhoodStats}
+            />
             <div className="flex gap-2 mt-2">
               {savedIds.has(p.id) ? (
                 <span className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
@@ -366,6 +377,8 @@ const Busqueda = () => {
   const [pastSearches, setPastSearches] = useState<SearchRun[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
+  const [userAnalyses, setUserAnalyses] = useState<Record<string, UserAnalysis>>({});
+  const neighborhoodStats = data?.neighborhoodStats ?? new Map();
 
   // Derive available filter values from properties
   const availableTypes = [...new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])].sort();
@@ -434,11 +447,39 @@ const Busqueda = () => {
     return () => clearInterval(interval);
   }, [status, currentRun]);
 
-  const loadResults = useCallback((ids: string[]) => {
+  const loadResults = useCallback(async (ids: string[]) => {
     const propsMap = new Map(properties.map((p) => [p.id, p]));
     const results = ids.map((id) => propsMap.get(id)).filter(Boolean) as Property[];
     setResultProperties(results);
-  }, [properties]);
+
+    // Fetch analyses for result properties
+    if (user && ids.length > 0) {
+      const { data: analyses } = await supabase
+        .from("user_property_analysis")
+        .select("*")
+        .eq("user_id", user.id)
+        .in("property_id", ids);
+      if (analyses) {
+        const map: Record<string, UserAnalysis> = {};
+        analyses.forEach((a: any) => {
+          map[a.property_id] = {
+            score_multiplicador: a.score_multiplicador,
+            informe_breve: a.informe_breve,
+            highlights: a.highlights,
+            lowlights: a.lowlights,
+            estado_general: a.estado_general,
+            valor_potencial_m2: a.valor_potencial_m2,
+            valor_potencial_total: a.valor_potencial_total,
+            valor_potencial_median_m2: a.valor_potencial_median_m2 ?? null,
+            comparables_count: a.comparables_count,
+            oportunidad_ajustada: a.oportunidad_ajustada,
+            oportunidad_neta: a.oportunidad_neta,
+          };
+        });
+        setUserAnalyses(map);
+      }
+    }
+  }, [properties, user]);
 
   const handleStart = async () => {
     if (!user) return;
@@ -476,7 +517,7 @@ const Busqueda = () => {
     supabase.functions.invoke("run-search", {
       body: {
         search_id: searchRun.id,
-        filters,
+        filters: finalFilters,
         user_id: user.id,
         surface_type: getSurfaceType(),
         min_surface_enabled: getMinSurfaceEnabled(),
@@ -631,6 +672,9 @@ const Busqueda = () => {
             onDiscard={handleDiscard}
             savedIds={savedIds}
             discardedIds={discardedIds}
+            analyses={userAnalyses}
+            allProperties={properties}
+            neighborhoodStats={neighborhoodStats}
           />
         )}
       </div>
