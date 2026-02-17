@@ -223,7 +223,7 @@ const FilterStep = ({
   );
 };
 
-const ProgressStep = ({ run }: { run: SearchRun | null }) => {
+const ProgressStep = ({ run, onCancel }: { run: SearchRun | null; onCancel: () => void }) => {
   if (!run) return null;
 
   const steps = [
@@ -262,6 +262,15 @@ const ProgressStep = ({ run }: { run: SearchRun | null }) => {
       <p className="text-xs text-muted-foreground/70">
         Esto puede demorar varios minutos. Podés dejar esta pestaña abierta.
       </p>
+      <Button
+        onClick={onCancel}
+        variant="outline"
+        size="sm"
+        className="gap-2 rounded-full text-destructive border-destructive/30 hover:bg-destructive/10"
+      >
+        <XCircle className="h-4 w-4" />
+        Cancelar búsqueda
+      </Button>
     </div>
   );
 };
@@ -486,6 +495,17 @@ const Busqueda = () => {
     setDiscardedIds((prev) => new Set([...prev, propertyId]));
   };
 
+  const handleCancel = async () => {
+    if (!currentRun) return;
+    await supabase
+      .from("search_runs")
+      .update({ status: "failed", error_message: "Cancelada por el usuario" })
+      .eq("id", currentRun.id);
+    setStatus("failed");
+    setCurrentRun((prev) => prev ? { ...prev, status: "failed", error_message: "Cancelada por el usuario" } : null);
+    toast({ title: "Búsqueda cancelada" });
+  };
+
   const handleNewSearch = () => {
     setStatus("configuring");
     setCurrentRun(null);
@@ -587,7 +607,7 @@ const Busqueda = () => {
         )}
 
         {/* Running */}
-        {status === "running" && <ProgressStep run={currentRun} />}
+        {status === "running" && <ProgressStep run={currentRun} onCancel={handleCancel} />}
 
         {/* Failed */}
         {status === "failed" && (
