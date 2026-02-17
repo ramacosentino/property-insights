@@ -383,20 +383,21 @@ const Busqueda = () => {
   // Derive available filter values from properties
   const availableTypes = [...new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])].sort();
 
-  // Group neighborhoods by province (same as PropertyList)
+  // Group neighborhoods by province using normalized data
   const neighborhoodGroups = useMemo(() => {
     const neighborhoodCounts = new Map<string, number>();
     const provCounts = new Map<string, number>();
     for (const p of properties) {
-      neighborhoodCounts.set(p.neighborhood, (neighborhoodCounts.get(p.neighborhood) || 0) + 1);
-      const prov = p.city || "Sin ciudad";
+      const hood = p.normNeighborhood || p.neighborhood;
+      const prov = p.normLocality || p.normProvince || p.city || "Sin ciudad";
+      neighborhoodCounts.set(hood, (neighborhoodCounts.get(hood) || 0) + 1);
       provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
     }
     const provMap = new Map<string, { value: string; label: string; count: number }[]>();
     for (const [hood, count] of neighborhoodCounts.entries()) {
       if (hood === "Sin barrio") continue;
-      const sample = properties.find((p) => p.neighborhood === hood);
-      const prov = sample?.city || "Sin ciudad";
+      const sample = properties.find((p) => (p.normNeighborhood || p.neighborhood) === hood);
+      const prov = sample?.normLocality || sample?.normProvince || sample?.city || "Sin ciudad";
       if (!provMap.has(prov)) provMap.set(prov, []);
       provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
     }

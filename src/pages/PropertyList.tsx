@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal, TrendingDown, Star, X } from "lucide-react";
-import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 
 function getParkingLabel(parking: number | null): string {
@@ -67,21 +66,6 @@ function buildOptionsWithCounts(
   }));
 }
 
-/** Merge normalized geo data into properties */
-function enrichProperties(
-  properties: Property[],
-  geoData: Map<string, CachedGeoData>
-): Property[] {
-  return properties.map((p) => {
-    const geo = geoData.get(p.location);
-    if (!geo) return p;
-    return {
-      ...p,
-      neighborhood: geo.norm_neighborhood || p.neighborhood,
-      city: geo.norm_locality || geo.norm_province || p.city,
-    };
-  });
-}
 
 function formatPrice(v: number): string {
   if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
@@ -91,18 +75,8 @@ function formatPrice(v: number): string {
 
 const PropertyList = () => {
   const { data, isLoading } = useProperties();
-  const rawProperties = data?.properties ?? [];
+  const properties = data?.properties ?? [];
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
-  const [geoData, setGeoData] = useState<Map<string, CachedGeoData>>(new Map());
-
-  useEffect(() => {
-    fetchCachedCoordinates().then(setGeoData);
-  }, []);
-
-  const properties = useMemo(
-    () => enrichProperties(rawProperties, geoData),
-    [rawProperties, geoData]
-  );
 
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 5000;

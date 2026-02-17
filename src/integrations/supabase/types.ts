@@ -108,6 +108,9 @@ export type Database = {
           lowlights: string[] | null
           luminosity: string | null
           neighborhood: string | null
+          norm_locality: string | null
+          norm_neighborhood: string | null
+          norm_province: string | null
           oportunidad_ajustada: number | null
           oportunidad_neta: number | null
           orientation: string | null
@@ -150,6 +153,9 @@ export type Database = {
           lowlights?: string[] | null
           luminosity?: string | null
           neighborhood?: string | null
+          norm_locality?: string | null
+          norm_neighborhood?: string | null
+          norm_province?: string | null
           oportunidad_ajustada?: number | null
           oportunidad_neta?: number | null
           orientation?: string | null
@@ -192,6 +198,9 @@ export type Database = {
           lowlights?: string[] | null
           luminosity?: string | null
           neighborhood?: string | null
+          norm_locality?: string | null
+          norm_neighborhood?: string | null
+          norm_province?: string | null
           oportunidad_ajustada?: number | null
           oportunidad_neta?: number | null
           orientation?: string | null

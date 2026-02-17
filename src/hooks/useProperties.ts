@@ -13,6 +13,9 @@ interface DBPropertyRow {
   location: string | null;
   neighborhood: string | null;
   city: string | null;
+  norm_neighborhood: string | null;
+  norm_locality: string | null;
+  norm_province: string | null;
   scraped_at: string | null;
   address: string | null;
   street: string | null;
@@ -74,8 +77,11 @@ function computeStats(rows: DBPropertyRow[]): {
     price: r.price!,
     currency: r.currency || "USD",
     location: r.location || "",
-    neighborhood: r.neighborhood || "Sin barrio",
-    city: r.city || "Sin ciudad",
+    neighborhood: r.norm_neighborhood || r.neighborhood || "Sin barrio",
+    city: r.norm_locality || r.norm_province || r.city || "Sin ciudad",
+    normNeighborhood: r.norm_neighborhood,
+    normLocality: r.norm_locality,
+    normProvince: r.norm_province,
     scrapedAt: r.scraped_at || "",
     address: r.address,
     street: r.street,
