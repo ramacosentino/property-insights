@@ -12,6 +12,9 @@ export interface Property {
   location: string;
   neighborhood: string;
   city: string;
+  normNeighborhood: string | null;
+  normLocality: string | null;
+  normProvince: string | null;
   scrapedAt: string;
   address: string | null;
   street: string | null;
@@ -103,6 +106,9 @@ export function loadProperties(): { properties: Property[]; neighborhoodStats: M
       location: row[6] || "",
       neighborhood: row[7] || "Sin barrio",
       city: row[8] || "Sin ciudad",
+      normNeighborhood: null,
+      normLocality: null,
+      normProvince: null,
       scrapedAt: row[9] || "",
       address: row[10] || null,
       street: row[11] || null,

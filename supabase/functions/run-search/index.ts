@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     // 1. Build query with filters
     let query = supabase
       .from("properties")
-      .select("id, price, price_per_m2_total, surface_total, surface_covered, neighborhood, city, property_type, rooms, parking, url")
+      .select("id, price, price_per_m2_total, surface_total, surface_covered, neighborhood, norm_neighborhood, norm_locality, norm_province, city, property_type, rooms, parking, url")
       .gt("price", 0)
       .gt("price_per_m2_total", 0)
       .not("url", "is", null);
@@ -41,15 +41,15 @@ Deno.serve(async (req) => {
       query = query.in("property_type", filters.property_types);
     }
     if (filters.neighborhoods?.length > 0) {
-      query = query.in("neighborhood", filters.neighborhoods);
+      query = query.in("norm_neighborhood", filters.neighborhoods);
     }
     if (filters.excluded_neighborhoods?.length > 0) {
       for (const excluded of filters.excluded_neighborhoods) {
-        query = query.neq("neighborhood", excluded);
+        query = query.neq("norm_neighborhood", excluded);
       }
     }
     if (filters.cities?.length > 0) {
-      query = query.in("city", filters.cities);
+      query = query.in("norm_locality", filters.cities);
     }
     if (filters.price_min != null) {
       query = query.gte("price", filters.price_min);
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     console.log(`Filtered: ${allMatched.length} properties matched`);
 
     // 2. Compute median per neighborhood+type, then opportunity score
-    const groupKey = (p: any) => `${p.neighborhood}|||${p.property_type || ""}`;
+    const groupKey = (p: any) => `${p.norm_neighborhood || p.neighborhood}|||${p.property_type || ""}`;
     const groupValues = new Map<string, number[]>();
     for (const p of allMatched) {
       const key = groupKey(p);
