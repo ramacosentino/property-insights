@@ -250,6 +250,48 @@ export type Database = {
           },
         ]
       }
+      search_runs: {
+        Row: {
+          analyzed_count: number | null
+          candidates_count: number | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          filters: Json
+          id: string
+          result_property_ids: string[] | null
+          status: string
+          total_matched: number | null
+          user_id: string
+        }
+        Insert: {
+          analyzed_count?: number | null
+          candidates_count?: number | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          filters?: Json
+          id?: string
+          result_property_ids?: string[] | null
+          status?: string
+          total_matched?: number | null
+          user_id: string
+        }
+        Update: {
+          analyzed_count?: number | null
+          candidates_count?: number | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          filters?: Json
+          id?: string
+          result_property_ids?: string[] | null
+          status?: string
+          total_matched?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       upload_logs: {
         Row: {
           error_message: string | null

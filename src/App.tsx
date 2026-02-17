@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MapView from "./pages/MapView";
 import PropertyList from "./pages/PropertyList";
 import MisProyectos from "./pages/MisProyectos";
+import Busqueda from "./pages/Busqueda";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<MapView />} />
           <Route path="/propiedades" element={<PropertyList />} />
           <Route path="/mis-proyectos" element={<MisProyectos />} />
+          <Route path="/busqueda" element={<Busqueda />} />
           <Route path="/configuracion" element={<Settings />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />

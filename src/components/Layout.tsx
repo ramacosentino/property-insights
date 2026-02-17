@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, BarChart3, Sun, Moon, Settings, Star, LogOut, User } from "lucide-react";
+import { Map, List, BarChart3, Sun, Moon, Settings, Star, LogOut, User, Search } from "lucide-react";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
@@ -27,6 +27,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
     { path: "/", label: "Mapa", icon: Map },
     { path: "/propiedades", label: "Propiedades", icon: List },
     { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badge: preselectionCount },
+    { path: "/busqueda", label: "Búsqueda", icon: Search },
   ];
 
   const handleSignOut = async () => {
