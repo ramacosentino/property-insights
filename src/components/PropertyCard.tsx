@@ -1,81 +1,101 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/lib/propertyData";
-import { TrendingDown, ExternalLink, Star } from "lucide-react";
-import FlagLocationButton from "@/components/FlagLocationButton";
-import ManualLocationDialog from "@/components/ManualLocationDialog";
+import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw } from "lucide-react";
 import { usePreselection } from "@/hooks/usePreselection";
 
 interface PropertyCardProps {
   property: Property;
   compact?: boolean;
+  onDiscard?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  isDiscarded?: boolean;
 }
 
-const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
-  const [manualDialogOpen, setManualDialogOpen] = useState(false);
-  const [manualAddress, setManualAddress] = useState("");
-  const { isSelected, isDiscarded, toggle } = usePreselection();
+const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDiscarded }: PropertyCardProps) => {
+  const { isSelected, toggle } = usePreselection();
   const isHighlighted = property.isTopOpportunity || property.isNeighborhoodDeal;
   const isPinned = isSelected(property.id);
-  const discarded = isDiscarded(property.id);
 
   return (
     <div
-      className={`rounded-2xl border p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg relative ${
-        discarded
+      className={`rounded-2xl border p-4 transition-all hover:translate-y-[-2px] hover:shadow-lg relative ${
+        isDiscarded
           ? "border-destructive/20 bg-card opacity-75"
           : isHighlighted
           ? "border-primary/30 bg-card"
           : "border-border bg-card"
       }`}
     >
-      {discarded && (
-        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/20 text-destructive border border-destructive/30 z-10">
-          Descartado
-        </span>
-      )}
-      <div className="flex items-start justify-between gap-3">
+      {/* Top row: title + actions */}
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-1.5 mb-0.5">
             {property.isTopOpportunity && (
-              <Star className="h-4 w-4 text-primary fill-primary flex-shrink-0" />
+              <Star className="h-3.5 w-3.5 text-primary fill-primary flex-shrink-0" />
             )}
             <h3 className="text-sm font-semibold truncate">{property.location}</h3>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             {property.neighborhood}, {property.city}
           </p>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {/* Discard / Restore small button */}
+          {isDiscarded && onRestore ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRestore(property.id); }}
+              className="p-1 rounded-full text-primary hover:bg-primary/10 transition-colors"
+              title="Restaurar"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          ) : onDiscard ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDiscard(property.id); }}
+              className="p-1 rounded-full text-muted-foreground hover:text-destructive transition-colors"
+              title="Descartar"
+            >
+              <XCircle className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
           <button
             onClick={(e) => { e.stopPropagation(); toggle(property.id); }}
-            className={`p-1.5 rounded-full transition-colors ${
+            className={`p-1 rounded-full transition-colors ${
               isPinned ? "text-yellow-500 hover:text-yellow-600" : "text-muted-foreground hover:text-yellow-500"
             }`}
             title={isPinned ? "Quitar de preselección" : "Agregar a preselección"}
           >
-            <Star className={`h-4 w-4 ${isPinned ? "fill-yellow-500" : ""}`} />
+            <Star className={`h-3.5 w-3.5 ${isPinned ? "fill-yellow-500" : ""}`} />
           </button>
           <a
             href={property.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-full hover:bg-secondary"
+            className="text-muted-foreground hover:text-primary transition-colors p-1 rounded-full"
           >
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-3 w-3" />
           </a>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      {/* Discarded badge */}
+      {isDiscarded && (
+        <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/20 text-destructive border border-destructive/30">
+          Descartado
+        </span>
+      )}
+
+      {/* Price row */}
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Precio</p>
+          <p className="text-[10px] text-muted-foreground mb-0.5">Precio</p>
           <p className="text-sm font-mono font-semibold">
             USD {property.price.toLocaleString()}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">USD/m²</p>
+          <p className="text-[10px] text-muted-foreground mb-0.5">USD/m²</p>
           <p className={`text-sm font-mono font-bold ${isHighlighted ? "text-primary" : ""}`}>
             {property.pricePerM2Total ? `$${property.pricePerM2Total.toLocaleString()}` : "—"}
           </p>
@@ -84,7 +104,8 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
 
       {!compact && (
         <>
-          <div className="mt-3 grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+          {/* Main specs */}
+          <div className="mt-2.5 grid grid-cols-4 gap-2 text-xs text-muted-foreground">
             <div>
               <span className="block text-foreground font-mono">{property.surfaceTotal ?? "—"}</span>
               m² tot
@@ -103,7 +124,36 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 flex-wrap">
+          {/* Extra details inline */}
+          <div className="mt-2.5 grid grid-cols-3 gap-x-3 gap-y-1 text-[11px]">
+            {property.propertyType && (
+              <div><span className="text-muted-foreground">Tipo:</span> <span className="font-medium">{property.propertyType}</span></div>
+            )}
+            {property.surfaceCovered != null && (
+              <div><span className="text-muted-foreground">m² cub:</span> <span className="font-mono font-medium">{property.surfaceCovered}</span></div>
+            )}
+            {property.ageYears != null && (
+              <div><span className="text-muted-foreground">Antig:</span> <span className="font-mono font-medium">{property.ageYears} años</span></div>
+            )}
+            {property.parking != null && property.parking > 0 && (
+              <div><span className="text-muted-foreground">Cocheras:</span> <span className="font-mono font-medium">{property.parking}</span></div>
+            )}
+            {property.expenses != null && property.expenses > 0 && (
+              <div><span className="text-muted-foreground">Expensas:</span> <span className="font-mono font-medium">${property.expenses.toLocaleString()}</span></div>
+            )}
+            {property.disposition && (
+              <div><span className="text-muted-foreground">Disp:</span> <span className="font-medium">{property.disposition}</span></div>
+            )}
+            {property.orientation && (
+              <div><span className="text-muted-foreground">Orient:</span> <span className="font-medium">{property.orientation}</span></div>
+            )}
+            {property.luminosity && (
+              <div><span className="text-muted-foreground">Luz:</span> <span className="font-medium">{property.luminosity}</span></div>
+            )}
+          </div>
+
+          {/* Badges */}
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
             {property.isTopOpportunity && (
               <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30 rounded-full">
                 Top Oportunidad
@@ -115,32 +165,9 @@ const PropertyCard = ({ property, compact = false }: PropertyCardProps) => {
                 {property.opportunityScore.toFixed(0)}% bajo mediana
               </Badge>
             )}
-            {property.parking && property.parking > 0 && (
-              <Badge variant="secondary" className="text-xs rounded-full">
-                {property.parking} cochera{property.parking > 1 ? "s" : ""}
-              </Badge>
-            )}
           </div>
-
-          {property.address && (
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <FlagLocationButton
-                address={property.address}
-                onManualCorrection={(addr) => {
-                  setManualAddress(addr);
-                  setManualDialogOpen(true);
-                }}
-              />
-            </div>
-          )}
         </>
       )}
-
-      <ManualLocationDialog
-        open={manualDialogOpen}
-        onOpenChange={setManualDialogOpen}
-        address={manualAddress}
-      />
     </div>
   );
 };
