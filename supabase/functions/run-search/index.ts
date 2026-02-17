@@ -154,61 +154,76 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Take top 5% (min 10, max 50)
+    // Take top 5% (min 10, max 15)
     const totalCandidates = candidates.length;
     let topCount = Math.ceil(totalCandidates * 0.05);
-    topCount = Math.max(10, Math.min(50, topCount));
-    topCount = Math.min(topCount, totalCandidates); // Can't take more than available
+    topCount = Math.max(10, Math.min(15, topCount));
+    topCount = Math.min(topCount, totalCandidates);
     const topCandidates = candidates.slice(0, topCount);
 
-    console.log(`Selected ${topCandidates.length} candidates from ${totalCandidates} (5% rule)`);
+    console.log(`Selected ${topCandidates.length} candidates from ${totalCandidates}`);
+
+    // 3. Check which candidates already have analysis (reuse)
+    const candidateIds = topCandidates.map((c) => c.id);
+    const { data: existingAnalyses } = await supabase
+      .from("user_property_analysis")
+      .select("property_id")
+      .eq("user_id", user_id)
+      .in("property_id", candidateIds);
+
+    const alreadyAnalyzed = new Set((existingAnalyses || []).map((a: any) => a.property_id));
+    const needsAnalysis = topCandidates.filter((c) => !alreadyAnalyzed.has(c.id));
+
+    console.log(`Reusing ${alreadyAnalyzed.size} existing analyses, need to analyze ${needsAnalysis.length}`);
 
     await supabase.from("search_runs").update({
       status: "analyzing",
       total_matched: allMatched.length,
       candidates_count: topCandidates.length,
-      analyzed_count: 0,
+      analyzed_count: alreadyAnalyzed.size,
     }).eq("id", search_id);
 
-    // 3. Analyze each candidate with AI (sequential to avoid rate limits)
-    let analyzedCount = 0;
+    // 4. Analyze in parallel batches of 5
+    let analyzedCount = alreadyAnalyzed.size;
     const analyzeUrl = `${supabaseUrl}/functions/v1/analyze-property`;
+    const BATCH_SIZE = 5;
 
-    for (const candidate of topCandidates) {
-      try {
-        const analyzeRes = await fetch(analyzeUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            property_id: candidate.id,
-            user_id,
-            surface_type,
-            min_surface_enabled,
-            renovation_costs,
-          }),
-        });
+    for (let i = 0; i < needsAnalysis.length; i += BATCH_SIZE) {
+      const batch = needsAnalysis.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((candidate) =>
+          fetch(analyzeUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${serviceKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              property_id: candidate.id,
+              user_id,
+              surface_type,
+              min_surface_enabled,
+              renovation_costs,
+            }),
+          })
+        )
+      );
 
-        if (analyzeRes.ok) {
+      for (const r of results) {
+        if (r.status === "fulfilled" && r.value.ok) {
           analyzedCount++;
-          // Update progress every 5 or on last
-          if (analyzedCount % 5 === 0 || analyzedCount === topCandidates.length) {
-            await supabase.from("search_runs").update({
-              analyzed_count: analyzedCount,
-            }).eq("id", search_id);
-          }
         } else {
-          console.error(`Analysis failed for ${candidate.id}: ${analyzeRes.status}`);
+          const reason = r.status === "rejected" ? r.reason : `status ${(r as any).value?.status}`;
+          console.error(`Analysis failed:`, reason);
         }
-      } catch (err) {
-        console.error(`Analysis error for ${candidate.id}:`, err);
       }
+
+      await supabase.from("search_runs").update({
+        analyzed_count: analyzedCount,
+      }).eq("id", search_id);
     }
 
-    // 4. Fetch analyses and rank by oportunidad_neta
-    const candidateIds = topCandidates.map((c) => c.id);
+    // 6. Fetch analyses and rank by oportunidad_neta
     const { data: analyses } = await supabase
       .from("user_property_analysis")
       .select("property_id, oportunidad_neta")
@@ -224,7 +239,7 @@ Deno.serve(async (req) => {
       .slice(0, 10)
       .map((r) => r.id);
 
-    // 5. Update search run as completed
+    // 7. Update search run as completed
     await supabase.from("search_runs").update({
       status: "completed",
       analyzed_count: analyzedCount,
