@@ -1,8 +1,15 @@
-import { Link, useLocation } from "react-router-dom";
-import { Map, List, BarChart3, Sun, Moon, Settings, Star } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Map, List, BarChart3, Sun, Moon, Settings, Star, LogOut, User } from "lucide-react";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,14 +18,24 @@ interface LayoutProps {
 
 const Layout = ({ children, headerContent }: LayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isDark, toggle } = useTheme();
   const { count: preselectionCount } = usePreselection();
+  const { user, signOut } = useAuth();
 
   const mainNav = [
     { path: "/", label: "Mapa", icon: Map },
     { path: "/propiedades", label: "Propiedades", icon: List },
     { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badge: preselectionCount },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -87,6 +104,39 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
             <div className="hidden md:block">
               <CsvUploadButton />
             </div>
+
+            {/* User menu */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="ml-1 flex items-center gap-1.5 p-1 rounded-full hover:bg-secondary transition-all">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
+                        <User className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground truncate">
+                    {displayName}
+                  </div>
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                    <LogOut className="h-3.5 w-3.5 mr-2" />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                to="/auth"
+                className="ml-1 px-3 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+              >
+                Iniciar sesión
+              </Link>
+            )}
           </nav>
         </div>
         {/* Row 2 (mobile only): headerContent */}

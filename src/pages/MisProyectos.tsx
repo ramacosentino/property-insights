@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
+import { useAuth } from "@/hooks/useAuth";
 import PropertyCard from "@/components/PropertyCard";
 import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
@@ -315,6 +317,11 @@ const MisProyectos = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
+  const { user, loading: authLoading } = useAuth();
+
+  if (!authLoading && !user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const preselected = properties.filter((p) => selectedIds.has(p.id));
 
