@@ -122,6 +122,7 @@ const PropertyList = () => {
   const [sortBy, setSortBy] = useState<string>("pricePerSqm");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
   const [rangesInitialized, setRangesInitialized] = useState(false);
+  const [importDateFilter, setImportDateFilter] = useState<string>("all");
 
   // Initialize slider ranges once data loads
   useEffect(() => {
@@ -259,6 +260,13 @@ const PropertyList = () => {
         result = result.filter((p) => p.expenses !== null && p.expenses >= expensesRange[0] && (expensesRange[1] >= EXPENSES_CAP || p.expenses <= expensesRange[1]));
       }
     }
+    // Import date filter
+    if (importDateFilter !== "all") {
+      const now = Date.now();
+      const msMap: Record<string, number> = { "1d": 86400000, "7d": 604800000, "30d": 2592000000, "90d": 7776000000 };
+      const ms = msMap[importDateFilter];
+      if (ms) result = result.filter((p) => now - new Date(p.createdAt).getTime() <= ms);
+    }
     if (showOnlyDeals) {
       result = result.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
     }
@@ -274,7 +282,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges]);
+  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges, importDateFilter]);
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
@@ -346,6 +354,17 @@ const PropertyList = () => {
                   <SelectItem value="area">Superficie ↓</SelectItem>
                 </SelectContent>
               </Select>
+              <select
+                value={importDateFilter}
+                onChange={(e) => setImportDateFilter(e.target.value)}
+                className="text-xs bg-secondary border border-border rounded-full px-3 py-2.5 text-foreground h-10"
+              >
+                <option value="all">Todas las fechas</option>
+                <option value="1d">Último día</option>
+                <option value="7d">Última semana</option>
+                <option value="30d">Último mes</option>
+                <option value="90d">Últimos 3 meses</option>
+              </select>
             </div>
           </div>
 
