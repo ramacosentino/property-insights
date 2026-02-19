@@ -342,7 +342,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { property_id, user_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
+    const { property_id, user_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null, force = false } = await req.json();
     console.log("Received renovation_costs:", JSON.stringify(renovation_costs));
 
     if (!property_id) {
@@ -379,8 +379,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 2. Check if shared analysis already exists
-    const hasExistingAnalysis = prop.score_multiplicador != null;
+    // 2. Check if shared analysis already exists (skip if force=true)
+    const hasExistingAnalysis = !force && prop.score_multiplicador != null;
     let score: number;
     let highlights: string[];
     let lowlights: string[];

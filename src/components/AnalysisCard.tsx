@@ -21,7 +21,7 @@ export interface UserAnalysis {
 const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allProperties, neighborhoodStats, onDiscard, onRestore, isDiscarded }: {
   property: Property;
   analysis: UserAnalysis | null;
-  onAnalyze?: (id: string) => void;
+  onAnalyze?: (id: string, force?: boolean) => void;
   isAnalyzing?: boolean;
   allProperties: Property[];
   neighborhoodStats: Map<string, NeighborhoodStats>;
@@ -279,7 +279,7 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
           {onAnalyze && (
             <div className="flex gap-2">
               <button
-                onClick={() => onAnalyze(property.id)}
+                onClick={() => onAnalyze(property.id, true)}
                 disabled={isAnalyzing}
                 className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all disabled:opacity-50"
               >
