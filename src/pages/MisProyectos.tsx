@@ -75,13 +75,13 @@ const MisProyectos = () => {
   const activeProjects = preselected.filter((p) => !discardedIds.has(p.id));
   const discardedProjects = preselected.filter((p) => discardedIds.has(p.id));
 
-  const handleAnalyze = async (propertyId: string) => {
+  const handleAnalyze = async (propertyId: string, force = false) => {
     if (!user) return;
     setAnalyzingIds((prev) => new Set([...prev, propertyId]));
 
     toast({
-      title: "🤖 Analizando...",
-      description: "Esto puede demorar unos segundos.",
+      title: force ? "🔄 Re-analizando desde cero..." : "🤖 Analizando...",
+      description: force ? "Scrapeando la publicación nuevamente." : "Esto puede demorar unos segundos.",
     });
 
     try {
@@ -91,7 +91,7 @@ const MisProyectos = () => {
         renovationCosts[`${c.minScore}`] = c.costPerM2;
       });
       const { data, error } = await supabase.functions.invoke("analyze-property", {
-        body: { property_id: propertyId, user_id: user.id, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts },
+        body: { property_id: propertyId, user_id: user.id, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts, force },
       });
 
       if (error) throw error;
