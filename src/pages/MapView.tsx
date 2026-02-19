@@ -248,7 +248,9 @@ const MapView = () => {
   const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
   const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
   // View mode: "opportunities" or "all"
-  const [viewMode, setViewMode] = useState<"opportunities" | "all">("opportunities");
+  const [viewMode, setViewMode] = useState<"opportunities" | "all" | "projects">("opportunities");
+  // Import date filter
+  const [importDateFilter, setImportDateFilter] = useState<string>("all");
   // Dynamic opportunity threshold (%)
   const [dealThreshold, setDealThreshold] = useState(40);
   // Mobile bottom sheet state: "collapsed" | "half" | "full"
@@ -306,7 +308,8 @@ const MapView = () => {
     + (rangesInitialized && (surfaceRange[0] > dataRanges.surfaceMin || surfaceRange[1] < dataRanges.surfaceMax) ? 1 : 0)
     + (rangesInitialized && (surfaceCoveredRange[0] > dataRanges.surfaceCoveredMin || surfaceCoveredRange[1] < dataRanges.surfaceCoveredMax) ? 1 : 0)
     + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0)
-    + (rangesInitialized && (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) ? 1 : 0);
+    + (rangesInitialized && (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) ? 1 : 0)
+    + (importDateFilter !== "all" ? 1 : 0);
 
   const clearAllFilters = () => {
     setRoomsFilter(createFilterState());
@@ -317,6 +320,7 @@ const MapView = () => {
     setBathroomsFilter(createFilterState());
     setDispositionFilter(createFilterState());
     setOrientationFilter(createFilterState());
+    setImportDateFilter("all");
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
@@ -355,6 +359,10 @@ const MapView = () => {
         statsGroupBy === "neighborhood" ? p.neighborhood === selectedProvince : p.city === selectedProvince
       );
     }
+    // "Mis Proyectos" view: only show preselected
+    if (viewMode === "projects") {
+      result = result.filter((p) => isPreselectedHook(p.id));
+    }
     if (neighborhoodFilter.included.size > 0 || neighborhoodFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(p.neighborhood, neighborhoodFilter));
     if (propertyTypeFilter.included.size > 0 || propertyTypeFilter.excluded.size > 0)
@@ -371,6 +379,13 @@ const MapView = () => {
       result = result.filter((p) => applyFilter(p.disposition || "", dispositionFilter));
     if (orientationFilter.included.size > 0 || orientationFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(p.orientation || "", orientationFilter));
+    // Import date filter
+    if (importDateFilter !== "all") {
+      const now = Date.now();
+      const msMap: Record<string, number> = { "1d": 86400000, "7d": 604800000, "30d": 2592000000, "90d": 7776000000 };
+      const ms = msMap[importDateFilter];
+      if (ms) result = result.filter((p) => now - new Date(p.createdAt).getTime() <= ms);
+    }
     // Range filters (when at cap, include everything above)
     if (rangesInitialized) {
       if (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax)
@@ -385,7 +400,7 @@ const MapView = () => {
         result = result.filter((p) => p.expenses !== null && p.expenses >= expensesRange[0] && (expensesRange[1] >= EXPENSES_CAP || p.expenses <= expensesRange[1]));
     }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter]);
 
   const mappedProperties = filteredProperties;
 
@@ -605,7 +620,7 @@ const MapView = () => {
     deals.clearLayers();
     cluster.clearLayers();
 
-    if (viewMode === "all") {
+    if (viewMode === "all" || viewMode === "projects") {
       // Clustered view: show all filtered properties
       mappedProperties.forEach((p) => {
         const coords = getCoord(p);
@@ -652,6 +667,16 @@ const MapView = () => {
             ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
             ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
             ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
+            ${viewMode === "projects" && p.score_multiplicador != null ? `
+              <div style="border-top:1px solid #eee;margin-top:8px;padding-top:8px;">
+                <strong style="font-size:11px;">📊 Análisis del proyecto</strong><br/>
+                ${p.score_multiplicador != null ? `<strong>Score:</strong> ${Number(p.score_multiplicador).toFixed(1)}x<br/>` : ""}
+                ${p.estado_general ? `<strong>Estado:</strong> ${p.estado_general}<br/>` : ""}
+                ${p.oportunidad_neta != null ? `<strong>Ganancia neta est.:</strong> USD ${Number(p.oportunidad_neta).toLocaleString()}<br/>` : ""}
+                ${p.oportunidad_ajustada != null ? `<strong>Oportunidad:</strong> ${Number(p.oportunidad_ajustada).toFixed(1)}%<br/>` : ""}
+                ${p.comparables_count != null ? `<strong>Comparables:</strong> ${p.comparables_count}<br/>` : ""}
+              </div>
+            ` : ""}
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
               <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
               <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${p.id}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
@@ -846,7 +871,29 @@ const MapView = () => {
           <Eye className="h-3 w-3" />
           Todas
         </button>
+        <button
+          onClick={() => setViewMode("projects")}
+          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+            viewMode === "projects" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Star className="h-3 w-3 fill-current" />
+          Proyectos
+        </button>
       </div>
+
+      {/* Import date filter */}
+      <select
+        value={importDateFilter}
+        onChange={(e) => setImportDateFilter(e.target.value)}
+        className="text-[11px] bg-secondary border border-border rounded-full px-2.5 py-1 text-foreground shrink-0"
+      >
+        <option value="all">Todas las fechas</option>
+        <option value="1d">Último día</option>
+        <option value="7d">Última semana</option>
+        <option value="30d">Último mes</option>
+        <option value="90d">Últimos 3 meses</option>
+      </select>
 
       {activeFilterCount > 0 && (
         <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border shrink-0">
@@ -1083,6 +1130,21 @@ const MapView = () => {
 
   const filtersContent = (
     <div className="flex flex-col gap-4">
+      {/* Import date filter */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-medium text-muted-foreground w-16 shrink-0">Importado</span>
+        <select
+          value={importDateFilter}
+          onChange={(e) => setImportDateFilter(e.target.value)}
+          className="text-[11px] bg-secondary border border-border rounded-lg px-2 py-1 text-foreground"
+        >
+          <option value="all">Todas las fechas</option>
+          <option value="1d">Último día</option>
+          <option value="7d">Última semana</option>
+          <option value="30d">Último mes</option>
+          <option value="90d">Últimos 3 meses</option>
+        </select>
+      </div>
       <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
       <MapFilterRow title="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
       <MapFilterRow title="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />

@@ -34,6 +34,7 @@ interface DBPropertyRow {
   luminosity: string | null;
   price_per_m2_total: number | null;
   price_per_m2_covered: number | null;
+  created_at: string;
   score_multiplicador: number | null;
   informe_breve: string | null;
   highlights: string[] | null;
@@ -83,6 +84,7 @@ function computeStats(rows: DBPropertyRow[]): {
     normLocality: r.norm_locality,
     normProvince: r.norm_province,
     scrapedAt: r.scraped_at || "",
+    createdAt: r.created_at,
     address: r.address,
     street: r.street,
     expenses: r.expenses,

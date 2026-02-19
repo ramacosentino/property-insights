@@ -26,6 +26,8 @@ const MisProyectos = () => {
   const [userAnalyses, setUserAnalyses] = useState<Record<string, UserAnalysis>>({});
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<string>("none");
+  const [sortAsc, setSortAsc] = useState(false);
+  const [savedDates, setSavedDates] = useState<Record<string, string>>({});
 
   // Fetch user-specific analyses (oportunidad_neta, valor_potencial_median_m2) and discarded state
   useEffect(() => {
@@ -59,11 +61,13 @@ const MisProyectos = () => {
 
     supabase
       .from("saved_projects")
-      .select("property_id, discarded_at")
+      .select("property_id, discarded_at, created_at")
       .eq("user_id", user.id)
-      .not("discarded_at", "is", null)
-      .then(({ data: discarded }) => {
-        setDiscardedIds(new Set((discarded ?? []).map((d: any) => d.property_id)));
+      .then(({ data: saved }) => {
+        setDiscardedIds(new Set((saved ?? []).filter((d: any) => d.discarded_at).map((d: any) => d.property_id)));
+        const dates: Record<string, string> = {};
+        (saved ?? []).forEach((d: any) => { dates[d.property_id] = d.created_at; });
+        setSavedDates(dates);
       });
   }, [user, properties]);
 
@@ -156,21 +160,30 @@ const MisProyectos = () => {
   const displayProjects = [...baseProjects].sort((a, b) => {
     const aa = userAnalyses[a.id];
     const ab = userAnalyses[b.id];
+    let cmp = 0;
     switch (sortBy) {
+      case "guardado":
+        cmp = new Date(savedDates[b.id] || 0).getTime() - new Date(savedDates[a.id] || 0).getTime();
+        break;
       case "ganancia":
-        return (ab?.oportunidad_neta ?? -Infinity) - (aa?.oportunidad_neta ?? -Infinity);
+        cmp = (ab?.oportunidad_neta ?? -Infinity) - (aa?.oportunidad_neta ?? -Infinity);
+        break;
       case "oportunidad": {
         const scoreA = aa?.oportunidad_ajustada != null ? ((Math.max(-40, Math.min(40, aa.oportunidad_ajustada)) + 40) / 80) * 10 : -1;
         const scoreB = ab?.oportunidad_ajustada != null ? ((Math.max(-40, Math.min(40, ab.oportunidad_ajustada)) + 40) / 80) * 10 : -1;
-        return scoreB - scoreA;
+        cmp = scoreB - scoreA;
+        break;
       }
       case "precio":
-        return (a.price ?? Infinity) - (b.price ?? Infinity);
+        cmp = (a.price ?? Infinity) - (b.price ?? Infinity);
+        break;
       case "usdm2":
-        return (a.pricePerM2Total ?? Infinity) - (b.pricePerM2Total ?? Infinity);
+        cmp = (a.pricePerM2Total ?? Infinity) - (b.pricePerM2Total ?? Infinity);
+        break;
       default:
         return 0;
     }
+    return sortAsc ? -cmp : cmp;
   });
 
   return (
@@ -234,11 +247,20 @@ const MisProyectos = () => {
               className="text-xs bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-foreground"
             >
               <option value="none">Sin ordenar</option>
-              <option value="ganancia">Ganancia Neta Est. ↓</option>
-              <option value="oportunidad">Oportunidad ↓</option>
-              <option value="precio">Precio ↑</option>
-              <option value="usdm2">USD/m² ↑</option>
+              <option value="guardado">Últimos guardados</option>
+              <option value="ganancia">Ganancia Neta Est.</option>
+              <option value="oportunidad">Oportunidad</option>
+              <option value="precio">Precio</option>
+              <option value="usdm2">USD/m²</option>
             </select>
+            {sortBy !== "none" && (
+              <button
+                onClick={() => setSortAsc((v) => !v)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {sortAsc ? "↑ Ascendente" : "↓ Descendente"}
+              </button>
+            )}
           </div>
         )}
 

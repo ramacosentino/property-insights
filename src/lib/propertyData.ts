@@ -31,6 +31,7 @@ export interface Property {
   disposition: string | null;
   orientation: string | null;
   luminosity: string | null;
+  createdAt: string;
   pricePerM2Total: number | null;
   pricePerM2Covered: number | null;
   // AI analysis
@@ -110,6 +111,7 @@ export function loadProperties(): { properties: Property[]; neighborhoodStats: M
       normLocality: null,
       normProvince: null,
       scrapedAt: row[9] || "",
+      createdAt: new Date().toISOString(),
       address: row[10] || null,
       street: row[11] || null,
       expenses: parseNum(row[12]),
