@@ -9,6 +9,8 @@ import MisProyectos from "./pages/MisProyectos";
 import Busqueda from "./pages/Busqueda";
 import Settings from "./pages/Settings";
 import Alertas from "./pages/Alertas";
+import Tasacion from "./pages/Tasacion";
+import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/mis-proyectos" element={<MisProyectos />} />
           <Route path="/busqueda" element={<Busqueda />} />
           <Route path="/alertas" element={<Alertas />} />
+          <Route path="/tasacion" element={<Tasacion />} />
+          <Route path="/inteligencia-precios" element={<InteligenciaPrecios />} />
           <Route path="/configuracion" element={<Settings />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />

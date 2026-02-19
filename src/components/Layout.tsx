@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, BarChart3, Bell, Menu, X, Upload } from "lucide-react";
+import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, BarChart3, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
@@ -17,6 +17,8 @@ const navItems = [
   { path: "/propiedades", label: "Propiedades", icon: List },
   { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badgeKey: "preselection" as const },
   { path: "/busqueda", label: "Búsqueda", icon: Search },
+  { path: "/tasacion", label: "Tasación", icon: Calculator },
+  { path: "/inteligencia-precios", label: "Inteligencia de Precios", icon: TrendingUp },
   { path: "/alertas", label: "Alertas", icon: Bell },
 ];
 
@@ -32,6 +34,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,7 +51,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
   const closeSidebar = () => setSidebarOpen(false);
 
-  const renderNavItem = (item: typeof navItems[0], collapsed = false) => {
+  const renderNavItem = (item: typeof navItems[0], isCollapsed = false) => {
     const isActive = location.pathname === item.path;
     const badge = getBadge((item as any).badgeKey);
 
@@ -57,34 +60,33 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
         key={item.path}
         to={item.path}
         onClick={closeSidebar}
-        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
           isActive
             ? "bg-primary/15 text-primary"
             : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-        } ${collapsed ? "justify-center" : ""}`}
-        title={collapsed ? item.label : undefined}
+        } ${isCollapsed ? "justify-center" : ""}`}
+        title={isCollapsed ? item.label : undefined}
       >
         <item.icon className="h-4 w-4 flex-shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
-        {!collapsed && badge != null && (
+        {!isCollapsed && <span className="truncate">{item.label}</span>}
+        {!isCollapsed && badge != null && (
           <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary leading-none">
             {badge}
           </span>
         )}
-        {collapsed && badge != null && (
+        {isCollapsed && badge != null && (
           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
         )}
       </Link>
     );
   };
 
-  // Desktop sidebar
-  const sidebarContent = (collapsed: boolean) => (
-    <div className={`flex flex-col h-screen bg-sidebar-background border-r border-sidebar-border ${collapsed ? "w-14" : "w-56"} transition-all duration-200`}>
+  const sidebarContent = (isCollapsed: boolean) => (
+    <div className={`flex flex-col h-screen bg-sidebar-background border-r border-sidebar-border ${isCollapsed ? "w-14" : "w-56"} transition-all duration-200`}>
       {/* Logo */}
-      <div className={`flex items-center gap-2 h-14 px-3 border-b border-sidebar-border ${collapsed ? "justify-center" : ""}`}>
+      <div className={`flex items-center gap-2 h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center" : ""}`}>
         <BarChart3 className="h-5 w-5 text-primary flex-shrink-0" />
-        {!collapsed && (
+        {!isCollapsed && (
           <h1 className="text-base font-bold tracking-tight">
             <span className="text-gradient-opportunity">PropAnalytics</span>
           </h1>
@@ -93,31 +95,43 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
       {/* Main nav */}
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => renderNavItem(item, collapsed))}
+        {navItems.map((item) => renderNavItem(item, isCollapsed))}
       </nav>
 
       {/* Bottom section */}
       <div className="p-2 space-y-0.5 border-t border-sidebar-border">
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="px-1 mb-1">
             <CsvUploadButton />
           </div>
         )}
-        {bottomItems.map((item) => renderNavItem(item, collapsed))}
+        {bottomItems.map((item) => renderNavItem(item, isCollapsed))}
 
         {/* Theme toggle */}
         <button
           onClick={toggle}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${collapsed ? "justify-center" : ""}`}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
           title={isDark ? "Modo claro" : "Modo oscuro"}
         >
           {isDark ? <Sun className="h-4 w-4 flex-shrink-0" /> : <Moon className="h-4 w-4 flex-shrink-0" />}
-          {!collapsed && <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>}
+          {!isCollapsed && <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>}
         </button>
+
+        {/* Collapse toggle (desktop only) */}
+        {!isMobile && (
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full justify-center"
+            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {!isCollapsed && <span>Colapsar</span>}
+          </button>
+        )}
 
         {/* User */}
         {user ? (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${collapsed ? "justify-center" : ""}`}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isCollapsed ? "justify-center" : ""}`}>
             {avatarUrl ? (
               <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover flex-shrink-0" />
             ) : (
@@ -125,7 +139,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
                 <User className="h-3.5 w-3.5 text-primary" />
               </div>
             )}
-            {!collapsed && (
+            {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-sidebar-foreground truncate">{displayName}</p>
                 <button onClick={handleSignOut} className="text-[10px] text-destructive hover:underline">
@@ -133,7 +147,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
                 </button>
               </div>
             )}
-            {collapsed && (
+            {isCollapsed && (
               <button onClick={handleSignOut} className="absolute" title="Cerrar sesión">
                 <span className="sr-only">Cerrar sesión</span>
               </button>
@@ -143,10 +157,10 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           <Link
             to="/auth"
             onClick={closeSidebar}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-all ${collapsed ? "justify-center" : ""}`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-all ${isCollapsed ? "justify-center" : ""}`}
           >
             <User className="h-4 w-4 flex-shrink-0" />
-            {!collapsed && <span>Iniciar sesión</span>}
+            {!isCollapsed && <span>Iniciar sesión</span>}
           </Link>
         )}
       </div>
@@ -158,7 +172,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
       {/* Desktop sidebar */}
       {!isMobile && (
         <aside className="hidden md:flex flex-shrink-0 sticky top-0 h-screen z-40">
-          {sidebarContent(false)}
+          {sidebarContent(collapsed)}
         </aside>
       )}
 
@@ -191,7 +205,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
                 <BarChart3 className="h-4 w-4 text-primary" />
                 <span className="text-sm font-bold text-gradient-opportunity">PropAnalytics</span>
               </div>
-              <div className="w-8" /> {/* Spacer for balance */}
+              <div className="w-8" />
             </div>
             {headerContent && (
               <div className="border-t border-border/50 px-3 py-1.5 flex items-center justify-center">
@@ -201,7 +215,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           </header>
         )}
 
-        {/* Desktop header content (filters etc) */}
+        {/* Desktop header content */}
         {!isMobile && headerContent && (
           <div className="border-b border-border glass-card px-4 py-2 flex items-center justify-center">
             {headerContent}
