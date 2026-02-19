@@ -84,15 +84,15 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const sidebarContent = (isCollapsed: boolean) => (
     <div className={`flex flex-col h-screen bg-sidebar-background border-r border-sidebar-border transition-[width] duration-300 ease-in-out ${isCollapsed ? "w-14" : "w-56"}`}>
       {/* Logo + collapse toggle */}
-      <div className={`flex items-center h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center" : "justify-between"}`}>
-        <div className={`flex items-center gap-2 ${isCollapsed ? "" : ""}`}>
-          <BarChart3 className="h-5 w-5 text-primary flex-shrink-0" />
-          {!isCollapsed && (
+      <div className={`flex items-center h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center px-2" : "justify-between"}`}>
+        {!isCollapsed && (
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary flex-shrink-0" />
             <h1 className="text-base font-bold tracking-tight">
               <span className="text-gradient-opportunity">PropAnalytics</span>
             </h1>
-          )}
-        </div>
+          </div>
+        )}
         {!isMobile && (
           <button
             onClick={() => setCollapsed((c) => !c)}

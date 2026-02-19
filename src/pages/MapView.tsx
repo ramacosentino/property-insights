@@ -559,7 +559,15 @@ const MapView = () => {
     });
 
     mapInstanceRef.current = map;
+
+    // Invalidate map size when container resizes (e.g. sidebar collapse)
+    const ro = new ResizeObserver(() => {
+      map.invalidateSize({ animate: true });
+    });
+    if (mapRef.current) ro.observe(mapRef.current);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapInstanceRef.current = null;
       diffuseLayerRef.current = null;
