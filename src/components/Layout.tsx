@@ -82,14 +82,25 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   };
 
   const sidebarContent = (isCollapsed: boolean) => (
-    <div className={`flex flex-col h-screen bg-sidebar-background border-r border-sidebar-border ${isCollapsed ? "w-14" : "w-56"} transition-all duration-200`}>
-      {/* Logo */}
-      <div className={`flex items-center gap-2 h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center" : ""}`}>
-        <BarChart3 className="h-5 w-5 text-primary flex-shrink-0" />
-        {!isCollapsed && (
-          <h1 className="text-base font-bold tracking-tight">
-            <span className="text-gradient-opportunity">PropAnalytics</span>
-          </h1>
+    <div className={`flex flex-col h-screen bg-sidebar-background border-r border-sidebar-border transition-[width] duration-300 ease-in-out ${isCollapsed ? "w-14" : "w-56"}`}>
+      {/* Logo + collapse toggle */}
+      <div className={`flex items-center h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center" : "justify-between"}`}>
+        <div className={`flex items-center gap-2 ${isCollapsed ? "" : ""}`}>
+          <BarChart3 className="h-5 w-5 text-primary flex-shrink-0" />
+          {!isCollapsed && (
+            <h1 className="text-base font-bold tracking-tight">
+              <span className="text-gradient-opportunity">PropAnalytics</span>
+            </h1>
+          )}
+        </div>
+        {!isMobile && (
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="p-1.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all"
+            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
         )}
       </div>
 
@@ -117,17 +128,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           {!isCollapsed && <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>}
         </button>
 
-        {/* Collapse toggle (desktop only) */}
-        {!isMobile && (
-          <button
-            onClick={() => setCollapsed((c) => !c)}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full justify-center"
-            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
-          >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            {!isCollapsed && <span>Colapsar</span>}
-          </button>
-        )}
+        {/* Collapse toggle removed — now in header */}
 
         {/* User */}
         {user ? (
