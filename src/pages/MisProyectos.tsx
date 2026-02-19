@@ -27,28 +27,30 @@ const MisProyectos = () => {
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<string>("none");
 
-  // Fetch user analyses and discarded state
+  // Fetch user-specific analyses (oportunidad_neta, valor_potencial_median_m2) and discarded state
   useEffect(() => {
     if (!user) return;
 
     supabase
       .from("user_property_analysis")
-      .select("*")
+      .select("property_id, oportunidad_neta, valor_potencial_median_m2")
       .eq("user_id", user.id)
       .then(({ data: analyses }) => {
         const map: Record<string, UserAnalysis> = {};
         (analyses ?? []).forEach((a: any) => {
+          // Find the property to merge shared analysis from properties table
+          const prop = properties.find(p => p.id === a.property_id);
           map[a.property_id] = {
-            score_multiplicador: a.score_multiplicador,
-            informe_breve: a.informe_breve,
-            highlights: a.highlights,
-            lowlights: a.lowlights,
-            estado_general: a.estado_general,
-            valor_potencial_m2: a.valor_potencial_m2,
-            valor_potencial_total: a.valor_potencial_total,
-            valor_potencial_median_m2: (a as any).valor_potencial_median_m2 ?? null,
-            comparables_count: a.comparables_count,
-            oportunidad_ajustada: a.oportunidad_ajustada,
+            score_multiplicador: prop?.score_multiplicador ?? null,
+            informe_breve: prop?.informe_breve ?? null,
+            highlights: prop?.highlights ?? null,
+            lowlights: prop?.lowlights ?? null,
+            estado_general: prop?.estado_general ?? null,
+            valor_potencial_m2: prop?.valor_potencial_m2 ?? null,
+            valor_potencial_total: prop?.valor_potencial_total ?? null,
+            valor_potencial_median_m2: a.valor_potencial_median_m2 ?? null,
+            comparables_count: prop?.comparables_count ?? null,
+            oportunidad_ajustada: prop?.oportunidad_ajustada ?? null,
             oportunidad_neta: a.oportunidad_neta,
           };
         });
@@ -63,7 +65,7 @@ const MisProyectos = () => {
       .then(({ data: discarded }) => {
         setDiscardedIds(new Set((discarded ?? []).map((d: any) => d.property_id)));
       });
-  }, [user]);
+  }, [user, properties]);
 
   if (!authLoading && !user) {
     return <Navigate to="/auth" replace />;
