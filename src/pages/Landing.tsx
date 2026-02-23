@@ -377,7 +377,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Value Proposition ═══ */}
-      <section className="py-24 md:py-32 px-6 relative overflow-hidden bg-gradient-to-br from-muted/50 to-background">
+      <section className="py-16 md:py-20 px-6 relative overflow-hidden bg-gradient-to-br from-muted/50 to-background">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px]" />
