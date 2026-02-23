@@ -176,6 +176,13 @@ const Landing = () => {
             <a href="#pricing" className="hover:text-landing-fg transition-colors">Precios</a>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggle}
+              className="p-2 rounded-full text-landing-muted hover:text-landing-fg hover:bg-landing-card transition-colors"
+              title={isDark ? "Modo claro" : "Modo oscuro"}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
             {user ? (
               <Button asChild size="sm" className="rounded-full px-5">
                 <Link to="/">Ir a la app</Link>
