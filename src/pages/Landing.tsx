@@ -341,13 +341,13 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: BarChart3, label: "Análisis automático" },
-              { icon: Target, label: "Comparables reales" },
-              { icon: TrendingUp, label: "Score de oportunidad" },
-              { icon: Bell, label: "Alertas inteligentes" },
+              { Icon: IconAnalysis, label: "Análisis automático" },
+              { Icon: IconComparables, label: "Comparables reales" },
+              { Icon: IconScore, label: "Score de oportunidad" },
+              { Icon: IconAlert, label: "Alertas inteligentes" },
             ].map((item, i) => (
               <div key={i} className="p-5 rounded-2xl border border-landing-card-border bg-landing-card/50 landing-card-glow text-center">
-                <item.icon className="h-7 w-7 text-primary mx-auto mb-3" />
+                <item.Icon className="mx-auto mb-3" size={32} />
                 <span className="text-sm font-semibold text-landing-fg">{item.label}</span>
               </div>
             ))}
