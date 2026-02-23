@@ -3,9 +3,6 @@ import { motion } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
-import {
-  IconMap, IconSearch, IconCalculator, IconTrending, IconStar, IconBell,
-} from "@/components/landing/GradientIcons";
 import landingHeroBg from "@/assets/landing-hero-bg.jpg";
 import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
@@ -30,37 +27,31 @@ const stagger = {
 /* ──────────── Data ──────────── */
 const features = [
   {
-    Icon: IconMap,
     title: "Mapa interactivo",
     desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
     detail: "Filtrá por barrio, precio, superficie y más. Identificá clusters de oportunidad que otros no ven.",
   },
   {
-    Icon: IconSearch,
     title: "Búsqueda inteligente",
     desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
     detail: "Combiná filtros avanzados y guardá tus búsquedas. Recibí nuevas propiedades que matchean automáticamente.",
   },
   {
-    Icon: IconCalculator,
     title: "Tasación automática",
     desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
     detail: "Nuestro algoritmo analiza propiedades similares por zona, superficie y características para darte un valor objetivo.",
   },
   {
-    Icon: IconTrending,
     title: "Inteligencia de precios",
     desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
     detail: "Gráficos interactivos con evolución histórica. Detectá zonas en ascenso antes que el resto.",
   },
   {
-    Icon: IconStar,
     title: "Mis Proyectos",
     desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
     detail: "Agregá notas, descartá las que no van y mantené organizado tu proceso de decisión.",
   },
   {
-    Icon: IconBell,
     title: "Alertas",
     desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
     detail: "Notificaciones personalizadas por email o en la app. Nunca más te pierdas una oportunidad.",
@@ -278,7 +269,7 @@ const Landing = () => {
       <section className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingHeroBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+          <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
         </div>
         <motion.div
           className="relative max-w-4xl mx-auto text-center"
@@ -319,7 +310,7 @@ const Landing = () => {
       <section className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingSolutionBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+          <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
         </div>
         <motion.div
           className="relative max-w-5xl mx-auto text-center"
@@ -384,18 +375,11 @@ const Landing = () => {
                 className="group grid grid-cols-1 md:grid-cols-2 gap-6 items-center p-8 md:p-10 rounded-3xl border border-landing-card-border bg-landing-card/30 hover:bg-landing-card/60 transition-all duration-500"
               >
                 <div className={i % 2 === 1 ? "md:order-2" : ""}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <feat.Icon size={24} />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-landing-fg">{feat.title}</h3>
-                  </div>
+                  <h3 className="text-xl md:text-2xl font-semibold text-landing-fg mb-4">{feat.title}</h3>
                   <p className="text-landing-muted leading-relaxed mb-3">{feat.desc}</p>
                   <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
                 </div>
-                <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border flex items-center justify-center ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                  <feat.Icon size={64} className="opacity-30" />
-                </div>
+                <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border ${i % 2 === 1 ? "md:order-1" : ""}`} />
               </motion.div>
             ))}
           </div>
@@ -406,7 +390,7 @@ const Landing = () => {
       <section id="profiles" className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingProfilesBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+          <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
         </div>
         <motion.div
           className="relative max-w-6xl mx-auto"
