@@ -423,7 +423,7 @@ const Landing = () => {
               <BarChart3 className="h-3.5 w-3.5 text-primary" />
               Para cada perfil
             </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight">
               Valor real para{" "}
               <span className="landing-gradient-text">cada usuario</span>
             </h2>
