@@ -63,6 +63,14 @@
     /* Map-specific tokens */
     --deal-marker: 220 15% 10%;
     --map-tiles: light;
+
+    /* Landing page tokens */
+    --landing-bg: 220 25% 4%;
+    --landing-fg: 210 20% 92%;
+    --landing-muted: 215 15% 55%;
+    --landing-card: 220 22% 9%;
+    --landing-card-border: 220 18% 16%;
+    --landing-glow: 200 85% 42%;
   }
 
   .dark {
@@ -188,5 +196,17 @@
     background: linear-gradient(135deg, hsl(var(--expensive)), hsl(155 55% 50%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+  .landing-gradient-text {
+    background: linear-gradient(135deg, hsl(200 85% 55%), hsl(190 90% 65%), hsl(155 70% 50%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .landing-card-glow {
+    box-shadow: 0 0 40px -15px hsl(200 85% 50% / 0.15);
+  }
+  .landing-section {
+    background: hsl(var(--landing-bg));
+    color: hsl(var(--landing-fg));
   }
 }

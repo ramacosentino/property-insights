@@ -73,6 +73,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        landing: {
+          bg: "hsl(var(--landing-bg))",
+          fg: "hsl(var(--landing-fg))",
+          muted: "hsl(var(--landing-muted))",
+          card: "hsl(var(--landing-card))",
+          "card-border": "hsl(var(--landing-card-border))",
+          glow: "hsl(var(--landing-glow))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

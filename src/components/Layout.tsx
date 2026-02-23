@@ -13,7 +13,7 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { path: "/", label: "Mapa", icon: Map },
+  { path: "/mapa", label: "Mapa", icon: Map },
   { path: "/propiedades", label: "Propiedades", icon: List },
   { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badgeKey: "preselection" as const },
   { path: "/busqueda", label: "Búsqueda", icon: Search },
