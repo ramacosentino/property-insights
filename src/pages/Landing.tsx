@@ -68,7 +68,7 @@ const userProfiles = [
       "No te sobreprecien: tené los datos del mercado",
       "Ahorrá tiempo filtrando solo lo que vale la pena",
     ],
-    gradient: "from-blue-500/20 to-cyan-500/20",
+    color: "from-blue-600 to-cyan-500",
   },
   {
     title: "Inversor",
@@ -79,7 +79,7 @@ const userProfiles = [
       "Análisis de rentabilidad por zona y USD/m²",
       "Alertas para no perder las mejores ofertas",
     ],
-    gradient: "from-emerald-500/20 to-teal-500/20",
+    color: "from-emerald-600 to-teal-500",
   },
   {
     title: "Inmobiliaria",
@@ -90,7 +90,7 @@ const userProfiles = [
       "Entendé tendencias por barrio para asesorar mejor",
       "Diferenciarte con analítica profesional",
     ],
-    gradient: "from-violet-500/20 to-purple-500/20",
+    color: "from-violet-600 to-purple-500",
   },
 ];
 
