@@ -375,18 +375,11 @@ const Landing = () => {
                 className="group grid grid-cols-1 md:grid-cols-2 gap-6 items-center p-8 md:p-10 rounded-3xl border border-landing-card-border bg-landing-card/30 hover:bg-landing-card/60 transition-all duration-500"
               >
                 <div className={i % 2 === 1 ? "md:order-2" : ""}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <feat.Icon size={24} />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-landing-fg">{feat.title}</h3>
-                  </div>
+                  <h3 className="text-xl md:text-2xl font-semibold text-landing-fg mb-4">{feat.title}</h3>
                   <p className="text-landing-muted leading-relaxed mb-3">{feat.desc}</p>
                   <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
                 </div>
-                <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border flex items-center justify-center ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                  <feat.Icon size={64} className="opacity-30" />
-                </div>
+                <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border ${i % 2 === 1 ? "md:order-1" : ""}`} />
               </motion.div>
             ))}
           </div>
