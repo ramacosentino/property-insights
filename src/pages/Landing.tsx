@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
+  Map, Search, BarChart2, TrendingUp, FolderOpen, Bell,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
-// solution section uses solid bg, no image needed
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import featMap from "@/assets/feat-map.jpg";
 import featSearch from "@/assets/feat-search.jpg";
@@ -22,11 +22,26 @@ import { Loader2, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 /* ──────────── Animations ──────────── */
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] as const } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] } },
 };
-const stagger = {
+
+const cardReveal: Variants = {
+  hidden: { opacity: 0, y: 30, scale: 0.97 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.6,
+      delay: i * 0.1,
+      ease: [0.25, 0.4, 0.25, 1],
+    },
+  }),
+};
+
+const stagger: Variants = {
   visible: { transition: { staggerChildren: 0.12 } },
 };
 
@@ -37,36 +52,65 @@ const features = [
     desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
     detail: "Filtrá por barrio, precio, superficie y más. Identificá clusters de oportunidad que otros no ven.",
     image: featMap,
+    icon: Map,
   },
   {
     title: "Búsqueda inteligente",
     desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
     detail: "Combiná filtros avanzados y guardá tus búsquedas. Recibí nuevas propiedades que matchean automáticamente.",
     image: featSearch,
+    icon: Search,
   },
   {
     title: "Tasación automática",
     desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
     detail: "Nuestro algoritmo analiza propiedades similares por zona, superficie y características para darte un valor objetivo.",
     image: featTasacion,
+    icon: BarChart2,
   },
   {
     title: "Inteligencia de precios",
     desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
     detail: "Gráficos interactivos con evolución histórica. Detectá zonas en ascenso antes que el resto.",
     image: featPrecios,
+    icon: TrendingUp,
   },
   {
     title: "Mis Proyectos",
     desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
     detail: "Agregá notas, descartá las que no van y mantené organizado tu proceso de decisión.",
     image: featProyectos,
+    icon: FolderOpen,
   },
   {
     title: "Alertas",
     desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
     detail: "Notificaciones personalizadas por email o en la app. Nunca más te pierdas una oportunidad.",
     image: featAlertas,
+    icon: Bell,
+  },
+];
+
+const solutionPillars = [
+  {
+    icon: BarChart2,
+    title: "Análisis automático",
+    desc: "Cada propiedad evaluada con algoritmos de mercado.",
+  },
+  {
+    icon: Search,
+    title: "Comparables reales",
+    desc: "Propiedades similares por zona y características.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Score de oportunidad",
+    desc: "Un número claro para priorizar tu búsqueda.",
+  },
+  {
+    icon: Bell,
+    title: "Alertas inteligentes",
+    desc: "Enterate primero de nuevas oportunidades.",
   },
 ];
 
@@ -80,7 +124,6 @@ const userProfiles = [
       "No te sobreprecien: tené los datos del mercado",
       "Ahorrá tiempo filtrando solo lo que vale la pena",
     ],
-    color: "from-blue-600 to-cyan-500",
   },
   {
     title: "Inversor",
@@ -91,7 +134,6 @@ const userProfiles = [
       "Análisis de rentabilidad por zona y USD/m²",
       "Alertas para no perder las mejores ofertas",
     ],
-    color: "from-emerald-600 to-teal-500",
   },
   {
     title: "Inmobiliaria",
@@ -102,7 +144,6 @@ const userProfiles = [
       "Entendé tendencias por barrio para asesorar mejor",
       "Diferenciarte con analítica profesional",
     ],
-    color: "from-violet-600 to-purple-500",
   },
 ];
 
@@ -248,7 +289,6 @@ const Landing = () => {
           </motion.div>
         </motion.div>
 
-        {/* Scroll indicator */}
         <motion.div
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
           animate={{ y: [0, 8, 0] }}
@@ -303,23 +343,40 @@ const Landing = () => {
             Propiedades dispersas en decenas de portales. Sin comparación objetiva. Sin datos de valor real.
             La mayoría de las decisiones de compra se toman con intuición — no con información.
           </motion.p>
-          <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
               { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
               { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
               { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
             ].map((item, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-left">
-                <h3 className="font-semibold text-lg text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-white/75 leading-relaxed">{item.desc}</p>
-              </div>
+              <motion.div
+                key={i}
+                custom={i}
+                variants={cardReveal}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                className="relative p-6 rounded-2xl backdrop-blur-xl border border-white/20 text-left overflow-hidden group"
+                style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)" }}
+              >
+                {/* Glow accent on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 to-transparent" />
+                <div className="relative">
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 text-white/60 text-sm font-bold mb-4">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="font-semibold text-lg text-white mb-2">{item.title}</h3>
+                  <p className="text-sm text-white/75 leading-relaxed">{item.desc}</p>
+                </div>
+              </motion.div>
             ))}
-          </motion.div>
+          </div>
         </motion.div>
       </section>
 
       {/* ═══ Value Proposition ═══ */}
-      <section className="py-24 md:py-32 px-6 relative overflow-hidden bg-gradient-to-br from-slate-50 to-sky-50 dark:from-slate-900 dark:to-slate-800">
+      <section className="py-24 md:py-32 px-6 relative overflow-hidden bg-gradient-to-br from-muted/50 to-background">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px]" />
@@ -343,61 +400,90 @@ const Landing = () => {
           <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-14">
             PropAnalytics reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
           </motion.p>
-          <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              "Análisis automático",
-              "Comparables reales",
-              "Score de oportunidad",
-              "Alertas inteligentes",
-            ].map((label, i) => (
-              <div key={i} className="p-5 rounded-2xl bg-primary text-center shadow-lg">
-                <span className="text-sm font-semibold text-primary-foreground">{label}</span>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+            {solutionPillars.map((pillar, i) => (
+              <motion.div
+                key={i}
+                custom={i}
+                variants={cardReveal}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                className="group relative p-6 rounded-2xl border border-border bg-card/80 backdrop-blur-sm text-left overflow-hidden hover:shadow-xl hover:shadow-primary/10 transition-shadow duration-500"
+              >
+                {/* Gradient top accent */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-300">
+                  <pillar.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1.5">{pillar.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{pillar.desc}</p>
+              </motion.div>
             ))}
-          </motion.div>
+          </div>
         </motion.div>
       </section>
 
       {/* ═══ Features Tour ═══ */}
       <section id="features" className="py-24 md:py-32 px-6">
-        <motion.div
-          className="max-w-6xl mx-auto"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={stagger}
-        >
-          <motion.div variants={fadeUp} className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={stagger}
+          >
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
               <BarChart3 className="h-3.5 w-3.5 text-primary" />
               Funcionalidades
-            </div>
-            <h2 className="text-3xl md:text-5xl font-medium tracking-tight">
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight">
               Cada herramienta que
               <br />
               <span className="landing-gradient-text">necesitás</span>
-            </h2>
+            </motion.h2>
           </motion.div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {features.map((feat, i) => (
               <motion.div
                 key={i}
-                variants={fadeUp}
-                className="group grid grid-cols-1 md:grid-cols-2 gap-6 items-center p-8 md:p-10 rounded-3xl border border-landing-card-border bg-landing-card/30 hover:bg-landing-card/60 transition-all duration-500"
+                custom={i}
+                variants={cardReveal}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                whileHover={{ scale: 1.01, transition: { duration: 0.3 } }}
+                className="group relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center p-8 md:p-10 rounded-3xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500"
               >
-                <div className={i % 2 === 1 ? "md:order-2" : ""}>
-                  <h3 className="text-xl md:text-2xl font-semibold text-landing-fg mb-4">{feat.title}</h3>
+                {/* Left gradient accent bar */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-accent to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                <div className={`relative ${i % 2 === 1 ? "md:order-2" : ""}`}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
+                      <feat.icon className="h-4.5 w-4.5 text-primary" />
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-semibold text-landing-fg">{feat.title}</h3>
+                  </div>
                   <p className="text-landing-muted leading-relaxed mb-3">{feat.desc}</p>
                   <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
                 </div>
-                <div className={`aspect-[16/10] rounded-2xl border border-landing-card-border overflow-hidden ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                  <img src={feat.image} alt={feat.title} className="w-full h-full object-cover" />
+                <div className={`aspect-[16/10] rounded-2xl border border-landing-card-border/40 overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-500 ${i % 2 === 1 ? "md:order-1" : ""}`}>
+                  <motion.img
+                    src={feat.image}
+                    alt={feat.title}
+                    className="w-full h-full object-cover"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.6 }}
+                  />
                 </div>
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ═══ User Profiles ═══ */}
@@ -420,7 +506,7 @@ const Landing = () => {
             </div>
             <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
               Valor real para{" "}
-              <span className="text-cyan-400">cada usuario</span>
+              <span className="text-primary">cada usuario</span>
             </h2>
           </motion.div>
 
@@ -428,19 +514,34 @@ const Landing = () => {
             {userProfiles.map((profile, i) => (
               <motion.div
                 key={i}
-                variants={fadeUp}
-                className={`relative p-8 rounded-3xl bg-gradient-to-br ${profile.color} shadow-2xl hover:scale-[1.02] transition-transform duration-500`}
+                custom={i}
+                variants={cardReveal}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                className="relative p-8 rounded-3xl backdrop-blur-xl border border-white/15 overflow-hidden group"
+                style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%)" }}
               >
-                <h3 className="text-2xl font-semibold text-white mb-1">{profile.title}</h3>
-                <p className="text-sm text-white/80 font-medium mb-5">{profile.subtitle}</p>
-                <ul className="space-y-3">
-                  {profile.points.map((p, j) => (
-                    <li key={j} className="flex items-start gap-2.5 text-sm text-white/90">
-                      <Check className="h-4 w-4 text-white flex-shrink-0 mt-0.5" />
-                      <span>{p}</span>
-                    </li>
-                  ))}
-                </ul>
+                {/* Subtle top accent */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
+                {/* Hover glow */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/8 to-transparent" />
+
+                <div className="relative">
+                  <h3 className="text-2xl font-semibold text-white mb-1">{profile.title}</h3>
+                  <p className="text-sm text-white/70 font-medium mb-5">{profile.subtitle}</p>
+                  <ul className="space-y-3">
+                    {profile.points.map((p, j) => (
+                      <li key={j} className="flex items-start gap-2.5 text-sm text-white/85">
+                        <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-primary" />
+                        </div>
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -469,52 +570,70 @@ const Landing = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {plans.map((plan) => {
+            {plans.map((plan, i) => {
               const isCurrent = currentPlan === plan.id && isActive;
               return (
                 <motion.div
                   key={plan.id}
-                  variants={fadeUp}
-                  className={`relative flex flex-col rounded-3xl border p-8 transition-all ${
+                  custom={i}
+                  variants={cardReveal}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                  className={`relative flex flex-col rounded-3xl border p-8 transition-all duration-500 overflow-hidden group ${
                     plan.popular
-                      ? "border-primary/50 bg-primary/5 landing-card-glow"
-                      : "border-landing-card-border bg-landing-card/40"
+                      ? "border-primary/50 bg-card shadow-xl shadow-primary/10"
+                      : "border-landing-card-border bg-card/60 hover:shadow-lg hover:shadow-primary/5"
                   }`}
                 >
+                  {/* Top accent for popular */}
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                      Más popular
-                    </div>
+                    <>
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                        Más popular
+                      </div>
+                    </>
                   )}
-                  <div className="flex items-center gap-3 mb-2">
-                    <plan.icon className={`h-5 w-5 ${plan.popular ? "text-primary" : "text-landing-muted"}`} />
-                    <h3 className="font-bold text-xl text-landing-fg">{plan.name}</h3>
+                  {/* Hover glow */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/5 to-transparent" />
+
+                  <div className="relative flex-1 flex flex-col">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${plan.popular ? "bg-primary/15" : "bg-muted"}`}>
+                        <plan.icon className={`h-4.5 w-4.5 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <h3 className="font-bold text-xl text-landing-fg">{plan.name}</h3>
+                    </div>
+                    <p className="text-2xl font-black text-landing-fg mb-6">{plan.price}</p>
+                    <ul className="flex-1 space-y-3 mb-8">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2.5 text-sm text-landing-muted">
+                          <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Check className="h-3 w-3 text-primary" />
+                          </div>
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={subscribing === plan.id || isCurrent || plan.id === "free"}
+                      className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                        isCurrent
+                          ? "bg-primary/10 text-primary cursor-default"
+                          : plan.popular
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
+                          : plan.id === "free"
+                          ? "bg-muted border border-border text-muted-foreground cursor-default"
+                          : "bg-muted border border-border text-foreground hover:bg-muted/80"
+                      } disabled:opacity-60`}
+                    >
+                      {subscribing === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {isCurrent ? "Plan actual" : plan.id === "free" ? "Gratis para siempre" : "Suscribirse"}
+                    </button>
                   </div>
-                  <p className="text-2xl font-black text-landing-fg mb-6">{plan.price}</p>
-                  <ul className="flex-1 space-y-3 mb-8">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm text-landing-muted">
-                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={subscribing === plan.id || isCurrent || plan.id === "free"}
-                    className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                      isCurrent
-                        ? "bg-primary/10 text-primary cursor-default"
-                        : plan.popular
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
-                        : plan.id === "free"
-                        ? "bg-landing-card border border-landing-card-border text-landing-muted cursor-default"
-                        : "bg-landing-card border border-landing-card-border text-landing-fg hover:bg-landing-card-border"
-                    } disabled:opacity-60`}
-                  >
-                    {subscribing === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {isCurrent ? "Plan actual" : plan.id === "free" ? "Gratis para siempre" : "Suscribirse"}
-                  </button>
                 </motion.div>
               );
             })}
