@@ -409,7 +409,7 @@ const Landing = () => {
           <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
         </div>
         <motion.div
-          className="max-w-6xl mx-auto"
+          className="relative max-w-6xl mx-auto"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
