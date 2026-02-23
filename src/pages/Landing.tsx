@@ -30,37 +30,37 @@ const stagger = {
 /* ──────────── Data ──────────── */
 const features = [
   {
-    icon: Map,
+    Icon: IconMap,
     title: "Mapa interactivo",
     desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
     detail: "Filtrá por barrio, precio, superficie y más. Identificá clusters de oportunidad que otros no ven.",
   },
   {
-    icon: Search,
+    Icon: IconSearch,
     title: "Búsqueda inteligente",
     desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
     detail: "Combiná filtros avanzados y guardá tus búsquedas. Recibí nuevas propiedades que matchean automáticamente.",
   },
   {
-    icon: Calculator,
+    Icon: IconCalculator,
     title: "Tasación automática",
     desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
     detail: "Nuestro algoritmo analiza propiedades similares por zona, superficie y características para darte un valor objetivo.",
   },
   {
-    icon: TrendingUp,
+    Icon: IconTrending,
     title: "Inteligencia de precios",
     desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
     detail: "Gráficos interactivos con evolución histórica. Detectá zonas en ascenso antes que el resto.",
   },
   {
-    icon: Star,
+    Icon: IconStar,
     title: "Mis Proyectos",
     desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
     detail: "Agregá notas, descartá las que no van y mantené organizado tu proceso de decisión.",
   },
   {
-    icon: Bell,
+    Icon: IconBell,
     title: "Alertas",
     desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
     detail: "Notificaciones personalizadas por email o en la app. Nunca más te pierdas una oportunidad.",
