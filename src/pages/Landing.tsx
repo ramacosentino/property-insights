@@ -248,7 +248,7 @@ const Landing = () => {
       </nav>
 
       {/* ═══ Hero ═══ */}
-      <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 px-6">
+      <section className="relative pt-28 pb-14 md:pt-36 md:pb-20 px-6">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/8 rounded-full blur-[120px]" />
           <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px]" />
