@@ -4,7 +4,7 @@ import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
-import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
+// solution section uses solid bg, no image needed
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import featMap from "@/assets/feat-map.jpg";
 import featSearch from "@/assets/feat-search.jpg";
@@ -319,10 +319,10 @@ const Landing = () => {
       </section>
 
       {/* ═══ Value Proposition ═══ */}
-      <section className="py-24 md:py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={landingSolutionBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-white/60 dark:bg-black/40" />
+      <section className="py-24 md:py-32 px-6 relative overflow-hidden bg-gradient-to-br from-slate-50 to-sky-50 dark:from-slate-900 dark:to-slate-800">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px]" />
         </div>
         <motion.div
           className="relative max-w-5xl mx-auto text-center"
@@ -331,7 +331,7 @@ const Landing = () => {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-foreground/20 bg-background/50 backdrop-blur-sm text-sm text-foreground/70 mb-6">
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50 backdrop-blur-sm text-sm text-muted-foreground mb-6">
             <Zap className="h-3.5 w-3.5 text-primary" />
             La solución
           </motion.div>
