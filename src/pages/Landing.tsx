@@ -406,7 +406,11 @@ const Landing = () => {
       </section>
 
       {/* ═══ User Profiles ═══ */}
-      <section id="profiles" className="py-24 md:py-32 px-6">
+      <section id="profiles" className="py-24 md:py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={landingProfilesBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+        </div>
         <motion.div
           className="max-w-6xl mx-auto"
           initial="hidden"
