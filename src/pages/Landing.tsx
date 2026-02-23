@@ -386,7 +386,7 @@ const Landing = () => {
                 <div className={i % 2 === 1 ? "md:order-2" : ""}>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <feat.icon className="h-5 w-5 text-primary" />
+                      <feat.Icon size={24} />
                     </div>
                     <h3 className="text-xl md:text-2xl font-bold text-landing-fg">{feat.title}</h3>
                   </div>
