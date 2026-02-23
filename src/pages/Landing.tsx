@@ -69,7 +69,6 @@ const features = [
 
 const userProfiles = [
   {
-    Icon: IconBuyer,
     title: "Comprador",
     subtitle: "Tomá decisiones informadas",
     points: [
