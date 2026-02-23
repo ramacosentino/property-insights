@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
-  Map, Search, BarChart2, TrendingUp, FolderOpen, Bell,
-  MapPin, Filter, DollarSign, LineChart, Bookmark, BellRing,
+  Search, BarChart2, TrendingUp, Bell,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import illustrations from "@/components/landing/FeatureIllustrations";
