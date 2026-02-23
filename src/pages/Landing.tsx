@@ -1,10 +1,14 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Map, Search, Calculator, TrendingUp, Star, Bell, BarChart3,
-  ArrowRight, Check, Building2, Briefcase, Users, ChevronDown,
-  Target, Eye, Shield, Zap, Crown,
+  BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
+import {
+  IconMap, IconSearch, IconCalculator, IconTrending, IconStar, IconBell,
+  IconShield, IconFragmented, IconTarget,
+  IconBuyer, IconInvestor, IconAgency,
+  IconAnalysis, IconComparables, IconScore, IconAlert,
+} from "@/components/landing/GradientIcons";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,37 +30,37 @@ const stagger = {
 /* ──────────── Data ──────────── */
 const features = [
   {
-    icon: Map,
+    Icon: IconMap,
     title: "Mapa interactivo",
     desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
     detail: "Filtrá por barrio, precio, superficie y más. Identificá clusters de oportunidad que otros no ven.",
   },
   {
-    icon: Search,
+    Icon: IconSearch,
     title: "Búsqueda inteligente",
     desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
     detail: "Combiná filtros avanzados y guardá tus búsquedas. Recibí nuevas propiedades que matchean automáticamente.",
   },
   {
-    icon: Calculator,
+    Icon: IconCalculator,
     title: "Tasación automática",
     desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
     detail: "Nuestro algoritmo analiza propiedades similares por zona, superficie y características para darte un valor objetivo.",
   },
   {
-    icon: TrendingUp,
+    Icon: IconTrending,
     title: "Inteligencia de precios",
     desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
     detail: "Gráficos interactivos con evolución histórica. Detectá zonas en ascenso antes que el resto.",
   },
   {
-    icon: Star,
+    Icon: IconStar,
     title: "Mis Proyectos",
     desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
     detail: "Agregá notas, descartá las que no van y mantené organizado tu proceso de decisión.",
   },
   {
-    icon: Bell,
+    Icon: IconBell,
     title: "Alertas",
     desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
     detail: "Notificaciones personalizadas por email o en la app. Nunca más te pierdas una oportunidad.",
@@ -65,7 +69,7 @@ const features = [
 
 const userProfiles = [
   {
-    icon: Building2,
+    Icon: IconBuyer,
     title: "Comprador",
     subtitle: "Tomá decisiones informadas",
     points: [
@@ -77,7 +81,7 @@ const userProfiles = [
     gradient: "from-blue-500/20 to-cyan-500/20",
   },
   {
-    icon: Briefcase,
+    Icon: IconInvestor,
     title: "Inversor",
     subtitle: "Encontrá oportunidades primero",
     points: [
@@ -89,7 +93,7 @@ const userProfiles = [
     gradient: "from-emerald-500/20 to-teal-500/20",
   },
   {
-    icon: Users,
+    Icon: IconAgency,
     title: "Inmobiliaria",
     subtitle: "Datos para ganar clientes",
     points: [
@@ -214,7 +218,7 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-8">
-            <Target className="h-3.5 w-3.5 text-primary" />
+            <BarChart3 className="h-3.5 w-3.5 text-primary" />
             Analítica inmobiliaria basada en datos
           </motion.div>
 
@@ -283,7 +287,7 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-            <Eye className="h-3.5 w-3.5 text-primary" />
+            <BarChart3 className="h-3.5 w-3.5 text-primary" />
             El problema
           </motion.div>
           <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black tracking-tight mb-6">
@@ -297,12 +301,12 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { icon: Shield, title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
-              { icon: Search, title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
-              { icon: Target, title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
+              { Icon: IconShield, title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
+              { Icon: IconFragmented, title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
+              { Icon: IconTarget, title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
             ].map((item, i) => (
               <div key={i} className="p-6 rounded-2xl border border-landing-card-border bg-landing-card/50 text-left">
-                <item.icon className="h-8 w-8 text-primary mb-4" />
+                <item.Icon className="mb-4" size={32} />
                 <h3 className="font-bold text-lg text-landing-fg mb-2">{item.title}</h3>
                 <p className="text-sm text-landing-muted leading-relaxed">{item.desc}</p>
               </div>
@@ -337,13 +341,13 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: BarChart3, label: "Análisis automático" },
-              { icon: Target, label: "Comparables reales" },
-              { icon: TrendingUp, label: "Score de oportunidad" },
-              { icon: Bell, label: "Alertas inteligentes" },
+              { Icon: IconAnalysis, label: "Análisis automático" },
+              { Icon: IconComparables, label: "Comparables reales" },
+              { Icon: IconScore, label: "Score de oportunidad" },
+              { Icon: IconAlert, label: "Alertas inteligentes" },
             ].map((item, i) => (
               <div key={i} className="p-5 rounded-2xl border border-landing-card-border bg-landing-card/50 landing-card-glow text-center">
-                <item.icon className="h-7 w-7 text-primary mx-auto mb-3" />
+                <item.Icon className="mx-auto mb-3" size={32} />
                 <span className="text-sm font-semibold text-landing-fg">{item.label}</span>
               </div>
             ))}
@@ -382,7 +386,7 @@ const Landing = () => {
                 <div className={i % 2 === 1 ? "md:order-2" : ""}>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <feat.icon className="h-5 w-5 text-primary" />
+                      <feat.Icon size={24} />
                     </div>
                     <h3 className="text-xl md:text-2xl font-bold text-landing-fg">{feat.title}</h3>
                   </div>
@@ -390,7 +394,7 @@ const Landing = () => {
                   <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
                 </div>
                 <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border flex items-center justify-center ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                  <feat.icon className="h-16 w-16 text-primary/20" />
+                  <feat.Icon size={64} className="opacity-30" />
                 </div>
               </motion.div>
             ))}
@@ -409,7 +413,7 @@ const Landing = () => {
         >
           <motion.div variants={fadeUp} className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-              <Users className="h-3.5 w-3.5 text-primary" />
+              <BarChart3 className="h-3.5 w-3.5 text-primary" />
               Para cada perfil
             </div>
             <h2 className="text-3xl md:text-5xl font-black tracking-tight">
@@ -428,7 +432,7 @@ const Landing = () => {
                 <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${profile.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative">
                   <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 inline-block mb-5">
-                    <profile.icon className="h-6 w-6 text-primary" />
+                    <profile.Icon size={28} />
                   </div>
                   <h3 className="text-2xl font-bold text-landing-fg mb-1">{profile.title}</h3>
                   <p className="text-sm text-primary font-medium mb-5">{profile.subtitle}</p>
