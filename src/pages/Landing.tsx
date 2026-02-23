@@ -11,7 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 /* ──────────── Animations ──────────── */
 const fadeUp = {
