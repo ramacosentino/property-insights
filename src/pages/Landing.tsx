@@ -335,7 +335,7 @@ const Landing = () => {
             <Zap className="h-3.5 w-3.5 text-primary" />
             La solución
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6">
             Todo el universo de propiedades,
             <br />
             <span className="landing-gradient-text">centralizado y comparado</span>
