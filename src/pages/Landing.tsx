@@ -294,7 +294,7 @@ const Landing = () => {
             <BarChart3 className="h-3.5 w-3.5 text-primary" />
             El problema
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6">
             El mercado inmobiliario
             <br />
             <span className="text-landing-muted">opera a ciegas</span>
