@@ -394,7 +394,7 @@ const Landing = () => {
                   <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
                 </div>
                 <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border flex items-center justify-center ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                  <feat.icon className="h-16 w-16 text-primary/20" />
+                  <feat.Icon size={64} className="opacity-30" />
                 </div>
               </motion.div>
             ))}
