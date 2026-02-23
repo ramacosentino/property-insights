@@ -372,7 +372,7 @@ const Landing = () => {
               <BarChart3 className="h-3.5 w-3.5 text-primary" />
               Funcionalidades
             </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight">
               Cada herramienta que
               <br />
               <span className="landing-gradient-text">necesitás</span>
