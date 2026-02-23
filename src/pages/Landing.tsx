@@ -438,10 +438,7 @@ const Landing = () => {
               >
                 <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${profile.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative">
-                  <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 inline-block mb-5">
-                    <profile.Icon size={28} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-landing-fg mb-1">{profile.title}</h3>
+                  <h3 className="text-2xl font-semibold text-landing-fg mb-1">{profile.title}</h3>
                   <p className="text-sm text-primary font-medium mb-5">{profile.subtitle}</p>
                   <ul className="space-y-3">
                     {profile.points.map((p, j) => (
