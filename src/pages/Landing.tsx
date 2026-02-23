@@ -446,28 +446,39 @@ const Landing = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((feat, i) => (
-              <motion.div
-                key={i}
-                custom={i}
-                variants={cardReveal}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
-                whileHover={{ y: -6, transition: { duration: 0.3 } }}
-                className="group relative p-7 rounded-2xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-500"
-              >
-                {/* Top gradient accent */}
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {features.map((feat, i) => {
+              const IllustrationComponent = illustrations[feat.icon.displayName || feat.icon.name || ""];
+              return (
+                <motion.div
+                  key={i}
+                  custom={i}
+                  variants={cardReveal}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-50px" }}
+                  whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                  className="group relative rounded-2xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-500"
+                >
+                  {/* Top gradient accent */}
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feat.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                  <feat.icon className={`h-7 w-7 ${feat.iconColor}`} />
-                </div>
-                <h3 className="text-lg font-semibold text-landing-fg mb-2">{feat.title}</h3>
-                <p className="text-sm text-landing-muted leading-relaxed mb-2">{feat.desc}</p>
-                <p className="text-xs text-landing-muted/60 leading-relaxed">{feat.detail}</p>
-              </motion.div>
-            ))}
+                  {/* Illustration */}
+                  <div className="h-44 p-3">
+                    {IllustrationComponent ? <IllustrationComponent /> : (
+                      <div className={`w-full h-full rounded-xl bg-gradient-to-br ${feat.color} flex items-center justify-center`}>
+                        <feat.icon className={`h-12 w-12 ${feat.iconColor}`} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text */}
+                  <div className="px-6 pb-6">
+                    <h3 className="text-lg font-semibold text-landing-fg mb-2">{feat.title}</h3>
+                    <p className="text-sm text-landing-muted leading-relaxed">{feat.desc}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
