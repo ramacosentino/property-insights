@@ -69,7 +69,7 @@ const features = [
 
 const userProfiles = [
   {
-    icon: Building2,
+    Icon: IconBuyer,
     title: "Comprador",
     subtitle: "Tomá decisiones informadas",
     points: [
@@ -81,7 +81,7 @@ const userProfiles = [
     gradient: "from-blue-500/20 to-cyan-500/20",
   },
   {
-    icon: Briefcase,
+    Icon: IconInvestor,
     title: "Inversor",
     subtitle: "Encontrá oportunidades primero",
     points: [
@@ -93,7 +93,7 @@ const userProfiles = [
     gradient: "from-emerald-500/20 to-teal-500/20",
   },
   {
-    icon: Users,
+    Icon: IconAgency,
     title: "Inmobiliaria",
     subtitle: "Datos para ganar clientes",
     points: [
