@@ -3,15 +3,10 @@ import { motion, type Variants } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
   Map, Search, BarChart2, TrendingUp, FolderOpen, Bell,
+  MapPin, Filter, DollarSign, LineChart, Bookmark, BellRing,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
-import featMap from "@/assets/feat-map.jpg";
-import featSearch from "@/assets/feat-search.jpg";
-import featTasacion from "@/assets/feat-tasacion.jpg";
-import featPrecios from "@/assets/feat-precios.jpg";
-import featProyectos from "@/assets/feat-proyectos.jpg";
-import featAlertas from "@/assets/feat-alertas.jpg";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,43 +46,49 @@ const features = [
     title: "Mapa interactivo",
     desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
     detail: "Filtrá por barrio, precio, superficie y más. Identificá clusters de oportunidad que otros no ven.",
-    image: featMap,
-    icon: Map,
+    icon: MapPin,
+    color: "from-blue-500/20 to-cyan-500/20",
+    iconColor: "text-blue-500",
   },
   {
     title: "Búsqueda inteligente",
     desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
     detail: "Combiná filtros avanzados y guardá tus búsquedas. Recibí nuevas propiedades que matchean automáticamente.",
-    image: featSearch,
-    icon: Search,
+    icon: Filter,
+    color: "from-violet-500/20 to-purple-500/20",
+    iconColor: "text-violet-500",
   },
   {
     title: "Tasación automática",
     desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
     detail: "Nuestro algoritmo analiza propiedades similares por zona, superficie y características para darte un valor objetivo.",
-    image: featTasacion,
-    icon: BarChart2,
+    icon: DollarSign,
+    color: "from-emerald-500/20 to-green-500/20",
+    iconColor: "text-emerald-500",
   },
   {
     title: "Inteligencia de precios",
     desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
     detail: "Gráficos interactivos con evolución histórica. Detectá zonas en ascenso antes que el resto.",
-    image: featPrecios,
-    icon: TrendingUp,
+    icon: LineChart,
+    color: "from-amber-500/20 to-orange-500/20",
+    iconColor: "text-amber-500",
   },
   {
     title: "Mis Proyectos",
     desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
     detail: "Agregá notas, descartá las que no van y mantené organizado tu proceso de decisión.",
-    image: featProyectos,
-    icon: FolderOpen,
+    icon: Bookmark,
+    color: "from-rose-500/20 to-pink-500/20",
+    iconColor: "text-rose-500",
   },
   {
     title: "Alertas",
     desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
     detail: "Notificaciones personalizadas por email o en la app. Nunca más te pierdas una oportunidad.",
-    image: featAlertas,
-    icon: Bell,
+    icon: BellRing,
+    color: "from-teal-500/20 to-cyan-500/20",
+    iconColor: "text-teal-500",
   },
 ];
 
@@ -247,7 +248,7 @@ const Landing = () => {
       </nav>
 
       {/* ═══ Hero ═══ */}
-      <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 px-6">
+      <section className="relative pt-28 pb-14 md:pt-36 md:pb-20 px-6">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/8 rounded-full blur-[120px]" />
           <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px]" />
@@ -318,7 +319,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Problem ═══ */}
-      <section className="py-24 md:py-32 px-6 relative overflow-hidden">
+      <section className="py-16 md:py-20 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingProblemBg} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/40" />
@@ -331,7 +332,6 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
-            <BarChart3 className="h-3.5 w-3.5 text-white" />
             El problema
           </motion.div>
           <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-white">
@@ -376,7 +376,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Value Proposition ═══ */}
-      <section className="py-24 md:py-32 px-6 relative overflow-hidden bg-gradient-to-br from-muted/50 to-background">
+      <section className="py-16 md:py-20 px-6 relative overflow-hidden bg-gradient-to-br from-muted/50 to-background">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px]" />
@@ -389,7 +389,6 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50 backdrop-blur-sm text-sm text-muted-foreground mb-6">
-            <Zap className="h-3.5 w-3.5 text-primary" />
             La solución
           </motion.div>
           <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-foreground">
@@ -426,7 +425,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Features Tour ═══ */}
-      <section id="features" className="py-24 md:py-32 px-6">
+      <section id="features" className="py-16 md:py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -435,8 +434,7 @@ const Landing = () => {
             viewport={{ once: true, margin: "-100px" }}
             variants={stagger}
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
               Funcionalidades
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight">
@@ -446,7 +444,7 @@ const Landing = () => {
             </motion.h2>
           </motion.div>
 
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((feat, i) => (
               <motion.div
                 key={i}
@@ -455,31 +453,18 @@ const Landing = () => {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-50px" }}
-                whileHover={{ scale: 1.01, transition: { duration: 0.3 } }}
-                className="group relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center p-8 md:p-10 rounded-3xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500"
+                whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                className="group relative p-7 rounded-2xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-500"
               >
-                {/* Left gradient accent bar */}
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-accent to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* Top gradient accent */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                <div className={`relative ${i % 2 === 1 ? "md:order-2" : ""}`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
-                      <feat.icon className="h-4.5 w-4.5 text-primary" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-semibold text-landing-fg">{feat.title}</h3>
-                  </div>
-                  <p className="text-landing-muted leading-relaxed mb-3">{feat.desc}</p>
-                  <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feat.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                  <feat.icon className={`h-7 w-7 ${feat.iconColor}`} />
                 </div>
-                <div className={`aspect-[16/10] rounded-2xl border border-landing-card-border/40 overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-500 ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                  <motion.img
-                    src={feat.image}
-                    alt={feat.title}
-                    className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.6 }}
-                  />
-                </div>
+                <h3 className="text-lg font-semibold text-landing-fg mb-2">{feat.title}</h3>
+                <p className="text-sm text-landing-muted leading-relaxed mb-2">{feat.desc}</p>
+                <p className="text-xs text-landing-muted/60 leading-relaxed">{feat.detail}</p>
               </motion.div>
             ))}
           </div>
@@ -487,7 +472,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ User Profiles ═══ */}
-      <section id="profiles" className="py-24 md:py-32 px-6 relative overflow-hidden">
+      <section id="profiles" className="py-16 md:py-20 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingProfilesBg} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/50" />
@@ -501,7 +486,6 @@ const Landing = () => {
         >
           <motion.div variants={fadeUp} className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
-              <BarChart3 className="h-3.5 w-3.5 text-white" />
               Para cada perfil
             </div>
             <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
@@ -549,7 +533,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Pricing ═══ */}
-      <section id="pricing" className="py-24 md:py-32 px-6">
+      <section id="pricing" className="py-16 md:py-20 px-6">
         <motion.div
           className="max-w-5xl mx-auto"
           initial="hidden"
@@ -559,7 +543,6 @@ const Landing = () => {
         >
           <motion.div variants={fadeUp} className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-              <Zap className="h-3.5 w-3.5 text-primary" />
               Precios
             </div>
             <h2 className="text-3xl md:text-5xl font-medium tracking-tight mb-4">
@@ -642,7 +625,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Final CTA ═══ */}
-      <section className="py-24 md:py-32 px-6 relative">
+      <section className="py-16 md:py-20 px-6 relative">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-[150px]" />
         </div>
