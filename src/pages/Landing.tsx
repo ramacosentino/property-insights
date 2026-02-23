@@ -429,7 +429,7 @@ const Landing = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((feat, i) => {
-              const IllustrationComponent = illustrations[feat.icon.displayName || feat.icon.name || ""];
+              const IllustrationComponent = illustrations[feat.illustrationKey];
               return (
                 <motion.div
                   key={i}
@@ -446,11 +446,7 @@ const Landing = () => {
 
                   {/* Illustration */}
                   <div className="h-44 p-3">
-                    {IllustrationComponent ? <IllustrationComponent /> : (
-                      <div className={`w-full h-full rounded-xl bg-gradient-to-br ${feat.color} flex items-center justify-center`}>
-                        <feat.icon className={`h-12 w-12 ${feat.iconColor}`} />
-                      </div>
-                    )}
+                    {IllustrationComponent && <IllustrationComponent />}
                   </div>
 
                   {/* Text */}
