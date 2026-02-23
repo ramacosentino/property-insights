@@ -431,7 +431,7 @@ const Landing = () => {
               <motion.div
                 key={i}
                 variants={fadeUp}
-                className="relative p-8 rounded-3xl border border-landing-card-border bg-landing-card/40 hover:bg-landing-card/70 transition-all duration-500 group"
+                className="relative p-8 rounded-3xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm hover:bg-landing-card/90 transition-all duration-500 group"
               >
                 <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${profile.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative">
