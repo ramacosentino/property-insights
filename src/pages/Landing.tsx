@@ -3,9 +3,6 @@ import { motion } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
-import {
-  IconMap, IconSearch, IconCalculator, IconTrending, IconStar, IconBell,
-} from "@/components/landing/GradientIcons";
 import landingHeroBg from "@/assets/landing-hero-bg.jpg";
 import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
