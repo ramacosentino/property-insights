@@ -5,10 +5,10 @@ import {
 } from "lucide-react";
 import {
   IconMap, IconSearch, IconCalculator, IconTrending, IconStar, IconBell,
-  IconShield, IconFragmented, IconTarget,
-  IconBuyer, IconInvestor, IconAgency,
-  IconAnalysis, IconComparables, IconScore, IconAlert,
 } from "@/components/landing/GradientIcons";
+import landingHeroBg from "@/assets/landing-hero-bg.jpg";
+import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
+import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
@@ -69,7 +69,6 @@ const features = [
 
 const userProfiles = [
   {
-    Icon: IconBuyer,
     title: "Comprador",
     subtitle: "Tomá decisiones informadas",
     points: [
@@ -81,7 +80,6 @@ const userProfiles = [
     gradient: "from-blue-500/20 to-cyan-500/20",
   },
   {
-    Icon: IconInvestor,
     title: "Inversor",
     subtitle: "Encontrá oportunidades primero",
     points: [
@@ -93,7 +91,6 @@ const userProfiles = [
     gradient: "from-emerald-500/20 to-teal-500/20",
   },
   {
-    Icon: IconAgency,
     title: "Inmobiliaria",
     subtitle: "Datos para ganar clientes",
     points: [
@@ -222,7 +219,7 @@ const Landing = () => {
             Analítica inmobiliaria basada en datos
           </motion.div>
 
-          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[0.95] mb-6">
+          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[0.95] mb-6">
             Cambiá la forma
             <br />
             en que{" "}
@@ -278,9 +275,13 @@ const Landing = () => {
       </section>
 
       {/* ═══ Problem ═══ */}
-      <section className="py-24 md:py-32 px-6">
+      <section className="py-24 md:py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={landingHeroBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+        </div>
         <motion.div
-          className="max-w-4xl mx-auto text-center"
+          className="relative max-w-4xl mx-auto text-center"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
@@ -290,7 +291,7 @@ const Landing = () => {
             <BarChart3 className="h-3.5 w-3.5 text-primary" />
             El problema
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6">
             El mercado inmobiliario
             <br />
             <span className="text-landing-muted">opera a ciegas</span>
@@ -301,13 +302,12 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { Icon: IconShield, title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
-              { Icon: IconFragmented, title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
-              { Icon: IconTarget, title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
+              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
+              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
+              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
             ].map((item, i) => (
-              <div key={i} className="p-6 rounded-2xl border border-landing-card-border bg-landing-card/50 text-left">
-                <item.Icon className="mb-4" size={32} />
-                <h3 className="font-bold text-lg text-landing-fg mb-2">{item.title}</h3>
+              <div key={i} className="p-6 rounded-2xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm text-left">
+                <h3 className="font-semibold text-lg text-landing-fg mb-2">{item.title}</h3>
                 <p className="text-sm text-landing-muted leading-relaxed">{item.desc}</p>
               </div>
             ))}
@@ -316,9 +316,10 @@ const Landing = () => {
       </section>
 
       {/* ═══ Value Proposition ═══ */}
-      <section className="py-24 md:py-32 px-6 relative">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]" />
+      <section className="py-24 md:py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={landingSolutionBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
         </div>
         <motion.div
           className="relative max-w-5xl mx-auto text-center"
@@ -331,7 +332,7 @@ const Landing = () => {
             <Zap className="h-3.5 w-3.5 text-primary" />
             La solución
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-black tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6">
             Todo el universo de propiedades,
             <br />
             <span className="landing-gradient-text">centralizado y comparado</span>
@@ -341,14 +342,13 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { Icon: IconAnalysis, label: "Análisis automático" },
-              { Icon: IconComparables, label: "Comparables reales" },
-              { Icon: IconScore, label: "Score de oportunidad" },
-              { Icon: IconAlert, label: "Alertas inteligentes" },
-            ].map((item, i) => (
-              <div key={i} className="p-5 rounded-2xl border border-landing-card-border bg-landing-card/50 landing-card-glow text-center">
-                <item.Icon className="mx-auto mb-3" size={32} />
-                <span className="text-sm font-semibold text-landing-fg">{item.label}</span>
+              "Análisis automático",
+              "Comparables reales",
+              "Score de oportunidad",
+              "Alertas inteligentes",
+            ].map((label, i) => (
+              <div key={i} className="p-5 rounded-2xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm landing-card-glow text-center">
+                <span className="text-sm font-semibold text-landing-fg">{label}</span>
               </div>
             ))}
           </motion.div>
@@ -369,7 +369,7 @@ const Landing = () => {
               <BarChart3 className="h-3.5 w-3.5 text-primary" />
               Funcionalidades
             </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight">
               Cada herramienta que
               <br />
               <span className="landing-gradient-text">necesitás</span>
@@ -403,9 +403,13 @@ const Landing = () => {
       </section>
 
       {/* ═══ User Profiles ═══ */}
-      <section id="profiles" className="py-24 md:py-32 px-6">
+      <section id="profiles" className="py-24 md:py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={landingProfilesBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+        </div>
         <motion.div
-          className="max-w-6xl mx-auto"
+          className="relative max-w-6xl mx-auto"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
@@ -416,7 +420,7 @@ const Landing = () => {
               <BarChart3 className="h-3.5 w-3.5 text-primary" />
               Para cada perfil
             </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight">
               Valor real para{" "}
               <span className="landing-gradient-text">cada usuario</span>
             </h2>
@@ -427,14 +431,11 @@ const Landing = () => {
               <motion.div
                 key={i}
                 variants={fadeUp}
-                className="relative p-8 rounded-3xl border border-landing-card-border bg-landing-card/40 hover:bg-landing-card/70 transition-all duration-500 group"
+                className="relative p-8 rounded-3xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm hover:bg-landing-card/90 transition-all duration-500 group"
               >
                 <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${profile.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative">
-                  <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 inline-block mb-5">
-                    <profile.Icon size={28} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-landing-fg mb-1">{profile.title}</h3>
+                  <h3 className="text-2xl font-semibold text-landing-fg mb-1">{profile.title}</h3>
                   <p className="text-sm text-primary font-medium mb-5">{profile.subtitle}</p>
                   <ul className="space-y-3">
                     {profile.points.map((p, j) => (
@@ -465,7 +466,7 @@ const Landing = () => {
               <Zap className="h-3.5 w-3.5 text-primary" />
               Precios
             </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight mb-4">
               Empezá gratis,
               <br />
               <span className="landing-gradient-text">escalá cuando quieras</span>
@@ -538,7 +539,7 @@ const Landing = () => {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-black tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-medium tracking-tight mb-6">
             Dejá de buscar
             <br />
             <span className="landing-gradient-text">a ciegas</span>
