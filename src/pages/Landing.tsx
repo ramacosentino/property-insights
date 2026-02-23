@@ -537,7 +537,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Pricing ═══ */}
-      <section id="pricing" className="py-24 md:py-32 px-6">
+      <section id="pricing" className="py-16 md:py-20 px-6">
         <motion.div
           className="max-w-5xl mx-auto"
           initial="hidden"
