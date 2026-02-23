@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
-import landingHeroBg from "@/assets/landing-hero-bg.jpg";
+import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import { Button } from "@/components/ui/button";
