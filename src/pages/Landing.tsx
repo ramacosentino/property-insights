@@ -301,12 +301,12 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { icon: Shield, title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
-              { icon: Search, title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
-              { icon: Target, title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
+              { Icon: IconShield, title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
+              { Icon: IconFragmented, title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
+              { Icon: IconTarget, title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
             ].map((item, i) => (
               <div key={i} className="p-6 rounded-2xl border border-landing-card-border bg-landing-card/50 text-left">
-                <item.icon className="h-8 w-8 text-primary mb-4" />
+                <item.Icon className="mb-4" size={32} />
                 <h3 className="font-bold text-lg text-landing-fg mb-2">{item.title}</h3>
                 <p className="text-sm text-landing-muted leading-relaxed">{item.desc}</p>
               </div>
