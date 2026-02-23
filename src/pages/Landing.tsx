@@ -447,7 +447,7 @@ const Landing = () => {
             </motion.h2>
           </motion.div>
 
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((feat, i) => (
               <motion.div
                 key={i}
@@ -456,31 +456,18 @@ const Landing = () => {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-50px" }}
-                whileHover={{ scale: 1.01, transition: { duration: 0.3 } }}
-                className="group relative grid grid-cols-1 md:grid-cols-2 gap-8 items-center p-8 md:p-10 rounded-3xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500"
+                whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                className="group relative p-7 rounded-2xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-500"
               >
-                {/* Left gradient accent bar */}
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-accent to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* Top gradient accent */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                <div className={`relative ${i % 2 === 1 ? "md:order-2" : ""}`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
-                      <feat.icon className="h-4.5 w-4.5 text-primary" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-semibold text-landing-fg">{feat.title}</h3>
-                  </div>
-                  <p className="text-landing-muted leading-relaxed mb-3">{feat.desc}</p>
-                  <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feat.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                  <feat.icon className={`h-7 w-7 ${feat.iconColor}`} />
                 </div>
-                <div className={`aspect-[16/10] rounded-2xl border border-landing-card-border/40 overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-500 ${i % 2 === 1 ? "md:order-1" : ""}`}>
-                  <motion.img
-                    src={feat.image}
-                    alt={feat.title}
-                    className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.6 }}
-                  />
-                </div>
+                <h3 className="text-lg font-semibold text-landing-fg mb-2">{feat.title}</h3>
+                <p className="text-sm text-landing-muted leading-relaxed mb-2">{feat.desc}</p>
+                <p className="text-xs text-landing-muted/60 leading-relaxed">{feat.detail}</p>
               </motion.div>
             ))}
           </div>
