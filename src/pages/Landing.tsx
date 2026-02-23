@@ -6,6 +6,12 @@ import {
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
+import featMap from "@/assets/feat-map.jpg";
+import featSearch from "@/assets/feat-search.jpg";
+import featTasacion from "@/assets/feat-tasacion.jpg";
+import featPrecios from "@/assets/feat-precios.jpg";
+import featProyectos from "@/assets/feat-proyectos.jpg";
+import featAlertas from "@/assets/feat-alertas.jpg";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,31 +36,37 @@ const features = [
     title: "Mapa interactivo",
     desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
     detail: "Filtrá por barrio, precio, superficie y más. Identificá clusters de oportunidad que otros no ven.",
+    image: featMap,
   },
   {
     title: "Búsqueda inteligente",
     desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
     detail: "Combiná filtros avanzados y guardá tus búsquedas. Recibí nuevas propiedades que matchean automáticamente.",
+    image: featSearch,
   },
   {
     title: "Tasación automática",
     desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
     detail: "Nuestro algoritmo analiza propiedades similares por zona, superficie y características para darte un valor objetivo.",
+    image: featTasacion,
   },
   {
     title: "Inteligencia de precios",
     desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
     detail: "Gráficos interactivos con evolución histórica. Detectá zonas en ascenso antes que el resto.",
+    image: featPrecios,
   },
   {
     title: "Mis Proyectos",
     desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
     detail: "Agregá notas, descartá las que no van y mantené organizado tu proceso de decisión.",
+    image: featProyectos,
   },
   {
     title: "Alertas",
     desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
     detail: "Notificaciones personalizadas por email o en la app. Nunca más te pierdas una oportunidad.",
+    image: featAlertas,
   },
 ];
 
@@ -293,13 +305,13 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías.", color: "from-red-500/90 to-orange-500/90" },
-              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa.", color: "from-amber-500/90 to-yellow-500/90" },
-              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras.", color: "from-rose-500/90 to-pink-500/90" },
+              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
+              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
+              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
             ].map((item, i) => (
-              <div key={i} className={`p-6 rounded-2xl bg-gradient-to-br ${item.color} backdrop-blur-sm text-left shadow-xl`}>
+              <div key={i} className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-left">
                 <h3 className="font-semibold text-lg text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-white/85 leading-relaxed">{item.desc}</p>
+                <p className="text-sm text-white/75 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </motion.div>
@@ -310,7 +322,7 @@ const Landing = () => {
       <section className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingSolutionBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-white/60 dark:bg-black/40" />
         </div>
         <motion.div
           className="relative max-w-5xl mx-auto text-center"
@@ -319,27 +331,27 @@ const Landing = () => {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
-            <Zap className="h-3.5 w-3.5 text-white" />
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-foreground/20 bg-background/50 backdrop-blur-sm text-sm text-foreground/70 mb-6">
+            <Zap className="h-3.5 w-3.5 text-primary" />
             La solución
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-white">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-foreground">
             Todo el universo de propiedades,
             <br />
-            <span className="text-cyan-400">centralizado y comparado</span>
+            <span className="text-primary">centralizado y comparado</span>
           </motion.h2>
-          <motion.p variants={fadeUp} className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed mb-14">
+          <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-14">
             PropAnalytics reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Análisis automático", color: "from-blue-500 to-cyan-500" },
-              { label: "Comparables reales", color: "from-emerald-500 to-teal-500" },
-              { label: "Score de oportunidad", color: "from-violet-500 to-purple-500" },
-              { label: "Alertas inteligentes", color: "from-orange-500 to-amber-500" },
-            ].map((item, i) => (
-              <div key={i} className={`p-5 rounded-2xl bg-gradient-to-br ${item.color} text-center shadow-lg`}>
-                <span className="text-sm font-semibold text-white">{item.label}</span>
+              "Análisis automático",
+              "Comparables reales",
+              "Score de oportunidad",
+              "Alertas inteligentes",
+            ].map((label, i) => (
+              <div key={i} className="p-5 rounded-2xl bg-primary text-center shadow-lg">
+                <span className="text-sm font-semibold text-primary-foreground">{label}</span>
               </div>
             ))}
           </motion.div>
@@ -379,7 +391,9 @@ const Landing = () => {
                   <p className="text-landing-muted leading-relaxed mb-3">{feat.desc}</p>
                   <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
                 </div>
-                <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border ${i % 2 === 1 ? "md:order-1" : ""}`} />
+                <div className={`aspect-[16/10] rounded-2xl border border-landing-card-border overflow-hidden ${i % 2 === 1 ? "md:order-1" : ""}`}>
+                  <img src={feat.image} alt={feat.title} className="w-full h-full object-cover" />
+                </div>
               </motion.div>
             ))}
           </div>
