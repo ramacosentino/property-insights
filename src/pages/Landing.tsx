@@ -436,8 +436,7 @@ const Landing = () => {
             viewport={{ once: true, margin: "-100px" }}
             variants={stagger}
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
               Funcionalidades
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight">
