@@ -427,7 +427,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Features Tour ═══ */}
-      <section id="features" className="py-24 md:py-32 px-6">
+      <section id="features" className="py-16 md:py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="text-center mb-16"
