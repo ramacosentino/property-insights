@@ -123,6 +123,14 @@
 
     --deal-marker: 210 20% 90%;
     --map-tiles: dark;
+
+    /* Landing page tokens (dark) */
+    --landing-bg: 220 25% 4%;
+    --landing-fg: 210 20% 92%;
+    --landing-muted: 215 15% 55%;
+    --landing-card: 220 22% 9%;
+    --landing-card-border: 220 18% 16%;
+    --landing-glow: 200 85% 42%;
   }
 }
 
