@@ -305,13 +305,13 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías.", color: "from-red-500/90 to-orange-500/90" },
-              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa.", color: "from-amber-500/90 to-yellow-500/90" },
-              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras.", color: "from-rose-500/90 to-pink-500/90" },
+              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
+              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
+              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
             ].map((item, i) => (
-              <div key={i} className={`p-6 rounded-2xl bg-gradient-to-br ${item.color} backdrop-blur-sm text-left shadow-xl`}>
+              <div key={i} className="p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-left">
                 <h3 className="font-semibold text-lg text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-white/85 leading-relaxed">{item.desc}</p>
+                <p className="text-sm text-white/75 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </motion.div>
