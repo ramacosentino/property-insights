@@ -542,7 +542,7 @@ const Landing = () => {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-black tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-medium tracking-tight mb-6">
             Dejá de buscar
             <br />
             <span className="landing-gradient-text">a ciegas</span>
