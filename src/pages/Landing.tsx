@@ -322,7 +322,7 @@ const Landing = () => {
       <section className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingSolutionBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-white/60 dark:bg-black/40" />
         </div>
         <motion.div
           className="relative max-w-5xl mx-auto text-center"
@@ -331,27 +331,27 @@ const Landing = () => {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
-            <Zap className="h-3.5 w-3.5 text-white" />
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-foreground/20 bg-background/50 backdrop-blur-sm text-sm text-foreground/70 mb-6">
+            <Zap className="h-3.5 w-3.5 text-primary" />
             La solución
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-white">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-foreground">
             Todo el universo de propiedades,
             <br />
-            <span className="text-cyan-400">centralizado y comparado</span>
+            <span className="text-primary">centralizado y comparado</span>
           </motion.h2>
-          <motion.p variants={fadeUp} className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed mb-14">
+          <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-14">
             PropAnalytics reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Análisis automático", color: "from-blue-500 to-cyan-500" },
-              { label: "Comparables reales", color: "from-emerald-500 to-teal-500" },
-              { label: "Score de oportunidad", color: "from-violet-500 to-purple-500" },
-              { label: "Alertas inteligentes", color: "from-orange-500 to-amber-500" },
-            ].map((item, i) => (
-              <div key={i} className={`p-5 rounded-2xl bg-gradient-to-br ${item.color} text-center shadow-lg`}>
-                <span className="text-sm font-semibold text-white">{item.label}</span>
+              "Análisis automático",
+              "Comparables reales",
+              "Score de oportunidad",
+              "Alertas inteligentes",
+            ].map((label, i) => (
+              <div key={i} className="p-5 rounded-2xl bg-primary text-center shadow-lg">
+                <span className="text-sm font-semibold text-primary-foreground">{label}</span>
               </div>
             ))}
           </motion.div>
