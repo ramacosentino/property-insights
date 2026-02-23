@@ -239,12 +239,12 @@ export const AlertsIllustration = () => (
 );
 
 const illustrations: Record<string, React.FC> = {
-  MapPin: MapIllustration,
-  Filter: SearchIllustration,
-  DollarSign: ValuationIllustration,
-  LineChart: PriceIntelIllustration,
-  Bookmark: ProjectsIllustration,
-  BellRing: AlertsIllustration,
+  map: MapIllustration,
+  search: SearchIllustration,
+  valuation: ValuationIllustration,
+  priceIntel: PriceIntelIllustration,
+  projects: ProjectsIllustration,
+  alerts: AlertsIllustration,
 };
 
 export default illustrations;
