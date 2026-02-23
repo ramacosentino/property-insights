@@ -65,11 +65,11 @@
     --map-tiles: light;
 
     /* Landing page tokens */
-    --landing-bg: 220 25% 4%;
-    --landing-fg: 210 20% 92%;
-    --landing-muted: 215 15% 55%;
-    --landing-card: 220 22% 9%;
-    --landing-card-border: 220 18% 16%;
+    --landing-bg: 220 20% 97%;
+    --landing-fg: 220 25% 12%;
+    --landing-muted: 215 12% 48%;
+    --landing-card: 220 15% 92%;
+    --landing-card-border: 220 14% 85%;
     --landing-glow: 200 85% 42%;
   }
 
@@ -123,6 +123,14 @@
 
     --deal-marker: 210 20% 90%;
     --map-tiles: dark;
+
+    /* Landing page tokens (dark) */
+    --landing-bg: 220 25% 4%;
+    --landing-fg: 210 20% 92%;
+    --landing-muted: 215 15% 55%;
+    --landing-card: 220 22% 9%;
+    --landing-card-border: 220 18% 16%;
+    --landing-glow: 200 85% 42%;
   }
 }
 
