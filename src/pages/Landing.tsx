@@ -319,10 +319,10 @@ const Landing = () => {
       </section>
 
       {/* ═══ Value Proposition ═══ */}
-      <section className="py-24 md:py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={landingSolutionBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-white/60 dark:bg-black/40" />
+      <section className="py-24 md:py-32 px-6 relative overflow-hidden bg-gradient-to-br from-slate-50 to-sky-50 dark:from-slate-900 dark:to-slate-800">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px]" />
         </div>
         <motion.div
           className="relative max-w-5xl mx-auto text-center"
