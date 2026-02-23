@@ -4,7 +4,7 @@ import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
-import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
+// solution section uses solid bg, no image needed
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import featMap from "@/assets/feat-map.jpg";
 import featSearch from "@/assets/feat-search.jpg";
