@@ -432,7 +432,7 @@ const Landing = () => {
                 <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${profile.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative">
                   <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 inline-block mb-5">
-                    <profile.icon className="h-6 w-6 text-primary" />
+                    <profile.Icon size={28} />
                   </div>
                   <h3 className="text-2xl font-bold text-landing-fg mb-1">{profile.title}</h3>
                   <p className="text-sm text-primary font-medium mb-5">{profile.subtitle}</p>
