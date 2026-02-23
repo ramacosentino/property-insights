@@ -80,7 +80,6 @@ const userProfiles = [
     gradient: "from-blue-500/20 to-cyan-500/20",
   },
   {
-    Icon: IconInvestor,
     title: "Inversor",
     subtitle: "Encontrá oportunidades primero",
     points: [
