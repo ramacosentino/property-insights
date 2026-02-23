@@ -12,6 +12,7 @@ import Alertas from "./pages/Alertas";
 import Tasacion from "./pages/Tasacion";
 import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
+import Planes from "./pages/Planes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/tasacion" element={<Tasacion />} />
           <Route path="/inteligencia-precios" element={<InteligenciaPrecios />} />
           <Route path="/configuracion" element={<Settings />} />
+          <Route path="/planes" element={<Planes />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
