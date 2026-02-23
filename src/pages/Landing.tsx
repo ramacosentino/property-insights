@@ -91,7 +91,6 @@ const userProfiles = [
     gradient: "from-emerald-500/20 to-teal-500/20",
   },
   {
-    Icon: IconAgency,
     title: "Inmobiliaria",
     subtitle: "Datos para ganar clientes",
     points: [
