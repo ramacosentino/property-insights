@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, BarChart3, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, BarChart3, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
