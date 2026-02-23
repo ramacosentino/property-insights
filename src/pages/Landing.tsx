@@ -5,10 +5,10 @@ import {
 } from "lucide-react";
 import {
   IconMap, IconSearch, IconCalculator, IconTrending, IconStar, IconBell,
-  IconShield, IconFragmented, IconTarget,
-  IconBuyer, IconInvestor, IconAgency,
-  IconAnalysis, IconComparables, IconScore, IconAlert,
 } from "@/components/landing/GradientIcons";
+import landingHeroBg from "@/assets/landing-hero-bg.jpg";
+import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
+import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
