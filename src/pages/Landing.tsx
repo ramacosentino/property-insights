@@ -630,7 +630,7 @@ const Landing = () => {
       </section>
 
       {/* ═══ Final CTA ═══ */}
-      <section className="py-24 md:py-32 px-6 relative">
+      <section className="py-16 md:py-20 px-6 relative">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-[150px]" />
         </div>
