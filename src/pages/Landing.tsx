@@ -389,7 +389,6 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50 backdrop-blur-sm text-sm text-muted-foreground mb-6">
-            <Zap className="h-3.5 w-3.5 text-primary" />
             La solución
           </motion.div>
           <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-foreground">
