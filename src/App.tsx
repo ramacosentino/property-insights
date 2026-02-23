@@ -12,6 +12,7 @@ import Alertas from "./pages/Alertas";
 import Tasacion from "./pages/Tasacion";
 import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
+import Planes from "./pages/Planes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
