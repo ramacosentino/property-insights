@@ -222,7 +222,7 @@ const Landing = () => {
             Analítica inmobiliaria basada en datos
           </motion.div>
 
-          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[0.95] mb-6">
+          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[0.95] mb-6">
             Cambiá la forma
             <br />
             en que{" "}
