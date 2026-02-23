@@ -6,6 +6,7 @@ import {
   MapPin, Filter, DollarSign, LineChart, Bookmark, BellRing,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
+import illustrations from "@/components/landing/FeatureIllustrations";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
