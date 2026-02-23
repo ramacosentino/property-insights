@@ -469,7 +469,7 @@ const Landing = () => {
               <Zap className="h-3.5 w-3.5 text-primary" />
               Precios
             </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight mb-4">
               Empezá gratis,
               <br />
               <span className="landing-gradient-text">escalá cuando quieras</span>
