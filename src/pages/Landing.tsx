@@ -390,7 +390,7 @@ const Landing = () => {
       <section id="profiles" className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingProfilesBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
         <motion.div
           className="relative max-w-6xl mx-auto"
@@ -400,13 +400,13 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
+              <BarChart3 className="h-3.5 w-3.5 text-white" />
               Para cada perfil
             </div>
-            <h2 className="text-3xl md:text-5xl font-medium tracking-tight">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
               Valor real para{" "}
-              <span className="landing-gradient-text">cada usuario</span>
+              <span className="text-cyan-400">cada usuario</span>
             </h2>
           </motion.div>
 
@@ -415,21 +415,18 @@ const Landing = () => {
               <motion.div
                 key={i}
                 variants={fadeUp}
-                className="relative p-8 rounded-3xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm hover:bg-landing-card/90 transition-all duration-500 group"
+                className={`relative p-8 rounded-3xl bg-gradient-to-br ${profile.color} shadow-2xl hover:scale-[1.02] transition-transform duration-500`}
               >
-                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${profile.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                <div className="relative">
-                  <h3 className="text-2xl font-semibold text-landing-fg mb-1">{profile.title}</h3>
-                  <p className="text-sm text-primary font-medium mb-5">{profile.subtitle}</p>
-                  <ul className="space-y-3">
-                    {profile.points.map((p, j) => (
-                      <li key={j} className="flex items-start gap-2.5 text-sm text-landing-muted">
-                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        <span>{p}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <h3 className="text-2xl font-semibold text-white mb-1">{profile.title}</h3>
+                <p className="text-sm text-white/80 font-medium mb-5">{profile.subtitle}</p>
+                <ul className="space-y-3">
+                  {profile.points.map((p, j) => (
+                    <li key={j} className="flex items-start gap-2.5 text-sm text-white/90">
+                      <Check className="h-4 w-4 text-white flex-shrink-0 mt-0.5" />
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
               </motion.div>
             ))}
           </div>
