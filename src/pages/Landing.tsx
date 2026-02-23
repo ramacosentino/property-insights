@@ -488,7 +488,6 @@ const Landing = () => {
         >
           <motion.div variants={fadeUp} className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
-              <BarChart3 className="h-3.5 w-3.5 text-white" />
               Para cada perfil
             </div>
             <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
