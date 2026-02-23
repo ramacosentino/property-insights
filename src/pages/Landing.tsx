@@ -1,10 +1,14 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Map, Search, Calculator, TrendingUp, Star, Bell, BarChart3,
-  ArrowRight, Check, Building2, Briefcase, Users, ChevronDown,
-  Target, Eye, Shield, Zap, Crown,
+  BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
+import {
+  IconMap, IconSearch, IconCalculator, IconTrending, IconStar, IconBell,
+  IconShield, IconFragmented, IconTarget,
+  IconBuyer, IconInvestor, IconAgency,
+  IconAnalysis, IconComparables, IconScore, IconAlert,
+} from "@/components/landing/GradientIcons";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
