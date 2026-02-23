@@ -391,7 +391,9 @@ const Landing = () => {
                   <p className="text-landing-muted leading-relaxed mb-3">{feat.desc}</p>
                   <p className="text-sm text-landing-muted/70 leading-relaxed">{feat.detail}</p>
                 </div>
-                <div className={`aspect-[16/10] rounded-2xl bg-gradient-to-br from-landing-card to-landing-card-border/30 border border-landing-card-border ${i % 2 === 1 ? "md:order-1" : ""}`} />
+                <div className={`aspect-[16/10] rounded-2xl border border-landing-card-border overflow-hidden ${i % 2 === 1 ? "md:order-1" : ""}`}>
+                  <img src={feat.image} alt={feat.title} className="w-full h-full object-cover" />
+                </div>
               </motion.div>
             ))}
           </div>
