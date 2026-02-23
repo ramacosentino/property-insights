@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
 } from "lucide-react";
-import landingHeroBg from "@/assets/landing-hero-bg.jpg";
+import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import landingSolutionBg from "@/assets/landing-solution-bg.jpg";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ const userProfiles = [
       "No te sobreprecien: tené los datos del mercado",
       "Ahorrá tiempo filtrando solo lo que vale la pena",
     ],
-    gradient: "from-blue-500/20 to-cyan-500/20",
+    color: "from-blue-600 to-cyan-500",
   },
   {
     title: "Inversor",
@@ -79,7 +79,7 @@ const userProfiles = [
       "Análisis de rentabilidad por zona y USD/m²",
       "Alertas para no perder las mejores ofertas",
     ],
-    gradient: "from-emerald-500/20 to-teal-500/20",
+    color: "from-emerald-600 to-teal-500",
   },
   {
     title: "Inmobiliaria",
@@ -90,7 +90,7 @@ const userProfiles = [
       "Entendé tendencias por barrio para asesorar mejor",
       "Diferenciarte con analítica profesional",
     ],
-    gradient: "from-violet-500/20 to-purple-500/20",
+    color: "from-violet-600 to-purple-500",
   },
 ];
 
@@ -268,8 +268,8 @@ const Landing = () => {
       {/* ═══ Problem ═══ */}
       <section className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={landingHeroBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
+          <img src={landingProblemBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
         <motion.div
           className="relative max-w-4xl mx-auto text-center"
@@ -278,28 +278,28 @@ const Landing = () => {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-            <BarChart3 className="h-3.5 w-3.5 text-primary" />
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
+            <BarChart3 className="h-3.5 w-3.5 text-white" />
             El problema
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-white">
             El mercado inmobiliario
             <br />
-            <span className="text-landing-muted">opera a ciegas</span>
+            <span className="text-white/60">opera a ciegas</span>
           </motion.h2>
-          <motion.p variants={fadeUp} className="text-lg text-landing-muted max-w-2xl mx-auto leading-relaxed">
+          <motion.p variants={fadeUp} className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
             Propiedades dispersas en decenas de portales. Sin comparación objetiva. Sin datos de valor real.
             La mayoría de las decisiones de compra se toman con intuición — no con información.
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
-              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
-              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
+              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías.", color: "from-red-500/90 to-orange-500/90" },
+              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa.", color: "from-amber-500/90 to-yellow-500/90" },
+              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras.", color: "from-rose-500/90 to-pink-500/90" },
             ].map((item, i) => (
-              <div key={i} className="p-6 rounded-2xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm text-left">
-                <h3 className="font-semibold text-lg text-landing-fg mb-2">{item.title}</h3>
-                <p className="text-sm text-landing-muted leading-relaxed">{item.desc}</p>
+              <div key={i} className={`p-6 rounded-2xl bg-gradient-to-br ${item.color} backdrop-blur-sm text-left shadow-xl`}>
+                <h3 className="font-semibold text-lg text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-white/85 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </motion.div>
@@ -310,7 +310,7 @@ const Landing = () => {
       <section className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingSolutionBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
         <motion.div
           className="relative max-w-5xl mx-auto text-center"
@@ -319,27 +319,27 @@ const Landing = () => {
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-            <Zap className="h-3.5 w-3.5 text-primary" />
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
+            <Zap className="h-3.5 w-3.5 text-white" />
             La solución
           </motion.div>
-          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6">
+          <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-white">
             Todo el universo de propiedades,
             <br />
-            <span className="landing-gradient-text">centralizado y comparado</span>
+            <span className="text-cyan-400">centralizado y comparado</span>
           </motion.h2>
-          <motion.p variants={fadeUp} className="text-lg text-landing-muted max-w-2xl mx-auto leading-relaxed mb-14">
+          <motion.p variants={fadeUp} className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed mb-14">
             PropAnalytics reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
           </motion.p>
           <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              "Análisis automático",
-              "Comparables reales",
-              "Score de oportunidad",
-              "Alertas inteligentes",
-            ].map((label, i) => (
-              <div key={i} className="p-5 rounded-2xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm landing-card-glow text-center">
-                <span className="text-sm font-semibold text-landing-fg">{label}</span>
+              { label: "Análisis automático", color: "from-blue-500 to-cyan-500" },
+              { label: "Comparables reales", color: "from-emerald-500 to-teal-500" },
+              { label: "Score de oportunidad", color: "from-violet-500 to-purple-500" },
+              { label: "Alertas inteligentes", color: "from-orange-500 to-amber-500" },
+            ].map((item, i) => (
+              <div key={i} className={`p-5 rounded-2xl bg-gradient-to-br ${item.color} text-center shadow-lg`}>
+                <span className="text-sm font-semibold text-white">{item.label}</span>
               </div>
             ))}
           </motion.div>
@@ -390,7 +390,7 @@ const Landing = () => {
       <section id="profiles" className="py-24 md:py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={landingProfilesBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/50 dark:bg-background/70" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
         <motion.div
           className="relative max-w-6xl mx-auto"
@@ -400,13 +400,13 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white/80 mb-6">
+              <BarChart3 className="h-3.5 w-3.5 text-white" />
               Para cada perfil
             </div>
-            <h2 className="text-3xl md:text-5xl font-medium tracking-tight">
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
               Valor real para{" "}
-              <span className="landing-gradient-text">cada usuario</span>
+              <span className="text-cyan-400">cada usuario</span>
             </h2>
           </motion.div>
 
@@ -415,21 +415,18 @@ const Landing = () => {
               <motion.div
                 key={i}
                 variants={fadeUp}
-                className="relative p-8 rounded-3xl border border-landing-card-border bg-landing-card/80 backdrop-blur-sm hover:bg-landing-card/90 transition-all duration-500 group"
+                className={`relative p-8 rounded-3xl bg-gradient-to-br ${profile.color} shadow-2xl hover:scale-[1.02] transition-transform duration-500`}
               >
-                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${profile.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                <div className="relative">
-                  <h3 className="text-2xl font-semibold text-landing-fg mb-1">{profile.title}</h3>
-                  <p className="text-sm text-primary font-medium mb-5">{profile.subtitle}</p>
-                  <ul className="space-y-3">
-                    {profile.points.map((p, j) => (
-                      <li key={j} className="flex items-start gap-2.5 text-sm text-landing-muted">
-                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        <span>{p}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <h3 className="text-2xl font-semibold text-white mb-1">{profile.title}</h3>
+                <p className="text-sm text-white/80 font-medium mb-5">{profile.subtitle}</p>
+                <ul className="space-y-3">
+                  {profile.points.map((p, j) => (
+                    <li key={j} className="flex items-start gap-2.5 text-sm text-white/90">
+                      <Check className="h-4 w-4 text-white flex-shrink-0 mt-0.5" />
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
               </motion.div>
             ))}
           </div>
