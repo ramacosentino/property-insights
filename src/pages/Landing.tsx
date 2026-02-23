@@ -278,9 +278,13 @@ const Landing = () => {
       </section>
 
       {/* ═══ Problem ═══ */}
-      <section className="py-24 md:py-32 px-6">
+      <section className="py-24 md:py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={landingHeroBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+        </div>
         <motion.div
-          className="max-w-4xl mx-auto text-center"
+          className="relative max-w-4xl mx-auto text-center"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
