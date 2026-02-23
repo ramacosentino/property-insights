@@ -2,10 +2,10 @@ import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
-  Map, Search, BarChart2, TrendingUp, FolderOpen, Bell,
-  MapPin, Filter, DollarSign, LineChart, Bookmark, BellRing,
+  Search, BarChart2, TrendingUp, Bell,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
+import illustrations from "@/components/landing/FeatureIllustrations";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -45,50 +45,32 @@ const features = [
   {
     title: "Mapa interactivo",
     desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
-    detail: "Filtrá por barrio, precio, superficie y más. Identificá clusters de oportunidad que otros no ven.",
-    icon: MapPin,
-    color: "from-blue-500/20 to-cyan-500/20",
-    iconColor: "text-blue-500",
+    illustrationKey: "map",
   },
   {
     title: "Búsqueda inteligente",
     desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
-    detail: "Combiná filtros avanzados y guardá tus búsquedas. Recibí nuevas propiedades que matchean automáticamente.",
-    icon: Filter,
-    color: "from-violet-500/20 to-purple-500/20",
-    iconColor: "text-violet-500",
+    illustrationKey: "search",
   },
   {
     title: "Tasación automática",
     desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
-    detail: "Nuestro algoritmo analiza propiedades similares por zona, superficie y características para darte un valor objetivo.",
-    icon: DollarSign,
-    color: "from-emerald-500/20 to-green-500/20",
-    iconColor: "text-emerald-500",
+    illustrationKey: "valuation",
   },
   {
     title: "Inteligencia de precios",
     desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
-    detail: "Gráficos interactivos con evolución histórica. Detectá zonas en ascenso antes que el resto.",
-    icon: LineChart,
-    color: "from-amber-500/20 to-orange-500/20",
-    iconColor: "text-amber-500",
+    illustrationKey: "priceIntel",
   },
   {
     title: "Mis Proyectos",
     desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
-    detail: "Agregá notas, descartá las que no van y mantené organizado tu proceso de decisión.",
-    icon: Bookmark,
-    color: "from-rose-500/20 to-pink-500/20",
-    iconColor: "text-rose-500",
+    illustrationKey: "projects",
   },
   {
     title: "Alertas",
     desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
-    detail: "Notificaciones personalizadas por email o en la app. Nunca más te pierdas una oportunidad.",
-    icon: BellRing,
-    color: "from-teal-500/20 to-cyan-500/20",
-    iconColor: "text-teal-500",
+    illustrationKey: "alerts",
   },
 ];
 
@@ -445,28 +427,35 @@ const Landing = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((feat, i) => (
-              <motion.div
-                key={i}
-                custom={i}
-                variants={cardReveal}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
-                whileHover={{ y: -6, transition: { duration: 0.3 } }}
-                className="group relative p-7 rounded-2xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-500"
-              >
-                {/* Top gradient accent */}
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {features.map((feat, i) => {
+              const IllustrationComponent = illustrations[feat.illustrationKey];
+              return (
+                <motion.div
+                  key={i}
+                  custom={i}
+                  variants={cardReveal}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-50px" }}
+                  whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                  className="group relative rounded-2xl border border-landing-card-border/60 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-500"
+                >
+                  {/* Top gradient accent */}
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feat.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
-                  <feat.icon className={`h-7 w-7 ${feat.iconColor}`} />
-                </div>
-                <h3 className="text-lg font-semibold text-landing-fg mb-2">{feat.title}</h3>
-                <p className="text-sm text-landing-muted leading-relaxed mb-2">{feat.desc}</p>
-                <p className="text-xs text-landing-muted/60 leading-relaxed">{feat.detail}</p>
-              </motion.div>
-            ))}
+                  {/* Illustration */}
+                  <div className="h-44 p-3">
+                    {IllustrationComponent && <IllustrationComponent />}
+                  </div>
+
+                  {/* Text */}
+                  <div className="px-6 pb-6">
+                    <h3 className="text-lg font-semibold text-landing-fg mb-2">{feat.title}</h3>
+                    <p className="text-sm text-landing-muted leading-relaxed">{feat.desc}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
