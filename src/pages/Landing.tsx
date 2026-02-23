@@ -3,15 +3,10 @@ import { motion, type Variants } from "framer-motion";
 import {
   BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
   Map, Search, BarChart2, TrendingUp, FolderOpen, Bell,
+  MapPin, Filter, DollarSign, LineChart, Bookmark, BellRing,
 } from "lucide-react";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
-import featMap from "@/assets/feat-map.jpg";
-import featSearch from "@/assets/feat-search.jpg";
-import featTasacion from "@/assets/feat-tasacion.jpg";
-import featPrecios from "@/assets/feat-precios.jpg";
-import featProyectos from "@/assets/feat-proyectos.jpg";
-import featAlertas from "@/assets/feat-alertas.jpg";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
