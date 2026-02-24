@@ -5,6 +5,7 @@ import {
   Search, BarChart2, TrendingUp, Bell,
 } from "lucide-react";
 import UrbbanLogo from "@/components/UrbbanLogo";
+import RotatingWord from "@/components/RotatingWord";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import illustrations from "@/components/landing/FeatureIllustrations";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
@@ -247,7 +248,7 @@ const Landing = () => {
             Cambiá la forma
             <br />
             en que{" "}
-            <span className="landing-gradient-text">invertís</span>
+            <RotatingWord />
           </motion.h1>
 
           <motion.p variants={fadeUp} className="text-lg md:text-xl text-landing-muted max-w-2xl mx-auto mb-10 leading-relaxed">
