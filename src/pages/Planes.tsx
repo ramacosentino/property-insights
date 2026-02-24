@@ -119,8 +119,8 @@ const Planes = () => {
                 } ${isCurrent ? "ring-2 ring-primary" : ""}`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                    Popular
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold z-10">
+                    Más popular
                   </div>
                 )}
 
