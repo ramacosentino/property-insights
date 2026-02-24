@@ -10,8 +10,6 @@ const plans = [
   {
     id: "free",
     name: "Free",
-    price: "Gratis",
-    priceNum: 0,
     icon: Star,
     features: [
       "Ver propiedades en mapa",
