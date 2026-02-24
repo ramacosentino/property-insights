@@ -94,7 +94,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           </div>
         )}
         {isCollapsed && (
-          <UrbbanLogo size="sm" className="text-sidebar-foreground" showIcon />
+          <IconUAccent size={24} />
         )}
         {!isMobile && (
           <button
