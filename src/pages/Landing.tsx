@@ -575,7 +575,7 @@ const Landing = () => {
                       </div>
                       <h3 className="font-bold text-xl text-landing-fg">{plan.name}</h3>
                     </div>
-                    <p className="text-2xl font-black text-landing-fg mb-6">{plan.price}</p>
+                    <div className="mb-6" />
                     <ul className="flex-1 space-y-3 mb-8">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-sm text-landing-muted">

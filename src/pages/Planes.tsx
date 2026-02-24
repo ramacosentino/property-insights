@@ -130,7 +130,7 @@ const Planes = () => {
                   </div>
                   <div>
                     <h3 className="font-bold text-lg">{plan.name}</h3>
-                    <p className="text-xl font-bold text-foreground">{plan.price}</p>
+                    
                   </div>
                 </div>
 
