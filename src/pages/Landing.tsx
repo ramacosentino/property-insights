@@ -247,7 +247,7 @@ const Landing = () => {
             Cambiá la forma
             <br />
             en que{" "}
-            <span className="landing-gradient-text">invertís</span>
+            <RotatingWord />
           </motion.h1>
 
           <motion.p variants={fadeUp} className="text-lg md:text-xl text-landing-muted max-w-2xl mx-auto mb-10 leading-relaxed">
