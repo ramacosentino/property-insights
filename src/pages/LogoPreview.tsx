@@ -1,18 +1,19 @@
 import {
   LogoVariantA, LogoVariantB, LogoVariantC,
   LogoVariantD, LogoVariantE, LogoVariantF,
-  LogoVariantG, LogoVariantH,
+  LogoVariantG, LogoVariantH, LogoVariantI,
 } from "@/components/LogoExplorations";
 
 const variants = [
   { key: "A", label: "URBBAN · thin (400)", Component: LogoVariantA },
   { key: "B", label: "URBBAN · medium (500)", Component: LogoVariantB },
   { key: "C", label: "URBBAN · semibold (600)", Component: LogoVariantC },
-  { key: "D", label: "URBBAN · thin · B invertida", Component: LogoVariantD },
-  { key: "E", label: "URBBAN · medium · B invertida", Component: LogoVariantE },
-  { key: "F", label: "URBBAN · semibold · B invertida", Component: LogoVariantF },
-  { key: "G", label: "Urbban · thin · b invertida", Component: LogoVariantG },
-  { key: "H", label: "Urbban · medium · b invertida", Component: LogoVariantH },
+  { key: "D", label: "URBBAN · thin · 2da B invertida", Component: LogoVariantD },
+  { key: "E", label: "URBBAN · medium · 2da B invertida", Component: LogoVariantE },
+  { key: "F", label: "URBBAN · semibold · 2da B invertida", Component: LogoVariantF },
+  { key: "G", label: "URBBAN · thin · 1ra B invertida", Component: LogoVariantG },
+  { key: "H", label: "URBBAN · medium · 1ra B invertida", Component: LogoVariantH },
+  { key: "I", label: "URBBAN · semibold · 1ra B invertida", Component: LogoVariantI },
 ];
 
 const LogoPreview = () => (
