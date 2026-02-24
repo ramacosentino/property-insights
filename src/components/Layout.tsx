@@ -204,10 +204,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
               <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-all">
                 <Menu className="h-5 w-5 text-foreground" />
               </button>
-              <div className="flex items-center gap-1.5">
-                <BarChart3 className="h-4 w-4 text-primary" />
-                <span className="text-sm font-bold text-gradient-opportunity">PropAnalytics</span>
-              </div>
+              <UrbbanLogo size="sm" className="text-foreground" />
               <div className="w-8" />
             </div>
             {headerContent && (
