@@ -37,6 +37,7 @@ const App = () => (
           <Route path="/configuracion" element={<Settings />} />
           <Route path="/planes" element={<Planes />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/logo-preview" element={<LogoPreview />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
