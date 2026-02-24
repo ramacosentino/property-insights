@@ -141,7 +141,6 @@ const plans = [
   {
     id: "free",
     name: "Free",
-    price: "Gratis",
     icon: Star,
     features: ["Ver propiedades en mapa", "Filtros básicos", "Hasta 5 proyectos guardados"],
     popular: false,
@@ -149,7 +148,6 @@ const plans = [
   {
     id: "pro",
     name: "Pro",
-    price: "$9.990/mes",
     icon: Zap,
     features: ["Todo de Free", "Análisis ilimitados", "Proyectos ilimitados", "Filtros avanzados", "Exportar datos"],
     popular: true,
@@ -157,7 +155,6 @@ const plans = [
   {
     id: "premium",
     name: "Premium",
-    price: "$19.990/mes",
     icon: Crown,
     features: ["Todo de Pro", "Inteligencia de precios", "Alertas personalizadas", "Tasación automática", "Soporte prioritario"],
     popular: false,
