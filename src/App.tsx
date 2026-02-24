@@ -15,6 +15,7 @@ import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
 import Planes from "./pages/Planes";
 import NotFound from "./pages/NotFound";
+import LogoPreview from "./pages/LogoPreview";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/configuracion" element={<Settings />} />
           <Route path="/planes" element={<Planes />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/logo-preview" element={<LogoPreview />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
