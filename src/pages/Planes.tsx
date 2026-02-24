@@ -36,8 +36,6 @@ const plans = [
   {
     id: "premium",
     name: "Premium",
-    price: "$19.990/mes",
-    priceNum: 19990,
     icon: Crown,
     features: [
       "Todo de Pro",
