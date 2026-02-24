@@ -10,8 +10,6 @@ const plans = [
   {
     id: "free",
     name: "Free",
-    price: "Gratis",
-    priceNum: 0,
     icon: Star,
     features: [
       "Ver propiedades en mapa",
@@ -24,8 +22,6 @@ const plans = [
   {
     id: "pro",
     name: "Pro",
-    price: "$9.990/mes",
-    priceNum: 9990,
     icon: Zap,
     features: [
       "Todo de Free",
@@ -40,8 +36,6 @@ const plans = [
   {
     id: "premium",
     name: "Premium",
-    price: "$19.990/mes",
-    priceNum: 19990,
     icon: Crown,
     features: [
       "Todo de Pro",
@@ -125,8 +119,8 @@ const Planes = () => {
                 } ${isCurrent ? "ring-2 ring-primary" : ""}`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                    Popular
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold z-10">
+                    Más popular
                   </div>
                 )}
 
@@ -136,7 +130,7 @@ const Planes = () => {
                   </div>
                   <div>
                     <h3 className="font-bold text-lg">{plan.name}</h3>
-                    <p className="text-xl font-bold text-foreground">{plan.price}</p>
+                    
                   </div>
                 </div>
 

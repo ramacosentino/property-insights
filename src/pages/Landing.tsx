@@ -141,7 +141,6 @@ const plans = [
   {
     id: "free",
     name: "Free",
-    price: "Gratis",
     icon: Star,
     features: ["Ver propiedades en mapa", "Filtros básicos", "Hasta 5 proyectos guardados"],
     popular: false,
@@ -149,7 +148,6 @@ const plans = [
   {
     id: "pro",
     name: "Pro",
-    price: "$9.990/mes",
     icon: Zap,
     features: ["Todo de Free", "Análisis ilimitados", "Proyectos ilimitados", "Filtros avanzados", "Exportar datos"],
     popular: true,
@@ -157,7 +155,6 @@ const plans = [
   {
     id: "premium",
     name: "Premium",
-    price: "$19.990/mes",
     icon: Crown,
     features: ["Todo de Pro", "Inteligencia de precios", "Alertas personalizadas", "Tasación automática", "Soporte prioritario"],
     popular: false,
@@ -563,7 +560,7 @@ const Landing = () => {
                   {plan.popular && (
                     <>
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                      <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold z-10">
                         Más popular
                       </div>
                     </>
@@ -578,7 +575,7 @@ const Landing = () => {
                       </div>
                       <h3 className="font-bold text-xl text-landing-fg">{plan.name}</h3>
                     </div>
-                    <p className="text-2xl font-black text-landing-fg mb-6">{plan.price}</p>
+                    <div className="mb-6" />
                     <ul className="flex-1 space-y-3 mb-8">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-sm text-landing-muted">
