@@ -239,7 +239,7 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-8">
-            <BarChart3 className="h-3.5 w-3.5 text-primary" />
+            <UrbbanLogo size="sm" className="text-primary" showIcon />
             Analítica inmobiliaria basada en datos
           </motion.div>
 
