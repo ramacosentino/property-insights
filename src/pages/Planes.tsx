@@ -22,8 +22,6 @@ const plans = [
   {
     id: "pro",
     name: "Pro",
-    price: "$9.990/mes",
-    priceNum: 9990,
     icon: Zap,
     features: [
       "Todo de Free",
