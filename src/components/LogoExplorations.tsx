@@ -94,34 +94,51 @@ export const LogoVariantF = ({ className = "", height = 40 }: LogoExplorationPro
     <span>AN</span>
   </span>
 );
-
 /**
- * Variant G: Urbban — cap U, thin, both B flipped (primary on second)
+ * Variant G: URBBAN — thin, 1ra B invertida, 2da B normal primary
  */
 export const LogoVariantG = ({ className = "", height = 40 }: LogoExplorationProps) => (
   <span
     className={`inline-flex items-baseline ${className}`}
-    style={{ fontFamily: font, fontSize: height, fontWeight: 400, letterSpacing: "-0.015em", lineHeight: 1 }}
+    style={{ fontFamily: font, fontSize: height, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1 }}
     aria-label="Urbban"
   >
-    <span>Urb</span>
-    <span className="text-primary" style={{ display: "inline-block", transform: "scaleX(-1)" }}>b</span>
-    <span>an</span>
+    <span>UR</span>
+    <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>B</span>
+    <span className="text-primary">B</span>
+    <span>AN</span>
   </span>
 );
 
 /**
- * Variant H: Urbban — cap U, medium, both B flipped (primary on second)
+ * Variant H: URBBAN — medium, 1ra B invertida, 2da B normal primary
  */
 export const LogoVariantH = ({ className = "", height = 40 }: LogoExplorationProps) => (
   <span
     className={`inline-flex items-baseline ${className}`}
-    style={{ fontFamily: font, fontSize: height, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1 }}
+    style={{ fontFamily: font, fontSize: height, fontWeight: 500, letterSpacing: "-0.025em", lineHeight: 1 }}
     aria-label="Urbban"
   >
-    <span>Urb</span>
-    <span className="text-primary" style={{ display: "inline-block", transform: "scaleX(-1)" }}>b</span>
-    <span>an</span>
+    <span>UR</span>
+    <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>B</span>
+    <span className="text-primary">B</span>
+    <span>AN</span>
+  </span>
+);
+
+/**
+ * Variant I: URBBAN — semibold, 1ra B invertida, 2da B normal primary
+ */
+export const LogoVariantI = ({ className = "", height = 40 }: LogoExplorationProps) => (
+  <span
+    className={`inline-flex items-baseline ${className}`}
+    style={{ fontFamily: font, fontSize: height, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1 }}
+    aria-label="Urbban"
+  >
+    <span>UR</span>
+    <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>B</span>
+    <span className="text-primary">B</span>
+    <span>AN</span>
   </span>
 );
 
