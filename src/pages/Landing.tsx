@@ -210,7 +210,7 @@ const Landing = () => {
             </button>
             {user ? (
               <Button asChild size="sm" className="rounded-full px-5">
-                <Link to="/">Ir a la app</Link>
+                <Link to="/mapa">Ir a la app</Link>
               </Button>
             ) : (
               <>
