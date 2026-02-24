@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import {
-  BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
+  ArrowRight, Check, ChevronDown, Zap, Crown, Star,
   Search, BarChart2, TrendingUp, Bell,
 } from "lucide-react";
+import UrbbanLogo from "@/components/UrbbanLogo";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import illustrations from "@/components/landing/FeatureIllustrations";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
@@ -192,8 +193,7 @@ const Landing = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-landing-card-border/50 backdrop-blur-xl bg-landing-bg/80">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/landing" className="flex items-center gap-2.5">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold landing-gradient-text">PropAnalytics</span>
+            <UrbbanLogo size="md" className="text-landing-fg" />
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm text-landing-muted">
             <a href="#features" className="hover:text-landing-fg transition-colors">Funcionalidades</a>
@@ -239,7 +239,7 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-8">
-            <BarChart3 className="h-3.5 w-3.5 text-primary" />
+            <UrbbanLogo size="sm" className="text-primary" showIcon />
             Analítica inmobiliaria basada en datos
           </motion.div>
 
@@ -376,7 +376,7 @@ const Landing = () => {
             <span className="text-primary">centralizado y comparado</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-14">
-            PropAnalytics reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
+            Urbban reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
           </motion.p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
             {solutionPillars.map((pillar, i) => (
@@ -645,8 +645,7 @@ const Landing = () => {
       <footer className="border-t border-landing-card-border py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <span className="font-bold landing-gradient-text">PropAnalytics</span>
+            <UrbbanLogo size="sm" className="text-landing-muted" />
           </div>
           <div className="flex items-center gap-8 text-sm text-landing-muted">
             <a href="#features" className="hover:text-landing-fg transition-colors">Funcionalidades</a>

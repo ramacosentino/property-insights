@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, BarChart3, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
+import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
+import UrbbanLogo from "./UrbbanLogo";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
@@ -88,11 +89,11 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
       <div className={`flex items-center h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center px-2" : "justify-between"}`}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary flex-shrink-0" />
-            <h1 className="text-base font-bold tracking-tight">
-              <span className="text-gradient-opportunity">PropAnalytics</span>
-            </h1>
+            <UrbbanLogo size="sm" className="text-sidebar-foreground" />
           </div>
+        )}
+        {isCollapsed && (
+          <UrbbanLogo size="sm" className="text-sidebar-foreground" showIcon />
         )}
         {!isMobile && (
           <button
@@ -203,10 +204,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
               <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-all">
                 <Menu className="h-5 w-5 text-foreground" />
               </button>
-              <div className="flex items-center gap-1.5">
-                <BarChart3 className="h-4 w-4 text-primary" />
-                <span className="text-sm font-bold text-gradient-opportunity">PropAnalytics</span>
-              </div>
+              <UrbbanLogo size="sm" className="text-foreground" />
               <div className="w-8" />
             </div>
             {headerContent && (
