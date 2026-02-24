@@ -89,11 +89,11 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
       <div className={`flex items-center h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center px-2" : "justify-between"}`}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary flex-shrink-0" />
-            <h1 className="text-base font-bold tracking-tight">
-              <span className="text-gradient-opportunity">PropAnalytics</span>
-            </h1>
+            <UrbbanLogo size="sm" className="text-sidebar-foreground" />
           </div>
+        )}
+        {isCollapsed && (
+          <UrbbanLogo size="sm" className="text-sidebar-foreground" showIcon />
         )}
         {!isMobile && (
           <button
