@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
 import UrbbanLogo from "./UrbbanLogo";
+import { IconUAccent } from "./LogoIcons";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
@@ -93,7 +94,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           </div>
         )}
         {isCollapsed && (
-          <UrbbanLogo size="sm" className="text-sidebar-foreground" showIcon />
+          <IconUAccent size={24} />
         )}
         {!isMobile && (
           <button
