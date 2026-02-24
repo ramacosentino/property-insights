@@ -33,31 +33,100 @@ export const IconU = ({ size = 32, variant = "light" }: IconProps) => {
 };
 
 /**
- * Option 2: BB side by side — first B flipped, second B in primary
+ * Option 2: BB interlocked — first B flipped, overlapping with second B.
+ * At top overlap: flipped B is in front. At bottom overlap: primary B is in front.
+ * Achieved via SVG clip paths.
  */
 export const IconBB = ({ size = 32, variant = "light" }: IconProps) => {
-  const fontSize = Math.round(size * 0.55);
+  const id = `bb-${size}-${variant}`;
   const fg = variant === "dark" ? "hsl(var(--background))" : "hsl(var(--foreground))";
+  // viewBox is 40x40, B glyphs overlap in the center
   return (
-    <span
-      className="inline-flex items-baseline justify-center"
-      style={{
-        width: size,
-        height: size,
-        fontFamily: font,
-        fontSize,
-        fontWeight: 450,
-        lineHeight: 1,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: Math.round(size * -0.04),
-        color: fg,
-      }}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 40"
+      fill="none"
       aria-label="BB"
     >
-      <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>B</span>
-      <span className="text-primary">B</span>
-    </span>
+      <defs>
+        {/* Clip for flipped B: show full top half, hide where primary B overlaps at bottom */}
+        <clipPath id={`${id}-clip1`}>
+          <rect x="0" y="0" width="40" height="22" />
+          <rect x="0" y="22" width="14" height="18" />
+        </clipPath>
+        {/* Clip for primary B: show full bottom half, hide where flipped B overlaps at top */}
+        <clipPath id={`${id}-clip2`}>
+          <rect x="0" y="20" width="40" height="20" />
+          <rect x="22" y="0" width="18" height="20" />
+        </clipPath>
+      </defs>
+      {/* Flipped B (mirrored) — on top at the top overlap */}
+      <g clipPath={`url(#${id}-clip1)`}>
+        <g transform="translate(22, 0) scale(-1, 1)">
+          <text
+            x="0"
+            y="32"
+            fill={fg}
+            style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}
+          >
+            B
+          </text>
+        </g>
+      </g>
+      {/* Primary B — on top at the bottom overlap */}
+      <g clipPath={`url(#${id}-clip2)`}>
+        <text
+          x="16"
+          y="32"
+          fill="hsl(var(--primary))"
+          style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}
+        >
+          B
+        </text>
+      </g>
+      {/* Unclipped parts to fill gaps */}
+      {/* Flipped B bottom (behind primary) */}
+      <g>
+        <g transform="translate(22, 0) scale(-1, 1)">
+          <text
+            x="0"
+            y="32"
+            fill={fg}
+            style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}
+            opacity={0.999}
+          />
+        </g>
+      </g>
+      {/* Primary B top (behind flipped) */}
+      <g>
+        <text
+          x="16"
+          y="32"
+          fill="hsl(var(--primary))"
+          style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}
+          opacity={0.999}
+        />
+      </g>
+
+      {/* Layer order: draw both fully, then overlay clipped versions */}
+      {/* Full flipped B (back layer) */}
+      <g transform="translate(22, 0) scale(-1, 1)" opacity="1">
+        <text x="0" y="32" fill={fg} style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}>B</text>
+      </g>
+      {/* Full primary B (back layer) */}
+      <text x="16" y="32" fill="hsl(var(--primary))" style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}>B</text>
+      {/* Flipped B top portion (front, covers primary at top) */}
+      <g clipPath={`url(#${id}-clip1)`}>
+        <g transform="translate(22, 0) scale(-1, 1)">
+          <text x="0" y="32" fill={fg} style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}>B</text>
+        </g>
+      </g>
+      {/* Primary B bottom portion (front, covers flipped at bottom) */}
+      <g clipPath={`url(#${id}-clip2)`}>
+        <text x="16" y="32" fill="hsl(var(--primary))" style={{ fontFamily: font, fontSize: 34, fontWeight: 450 }}>B</text>
+      </g>
+    </svg>
   );
 };
 
