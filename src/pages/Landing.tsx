@@ -645,8 +645,7 @@ const Landing = () => {
       <footer className="border-t border-landing-card-border py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <span className="font-bold landing-gradient-text">PropAnalytics</span>
+            <UrbbanLogo size="sm" className="text-landing-muted" />
           </div>
           <div className="flex items-center gap-8 text-sm text-landing-muted">
             <a href="#features" className="hover:text-landing-fg transition-colors">Funcionalidades</a>
