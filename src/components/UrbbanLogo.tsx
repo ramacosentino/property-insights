@@ -57,7 +57,6 @@ const UrbbanLogo = ({
 
   const c = configs[variant];
 
-  // Split around the second 'b'
   const lowerText = c.text.toLowerCase();
   const firstBIdx = lowerText.indexOf("b");
   const secondBIdx = lowerText.indexOf("b", firstBIdx + 1);
@@ -66,13 +65,6 @@ const UrbbanLogo = ({
   const bChar = c.text[secondBIdx];
   const after = c.text.slice(secondBIdx + 1);
 
-  // Shadow/relief style for the accent b — darker blue with subtle text-shadow
-  const bShadowStyle: React.CSSProperties = {
-    color: "hsl(200 85% 35%)",
-    textShadow: "1px 1px 0px hsl(200 85% 25% / 0.3), 0px 2px 4px hsl(200 85% 20% / 0.15)",
-    fontFamily: fontFamilies[font],
-  };
-
   return (
     <span
       className={`inline-flex items-baseline ${c.weight} ${textSize[size]} ${className}`}
@@ -80,7 +72,7 @@ const UrbbanLogo = ({
       aria-label="Urbban"
     >
       <span>{before}</span>
-      <span style={bShadowStyle}>{bChar}</span>
+      <span className="text-primary">{bChar}</span>
       <span>{after}</span>
     </span>
   );
