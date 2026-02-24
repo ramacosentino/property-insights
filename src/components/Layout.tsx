@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
 import UrbbanLogo from "./UrbbanLogo";
+import { IconUAccent } from "./LogoIcons";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
