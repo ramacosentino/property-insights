@@ -15,6 +15,7 @@ import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
 import Planes from "./pages/Planes";
 import NotFound from "./pages/NotFound";
+import LogoPreview from "./pages/LogoPreview";
 
 const queryClient = new QueryClient();
 
