@@ -17,7 +17,7 @@ const Auth = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate("/", { replace: true });
+    if (!loading && user) navigate("/mapa", { replace: true });
   }, [user, loading, navigate]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
