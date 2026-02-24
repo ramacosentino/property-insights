@@ -2,22 +2,24 @@ interface UrbbanLogoProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   showIcon?: boolean;
-  variant?: "default" | "lowercase" | "thin" | "blue-b" | "cap-u" | "flipped-b" | "thin-blue" | "cap-thin-blue" | "cap-flipped";
+  variant?: "blue-b" | "thin-blue" | "cap-thin-blue" | "cap-u";
+  font?: "satoshi" | "space" | "dm" | "jakarta";
 }
 
-/**
- * URBBAN wordmark variants:
- * - default: All caps, black weight, 2nd B at 50% opacity
- * - lowercase: "urbban" lowercase, black weight, 2nd b at 50%
- * - thin: All caps, semibold (thinner), 2nd B at 35%
- * - blue-b: lowercase, black weight, 2nd b in primary color
- * - cap-u: "Urbban" with capital U, black weight, 2nd b in primary
- * - flipped-b: lowercase, 2nd b horizontally flipped
- * - thin-blue: lowercase, thin weight, 2nd b in primary
- * - cap-thin-blue: "Urbban" capital U, thin weight, 2nd b in primary
- * - cap-flipped: "Urbban" capital U, 2nd b flipped
- */
-const UrbbanLogo = ({ className = "", size = "md", showIcon = false, variant = "default" }: UrbbanLogoProps) => {
+const fontFamilies = {
+  satoshi: "'Satoshi', system-ui, sans-serif",
+  space: "'Space Grotesk', system-ui, sans-serif",
+  dm: "'DM Sans', system-ui, sans-serif",
+  jakarta: "'Plus Jakarta Sans', system-ui, sans-serif",
+};
+
+const UrbbanLogo = ({
+  className = "",
+  size = "md",
+  showIcon = false,
+  variant = "blue-b",
+  font = "satoshi",
+}: UrbbanLogoProps) => {
   const textSize = {
     sm: "text-base",
     md: "text-xl",
@@ -36,58 +38,50 @@ const UrbbanLogo = ({ className = "", size = "md", showIcon = false, variant = "
         className={`inline-flex items-center justify-center rounded-lg bg-current ${iconSize[size]} ${className}`}
         aria-label="Urbban"
       >
-        <span className="font-black tracking-tighter" style={{ color: "hsl(var(--background))", fontFamily: "'Satoshi', system-ui, sans-serif" }}>
+        <span
+          className="font-bold tracking-tighter"
+          style={{ color: "hsl(var(--background))", fontFamily: fontFamilies[font] }}
+        >
           U
         </span>
       </span>
     );
   }
 
-  // Config per variant
-  const config = {
-    default: { text: "URBBAN", weight: "font-black", tracking: "-0.03em", bStyle: "opacity-50", bColor: "", flipped: false },
-    lowercase: { text: "urbban", weight: "font-black", tracking: "-0.03em", bStyle: "opacity-50", bColor: "", flipped: false },
-    thin: { text: "URBBAN", weight: "font-semibold", tracking: "-0.02em", bStyle: "opacity-35", bColor: "", flipped: false },
-    "blue-b": { text: "urbban", weight: "font-black", tracking: "-0.03em", bStyle: "", bColor: "text-primary", flipped: false },
-    "cap-u": { text: "Urbban", weight: "font-black", tracking: "-0.03em", bStyle: "", bColor: "text-primary", flipped: false },
-    "flipped-b": { text: "urbban", weight: "font-black", tracking: "-0.03em", bStyle: "", bColor: "text-primary", flipped: true },
-    "thin-blue": { text: "urbban", weight: "font-medium", tracking: "-0.02em", bStyle: "", bColor: "text-primary", flipped: false },
-    "cap-thin-blue": { text: "Urbban", weight: "font-medium", tracking: "-0.02em", bStyle: "", bColor: "text-primary", flipped: false },
-    "cap-flipped": { text: "Urbban", weight: "font-black", tracking: "-0.03em", bStyle: "", bColor: "text-primary", flipped: true },
+  const configs = {
+    "blue-b": { text: "urbban", weight: "font-black", tracking: "-0.03em" },
+    "thin-blue": { text: "urbban", weight: "font-medium", tracking: "-0.015em" },
+    "cap-thin-blue": { text: "Urbban", weight: "font-medium", tracking: "-0.015em" },
+    "cap-u": { text: "Urbban", weight: "font-bold", tracking: "-0.025em" },
   };
 
-  const c = config[variant] || config.default;
-  const chars = c.text.split("");
-  // Find second 'b'/'B' index
-  let bCount = 0;
-  const secondBIndex = chars.findIndex((ch) => {
-    if (ch.toLowerCase() === "b") {
-      bCount++;
-      if (bCount === 2) return true;
-    }
-    return false;
-  });
+  const c = configs[variant];
+
+  // Split around the second 'b'
+  const lowerText = c.text.toLowerCase();
+  const firstBIdx = lowerText.indexOf("b");
+  const secondBIdx = lowerText.indexOf("b", firstBIdx + 1);
+
+  const before = c.text.slice(0, secondBIdx);
+  const bChar = c.text[secondBIdx];
+  const after = c.text.slice(secondBIdx + 1);
+
+  // Shadow/relief style for the accent b — darker blue with subtle text-shadow
+  const bShadowStyle: React.CSSProperties = {
+    color: "hsl(200 85% 35%)",
+    textShadow: "1px 1px 0px hsl(200 85% 25% / 0.3), 0px 2px 4px hsl(200 85% 20% / 0.15)",
+    fontFamily: fontFamilies[font],
+  };
 
   return (
     <span
-      className={`inline-flex items-baseline ${c.weight} tracking-tight ${textSize[size]} ${className}`}
-      style={{ fontFamily: "'Satoshi', system-ui, sans-serif", letterSpacing: c.tracking }}
+      className={`inline-flex items-baseline ${c.weight} ${textSize[size]} ${className}`}
+      style={{ fontFamily: fontFamilies[font], letterSpacing: c.tracking }}
       aria-label="Urbban"
     >
-      {chars.map((ch, i) => {
-        if (i === secondBIndex) {
-          return (
-            <span
-              key={i}
-              className={`${c.bStyle} ${c.bColor}`}
-              style={c.flipped ? { display: "inline-block", transform: "scaleX(-1)" } : undefined}
-            >
-              {ch}
-            </span>
-          );
-        }
-        return <span key={i}>{ch}</span>;
-      })}
+      <span>{before}</span>
+      <span style={bShadowStyle}>{bChar}</span>
+      <span>{after}</span>
     </span>
   );
 };
