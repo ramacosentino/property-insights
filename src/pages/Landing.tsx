@@ -5,6 +5,7 @@ import {
   Search, BarChart2, TrendingUp, Bell,
 } from "lucide-react";
 import UrbbanLogo from "@/components/UrbbanLogo";
+import RotatingWord from "@/components/RotatingWord";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import illustrations from "@/components/landing/FeatureIllustrations";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
