@@ -95,12 +95,12 @@ export const LogoVariantF = ({ className = "", height = 40 }: LogoExplorationPro
   </span>
 );
 /**
- * Variant G: URBBAN — thin, 1ra B invertida, 2da B normal primary
+ * Variant G: URBBAN — 450, 1ra B invertida, 2da B primary
  */
 export const LogoVariantG = ({ className = "", height = 40 }: LogoExplorationProps) => (
   <span
     className={`inline-flex items-baseline ${className}`}
-    style={{ fontFamily: font, fontSize: height, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1 }}
+    style={{ fontFamily: font, fontSize: height, fontWeight: 450, letterSpacing: "-0.02em", lineHeight: 1 }}
     aria-label="Urbban"
   >
     <span>UR</span>
@@ -111,34 +111,34 @@ export const LogoVariantG = ({ className = "", height = 40 }: LogoExplorationPro
 );
 
 /**
- * Variant H: URBBAN — medium, 1ra B invertida, 2da B normal primary
+ * Variant H: urbban — 450, 1ra b invertida, 2da b primary
  */
 export const LogoVariantH = ({ className = "", height = 40 }: LogoExplorationProps) => (
   <span
     className={`inline-flex items-baseline ${className}`}
-    style={{ fontFamily: font, fontSize: height, fontWeight: 500, letterSpacing: "-0.025em", lineHeight: 1 }}
+    style={{ fontFamily: font, fontSize: height, fontWeight: 450, letterSpacing: "-0.02em", lineHeight: 1 }}
     aria-label="Urbban"
   >
-    <span>UR</span>
-    <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>B</span>
-    <span className="text-primary">B</span>
-    <span>AN</span>
+    <span>ur</span>
+    <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>b</span>
+    <span className="text-primary">b</span>
+    <span>an</span>
   </span>
 );
 
 /**
- * Variant I: URBBAN — semibold, 1ra B invertida, 2da B normal primary
+ * Variant I: Urbban — 450, 1ra b invertida, 2da b primary
  */
 export const LogoVariantI = ({ className = "", height = 40 }: LogoExplorationProps) => (
   <span
     className={`inline-flex items-baseline ${className}`}
-    style={{ fontFamily: font, fontSize: height, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1 }}
+    style={{ fontFamily: font, fontSize: height, fontWeight: 450, letterSpacing: "-0.02em", lineHeight: 1 }}
     aria-label="Urbban"
   >
-    <span>UR</span>
-    <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>B</span>
-    <span className="text-primary">B</span>
-    <span>AN</span>
+    <span>Ur</span>
+    <span style={{ display: "inline-block", transform: "scaleX(-1)" }}>b</span>
+    <span className="text-primary">b</span>
+    <span>an</span>
   </span>
 );
 
