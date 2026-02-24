@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import {
-  BarChart3, ArrowRight, Check, ChevronDown, Zap, Crown, Star,
+  ArrowRight, Check, ChevronDown, Zap, Crown, Star,
   Search, BarChart2, TrendingUp, Bell,
 } from "lucide-react";
+import UrbbanLogo from "@/components/UrbbanLogo";
 import landingProblemBg from "@/assets/landing-problem-bg.jpg";
 import illustrations from "@/components/landing/FeatureIllustrations";
 import landingProfilesBg from "@/assets/landing-profiles-bg.jpg";
