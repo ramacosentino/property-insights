@@ -25,7 +25,7 @@ const MisProyectos = () => {
   const [tab, setTab] = useState<"active" | "discarded">("active");
   const [userAnalyses, setUserAnalyses] = useState<Record<string, UserAnalysis>>({});
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<string>("none");
+  const [sortBy, setSortBy] = useState<string>("guardado");
   const [sortAsc, setSortAsc] = useState(false);
   const [savedDates, setSavedDates] = useState<Record<string, string>>({});
 
