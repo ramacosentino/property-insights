@@ -763,10 +763,11 @@ const MapView = () => {
   const provinceStats = useMemo(() => {
     const map = new Map<string, { prices: number[]; count: number }>();
     for (const p of properties) {
+      if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
       const prov = p.city || "Sin ciudad";
       if (!map.has(prov)) map.set(prov, { prices: [], count: 0 });
       const entry = map.get(prov)!;
-      entry.prices.push(p.pricePerM2Total ?? 0);
+      entry.prices.push(p.pricePerM2Total);
       entry.count++;
     }
     const result: { name: string; medianPricePerSqm: number; count: number }[] = [];
@@ -783,10 +784,11 @@ const MapView = () => {
   const neighborhoodMedianStats = useMemo(() => {
     const map = new Map<string, { prices: number[]; count: number }>();
     for (const p of properties) {
+      if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
       const key = p.neighborhood || "Sin barrio";
       if (!map.has(key)) map.set(key, { prices: [], count: 0 });
       const entry = map.get(key)!;
-      entry.prices.push(p.pricePerM2Total ?? 0);
+      entry.prices.push(p.pricePerM2Total);
       entry.count++;
     }
     const result: { name: string; medianPricePerSqm: number; count: number }[] = [];
@@ -1302,7 +1304,15 @@ const MapView = () => {
           </div>
         )}
 
-        <div ref={mapRef} className="h-full w-full flex-1" />
+        {isLoading && (
+          <div className="absolute inset-0 z-[1200] flex items-center justify-center bg-background">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-sm text-muted-foreground">Cargando propiedades…</span>
+            </div>
+          </div>
+        )}
+        <div ref={mapRef} className="h-full w-full flex-1" style={{ background: 'var(--background)' }} />
 
         {/* ===== DESKTOP: Legend + sidebar ===== */}
         {!isMobile && (
