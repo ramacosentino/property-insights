@@ -79,8 +79,8 @@ const PropertyList = () => {
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
 
   const PRICE_CAP = 2000000;
-  const SURFACE_CAP = 5000;
-  const SURFACE_COVERED_CAP = 1000;
+  const SURFACE_CAP = 2000;
+  const SURFACE_COVERED_CAP = 800;
   const AGE_CAP = 50;
   const EXPENSES_CAP = 1000000;
 
