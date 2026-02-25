@@ -16,13 +16,67 @@ interface FactorDef {
 
 export const FACTOR_DEFS: FactorDef[] = [
   {
-    name: "propertyType", displayName: "Tipo de Propiedad",
-    description: "El tipo de propiedad es uno de los factores más determinantes del precio por m².",
-    extract: p => p.propertyType || "Sin dato",
+    name: "bathrooms", displayName: "Baños",
+    description: "Tener un solo baño resta valor. A partir de dos, el impacto es menor y se correlaciona con el tamaño.",
+    extract: p => {
+      if (!p.bathrooms) return "Sin dato";
+      if (p.bathrooms === 1) return "1 baño";
+      if (p.bathrooms === 2) return "2 baños";
+      return "3+ baños";
+    },
+  },
+  {
+    name: "parking", displayName: "Cochera",
+    description: "La cochera agrega un premium significativo, especialmente en zonas donde el m² es más caro.",
+    extract: p => {
+      if (p.parking == null) return "Sin dato";
+      if (p.parking === 0) return "Sin cochera";
+      if (p.parking === 1) return "1 cochera";
+      return "2+ cocheras";
+    },
+  },
+  {
+    name: "ageYears", displayName: "Antigüedad",
+    description: "A estrenar y pocos años tienen un premium claro. Más allá de eso, importa más el estado de conservación que la edad.",
+    extract: p => {
+      if (p.ageYears == null) return "Sin dato";
+      if (p.ageYears === 0) return "A estrenar";
+      if (p.ageYears <= 5) return "1-5 años";
+      if (p.ageYears <= 15) return "6-15 años";
+      if (p.ageYears <= 30) return "16-30 años";
+      if (p.ageYears <= 50) return "31-50 años";
+      return "50+ años";
+    },
+  },
+  {
+    name: "surfaceRange", displayName: "Rango de Superficie",
+    description: "A mayor superficie, menor USD/m² (economía de escala). Es uno de los factores más consistentes.",
+    extract: p => {
+      if (!p.surfaceTotal) return "Sin dato";
+      if (p.surfaceTotal < 35) return "< 35 m²";
+      if (p.surfaceTotal < 50) return "35-50 m²";
+      if (p.surfaceTotal < 80) return "50-80 m²";
+      if (p.surfaceTotal < 120) return "80-120 m²";
+      if (p.surfaceTotal < 200) return "120-200 m²";
+      return "200+ m²";
+    },
+  },
+  {
+    name: "coverageRatio", displayName: "Ratio Cubierto/Total",
+    description: "Más superficie cubierta = más valor/m². Pero no tener nada descubierto (terraza, balcón) también resta. Hay un sweet spot.",
+    extract: p => {
+      if (!p.surfaceTotal || !p.surfaceCovered || p.surfaceTotal === 0) return "Sin dato";
+      const r = p.surfaceCovered / p.surfaceTotal;
+      if (r >= 0.98) return "100% cubierto (sin exterior)";
+      if (r >= 0.85) return "85-98% cubierto";
+      if (r >= 0.7) return "70-85%";
+      if (r >= 0.5) return "50-70%";
+      return "< 50% cubierto";
+    },
   },
   {
     name: "rooms", displayName: "Ambientes",
-    description: "La cantidad de ambientes refleja el tamaño funcional y afecta directamente la valuación.",
+    description: "Los ambientes correlacionan con la superficie, así que su impacto directo en USD/m² es ambiguo. Se muestra como referencia.",
     extract: p => {
       if (!p.rooms) return "Sin dato";
       if (p.rooms === 1) return "Monoambiente";
@@ -33,75 +87,19 @@ export const FACTOR_DEFS: FactorDef[] = [
     },
   },
   {
-    name: "bathrooms", displayName: "Baños",
-    description: "Más baños suelen indicar mejor categoría y mayor valor por m².",
-    extract: p => {
-      if (!p.bathrooms) return "Sin dato";
-      if (p.bathrooms === 1) return "1 baño";
-      if (p.bathrooms === 2) return "2 baños";
-      return "3+ baños";
-    },
-  },
-  {
-    name: "parking", displayName: "Cochera",
-    description: "La disponibilidad de cochera agrega un premium significativo al valor.",
-    extract: p => {
-      if (p.parking == null) return "Sin dato";
-      if (p.parking === 0) return "Sin cochera";
-      if (p.parking === 1) return "1 cochera";
-      return "2+ cocheras";
-    },
-  },
-  {
-    name: "ageYears", displayName: "Antigüedad",
-    description: "Las propiedades más nuevas tienden a cotizar más alto por m².",
-    extract: p => {
-      if (p.ageYears == null) return "Sin dato";
-      if (p.ageYears === 0) return "A estrenar";
-      if (p.ageYears <= 10) return "1-10 años";
-      if (p.ageYears <= 30) return "11-30 años";
-      if (p.ageYears <= 50) return "31-50 años";
-      return "50+ años";
-    },
-  },
-  {
-    name: "coverageRatio", displayName: "Ratio Cubierto/Total",
-    description: "Un mayor porcentaje de superficie cubierta suele indicar mejor aprovechamiento.",
-    extract: p => {
-      if (!p.surfaceTotal || !p.surfaceCovered || p.surfaceTotal === 0) return "Sin dato";
-      const r = p.surfaceCovered / p.surfaceTotal;
-      if (r >= 0.95) return "100% cubierto";
-      if (r >= 0.7) return "70-95%";
-      if (r >= 0.5) return "50-70%";
-      return "< 50%";
-    },
-  },
-  {
-    name: "disposition", displayName: "Disposición",
-    description: "La disposición (frente, contrafrente, interno) afecta luz, ruido y valuación.",
-    extract: p => p.disposition || "Sin dato",
-  },
-  {
     name: "orientation", displayName: "Orientación",
-    description: "La orientación determina la luz natural y puede influir en el precio.",
+    description: "Sur es peor. El impacto es menor pero relevante si la propiedad no es luminosa.",
     extract: p => p.orientation || "Sin dato",
   },
   {
-    name: "luminosity", displayName: "Luminosidad",
-    description: "Propiedades con mejor luminosidad suelen tener una prima de precio.",
-    extract: p => p.luminosity || "Sin dato",
+    name: "disposition", displayName: "Disposición",
+    description: "Frente, contrafrente e interno. En la práctica tiene bajo impacto directo en el USD/m².",
+    extract: p => p.disposition || "Sin dato",
   },
   {
-    name: "surfaceRange", displayName: "Rango de Superficie",
-    description: "El tamaño total impacta en el precio por m²: propiedades más grandes suelen tener menor USD/m².",
-    extract: p => {
-      if (!p.surfaceTotal) return "Sin dato";
-      if (p.surfaceTotal < 50) return "< 50 m²";
-      if (p.surfaceTotal < 100) return "50-100 m²";
-      if (p.surfaceTotal < 200) return "100-200 m²";
-      if (p.surfaceTotal < 500) return "200-500 m²";
-      return "500+ m²";
-    },
+    name: "luminosity", displayName: "Luminosidad",
+    description: "La luminosidad impacta en el valor, pero el dato reportado en avisos puede no ser del todo confiable.",
+    extract: p => p.luminosity || "Sin dato",
   },
 ];
 
@@ -111,6 +109,7 @@ export interface FactorLevel {
   count: number;
   medianPriceM2: number;
   premium: number; // % vs overall median
+  isReference?: boolean; // true for "Sin dato" levels shown but excluded from calculations
 }
 
 export interface FactorAnalysis {
@@ -134,11 +133,26 @@ function median(values: number[]): number {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
+// ─── Get available property types ────────────────────────────────
+export function getPropertyTypes(properties: Property[]): string[] {
+  const types = new Set<string>();
+  for (const p of properties) {
+    if (p.propertyType) types.add(p.propertyType);
+  }
+  return Array.from(types).sort();
+}
+
 // ─── Factor Analysis (for visualization) ─────────────────────────
-export function computeFactorAnalysis(properties: Property[]): FactorAnalysis[] {
-  const valid = properties.filter(p => p.pricePerM2Total && p.pricePerM2Total > 0);
+export function computeFactorAnalysis(properties: Property[], propertyType?: string): FactorAnalysis[] {
+  // Filter by property type if specified
+  const filtered = propertyType
+    ? properties.filter(p => p.propertyType === propertyType)
+    : properties;
+
+  const valid = filtered.filter(p => p.pricePerM2Total && p.pricePerM2Total > 0);
   if (valid.length === 0) return [];
 
+  // Baseline median excludes "Sin dato" properties per factor, but we use overall median of the segment
   const overallMedian = median(valid.map(p => p.pricePerM2Total!));
   const results: FactorAnalysis[] = [];
 
@@ -150,28 +164,38 @@ export function computeFactorAnalysis(properties: Property[]): FactorAnalysis[] 
       groups.get(key)!.push(p.pricePerM2Total!);
     }
 
+    // Compute baseline median excluding "Sin dato" for this factor
+    const nonSinDatoValues: number[] = [];
+    for (const [label, values] of groups) {
+      if (label !== "Sin dato") nonSinDatoValues.push(...values);
+    }
+    const factorBaseline = nonSinDatoValues.length > 0 ? median(nonSinDatoValues) : overallMedian;
+
     const levels: FactorLevel[] = [];
     for (const [label, values] of groups) {
       if (values.length < 3) continue;
       const med = median(values);
+      const isSinDato = label === "Sin dato";
       levels.push({
         label,
         count: values.length,
         medianPriceM2: Math.round(med),
-        premium: Math.round(((med - overallMedian) / overallMedian) * 1000) / 10,
+        premium: Math.round(((med - factorBaseline) / factorBaseline) * 1000) / 10,
+        isReference: isSinDato,
       });
     }
     levels.sort((a, b) => b.medianPriceM2 - a.medianPriceM2);
 
-    const premiums = levels.map(l => l.premium);
-    const range = premiums.length > 1 ? Math.max(...premiums) - Math.min(...premiums) : 0;
+    // Impact range excludes "Sin dato" reference levels
+    const nonRefPremiums = levels.filter(l => !l.isReference).map(l => l.premium);
+    const range = nonRefPremiums.length > 1 ? Math.max(...nonRefPremiums) - Math.min(...nonRefPremiums) : 0;
 
     results.push({
       name: def.name,
       displayName: def.displayName,
       description: def.description,
       levels,
-      baselineMedian: Math.round(overallMedian),
+      baselineMedian: Math.round(factorBaseline),
       impactRange: Math.round(range * 10) / 10,
       relevance: Math.min(100, Math.round(range * 1.5)),
     });

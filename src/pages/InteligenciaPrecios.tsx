@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
-import { computeFactorAnalysis, FactorAnalysis } from "@/lib/priceFactors";
+import { computeFactorAnalysis, getPropertyTypes, FactorAnalysis } from "@/lib/priceFactors";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,14 +51,13 @@ function premiumColor(premium: number) {
 function FactorCard({ factor, aiInsight }: { factor: FactorAnalysis; aiInsight?: AIFactorInsight }) {
   const [expanded, setExpanded] = useState(false);
 
-  const chartData = factor.levels
-    .filter(l => l.label !== "Sin dato")
-    .map(l => ({
-      name: l.label,
-      premium: l.premium,
-      mediana: l.medianPriceM2,
-      count: l.count,
-    }));
+  const chartData = factor.levels.map(l => ({
+    name: l.label,
+    premium: l.premium,
+    mediana: l.medianPriceM2,
+    count: l.count,
+    isReference: l.isReference ?? false,
+  }));
 
   return (
     <Card className="overflow-hidden">
@@ -89,14 +88,20 @@ function FactorCard({ factor, aiInsight }: { factor: FactorAnalysis; aiInsight?:
                 <RTooltip
                   contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                   formatter={(value: number, _name: string, entry: any) => [
-                    `${value > 0 ? "+" : ""}${value}% | USD ${entry.payload.mediana}/m² (${entry.payload.count} props)`,
+                    `${value > 0 ? "+" : ""}${value}% | USD ${entry.payload.mediana}/m² (${entry.payload.count} props)${entry.payload.isReference ? " [ref]" : ""}`,
                     "Premium",
                   ]}
                 />
                 <ReferenceLine x={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
                 <Bar dataKey="premium" radius={[0, 4, 4, 0]} maxBarSize={20}>
                   {chartData.map((d, i) => (
-                    <Cell key={i} fill={premiumColor(d.premium)} fillOpacity={0.85} />
+                    <Cell
+                      key={i}
+                      fill={d.isReference ? "hsl(var(--muted-foreground))" : premiumColor(d.premium)}
+                      fillOpacity={d.isReference ? 0.35 : 0.85}
+                      strokeDasharray={d.isReference ? "4 2" : undefined}
+                      stroke={d.isReference ? "hsl(var(--muted-foreground))" : undefined}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -133,15 +138,24 @@ const InteligenciaPrecios = () => {
   const { data, isLoading } = useProperties();
   const [aiAnalysis, setAIAnalysis] = useState<AIAnalysis | null>(null);
   const [aiLoading, setAILoading] = useState(false);
+  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+
+  const propertyTypes = useMemo(() => {
+    if (!data?.properties) return [];
+    return getPropertyTypes(data.properties);
+  }, [data?.properties]);
 
   const factors = useMemo(() => {
     if (!data?.properties) return [];
-    return computeFactorAnalysis(data.properties);
-  }, [data?.properties]);
+    return computeFactorAnalysis(data.properties, selectedType);
+  }, [data?.properties, selectedType]);
 
   const topFactor = factors[0];
-  const totalProperties = data?.properties.length ?? 0;
-  const withPriceData = data?.properties.filter(p => p.pricePerM2Total && p.pricePerM2Total > 0).length ?? 0;
+  const filteredProps = selectedType
+    ? data?.properties.filter(p => p.propertyType === selectedType) ?? []
+    : data?.properties ?? [];
+  const totalProperties = filteredProps.length;
+  const withPriceData = filteredProps.filter(p => p.pricePerM2Total && p.pricePerM2Total > 0).length;
 
   const handleAIAnalysis = async () => {
     if (factors.length === 0) return;
@@ -173,6 +187,27 @@ const InteligenciaPrecios = () => {
           <p className="text-muted-foreground">
             Factores que impactan el USD/m² y su relevancia para detectar oportunidades reales.
           </p>
+          {propertyTypes.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Button
+                size="sm"
+                variant={selectedType === undefined ? "default" : "outline"}
+                onClick={() => setSelectedType(undefined)}
+              >
+                Todos los tipos
+              </Button>
+              {propertyTypes.map(t => (
+                <Button
+                  key={t}
+                  size="sm"
+                  variant={selectedType === t ? "default" : "outline"}
+                  onClick={() => setSelectedType(t)}
+                >
+                  {t}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -269,11 +304,9 @@ const InteligenciaPrecios = () => {
                   <div className="text-xs text-muted-foreground space-y-1">
                     <p className="font-medium text-foreground">¿Cómo funciona el análisis de factores?</p>
                     <p>
-                      Para cada factor, calculamos la <span className="font-semibold">mediana de USD/m²</span> de las propiedades con esa característica y la comparamos contra la mediana general.
-                      El <span className="font-semibold text-accent">% premium positivo</span> indica que esa característica encarece el m², mientras que un <span className="font-semibold text-primary">% negativo</span> indica que lo abarata.
-                    </p>
-                    <p>
-                      Estos factores se integran al cálculo de oportunidad: el score ahora compara el precio real contra un <span className="font-semibold">precio esperado ajustado</span> por las características específicas de cada propiedad.
+                      El análisis se segmenta por <span className="font-semibold">tipo de propiedad</span> para comparaciones justas (ej: deptos vs. deptos).
+                      Para cada factor, calculamos la <span className="font-semibold">mediana de USD/m²</span> excluyendo propiedades sin ese dato, y la comparamos contra la mediana del segmento.
+                      Las barras <span className="opacity-40">tenues</span> muestran "Sin dato" como referencia, sin afectar el cálculo.
                     </p>
                   </div>
                 </div>
