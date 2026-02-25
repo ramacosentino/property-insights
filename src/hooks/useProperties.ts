@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
+import { computeFactorPremiums, getPropertyFactorAdjustment, FactorPremiumMap } from "@/lib/priceFactors";
 
 interface DBPropertyRow {
   id: string;
@@ -172,6 +173,10 @@ function computeStats(rows: DBPropertyRow[]): {
     if (filtered.length > 0) groupMedians.set(key, median(filtered));
   }
 
+  // --- Factor premiums for adjusted opportunity score ---
+  const nonOutlierProps = rawProperties.filter((p) => !outlierIds.has(p.id)) as unknown as Property[];
+  const factorPremiums = computeFactorPremiums(nonOutlierProps);
+
   // --- Top 10% by price (excluding outliers) ---
   const withPrice = rawProperties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0 && !outlierIds.has(p.id));
   const sortedByPrice = [...withPrice].sort((a, b) => (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0));
@@ -187,9 +192,12 @@ function computeStats(rows: DBPropertyRow[]): {
     if (canScore) {
       const key = groupKey(p);
       const typeMedian = groupMedians.get(key);
-      const neighborhoodMedian = typeMedian ?? neighborhoodStats.get(p.neighborhood)?.medianPricePerSqm ?? 0;
-      if (neighborhoodMedian > 0) {
-        opportunityScore = ((neighborhoodMedian - p.pricePerM2Total!) / neighborhoodMedian) * 100;
+      const baseMedian = typeMedian ?? neighborhoodStats.get(p.neighborhood)?.medianPricePerSqm ?? 0;
+      if (baseMedian > 0) {
+        // Adjust expected price based on property-specific factors
+        const factorAdj = getPropertyFactorAdjustment(p as unknown as Property, factorPremiums);
+        const expectedPrice = baseMedian * (1 + factorAdj);
+        opportunityScore = ((expectedPrice - p.pricePerM2Total!) / expectedPrice) * 100;
       }
     }
 
