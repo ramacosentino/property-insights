@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
-import { computeFactorPremiums, getPropertyFactorAdjustment, FactorPremiumMap } from "@/lib/priceFactors";
+import { computeSegmentedFactorPremiums, getPropertyFactorAdjustment } from "@/lib/priceFactors";
 
 interface DBPropertyRow {
   id: string;
@@ -175,7 +175,7 @@ function computeStats(rows: DBPropertyRow[]): {
 
   // --- Factor premiums for adjusted opportunity score ---
   const nonOutlierProps = rawProperties.filter((p) => !outlierIds.has(p.id)) as unknown as Property[];
-  const factorPremiums = computeFactorPremiums(nonOutlierProps);
+  const factorPremiums = computeSegmentedFactorPremiums(nonOutlierProps);
 
   // --- Top 10% by price (excluding outliers) ---
   const withPrice = rawProperties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0 && !outlierIds.has(p.id));

@@ -132,6 +132,8 @@ export interface FactorAnalysis {
 
 // Premium map for adjustments
 export type FactorPremiumMap = Map<string, Map<string, number>>; // factorName -> levelLabel -> premium%
+// Segmented premium map: propertyType -> FactorPremiumMap
+export type SegmentedFactorPremiumMap = Map<string, FactorPremiumMap>;
 
 // ─── Segmentation ────────────────────────────────────────────────
 export type SegmentationAxis = "propertyType" | "rooms";
@@ -289,13 +291,12 @@ export function computeFactorAnalysis(
 }
 
 // ─── Factor Premiums (for opportunity adjustment) ─────────────────
-export function computeFactorPremiums(properties: Property[]): FactorPremiumMap {
+function computeFactorPremiumsForGroup(properties: Property[]): FactorPremiumMap {
   const valid = properties.filter(p => p.pricePerM2Total && p.pricePerM2Total > 0);
   const overallMedian = median(valid.map(p => p.pricePerM2Total!));
   const map: FactorPremiumMap = new Map();
 
   for (const def of FACTOR_DEFS) {
-    // Skip confounded factors in opportunity scoring
     if (def.confounded) continue;
     
     const groups = new Map<string, number[]>();
@@ -317,11 +318,40 @@ export function computeFactorPremiums(properties: Property[]): FactorPremiumMap 
   return map;
 }
 
+/** Compute factor premiums segmented by property type */
+export function computeSegmentedFactorPremiums(properties: Property[]): SegmentedFactorPremiumMap {
+  const map: SegmentedFactorPremiumMap = new Map();
+  
+  // Group by property type
+  const byType = new Map<string, Property[]>();
+  for (const p of properties) {
+    const type = p.propertyType || "__all__";
+    if (!byType.has(type)) byType.set(type, []);
+    byType.get(type)!.push(p);
+  }
+  
+  // Compute premiums per type
+  for (const [type, props] of byType) {
+    if (props.length < 10) continue; // need enough data
+    map.set(type, computeFactorPremiumsForGroup(props));
+  }
+  
+  // Also compute a fallback for all properties
+  map.set("__all__", computeFactorPremiumsForGroup(properties));
+  
+  return map;
+}
+
 // ─── Property Factor Adjustment ──────────────────────────────────
 export function getPropertyFactorAdjustment(
   property: PropLike,
-  premiums: FactorPremiumMap
+  segmentedPremiums: SegmentedFactorPremiumMap
 ): number {
+  // Use type-specific premiums, fall back to global
+  const premiums = segmentedPremiums.get(property.propertyType || "__all__")
+    ?? segmentedPremiums.get("__all__");
+  if (!premiums) return 0;
+
   let totalAdj = 0;
   let count = 0;
 
@@ -338,6 +368,5 @@ export function getPropertyFactorAdjustment(
   }
 
   if (count === 0) return 0;
-  // Average adjustment, dampened to 40% to be conservative
   return (totalAdj / count / 100) * 0.4;
 }
