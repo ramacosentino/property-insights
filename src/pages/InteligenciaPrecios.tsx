@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
-import { computeFactorAnalysis, getPropertyTypes, FactorAnalysis } from "@/lib/priceFactors";
+import { computeFactorAnalysis, getPropertyTypes, getSegmentValues, FactorAnalysis } from "@/lib/priceFactors";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import {
   TrendingUp, TrendingDown, BarChart3, Loader2, Sparkles, AlertTriangle,
-  ArrowUpRight, ArrowDownRight, Info, ChevronDown, ChevronUp,
+  ArrowUpRight, ArrowDownRight, Info, ChevronDown, ChevronUp, Shuffle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -64,11 +64,17 @@ function FactorCard({ factor, aiInsight }: { factor: FactorAnalysis; aiInsight?:
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2 flex-wrap">
               {factor.displayName}
               <Badge variant="outline" className={relevanceColor(factor.relevance)}>
                 {relevanceLabel(factor.relevance)}
               </Badge>
+              {factor.confounded && (
+                <Badge variant="outline" className="bg-warning/10 text-warning-foreground border-warning/30">
+                  <Shuffle className="h-3 w-3 mr-1" />
+                  Confundido
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription className="mt-1 text-xs">{factor.description}</CardDescription>
           </div>
@@ -79,12 +85,20 @@ function FactorCard({ factor, aiInsight }: { factor: FactorAnalysis; aiInsight?:
         </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
+        {/* Inverted pattern warning */}
+        {factor.invertedPattern && factor.invertedNote && (
+          <div className="flex items-start gap-2 p-2 rounded-md bg-warning/10 border border-warning/20">
+            <AlertTriangle className="h-3.5 w-3.5 text-warning-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-warning-foreground">{factor.invertedNote}</p>
+          </div>
+        )}
+
         {chartData.length > 0 && (
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 12, top: 0, bottom: 0 }}>
                 <XAxis type="number" tickFormatter={v => `${v > 0 ? "+" : ""}${v}%`} fontSize={10} />
-                <YAxis type="category" dataKey="name" width={90} fontSize={10} tick={{ fill: "hsl(var(--foreground))" }} />
+                <YAxis type="category" dataKey="name" width={110} fontSize={10} tick={{ fill: "hsl(var(--foreground))" }} />
                 <RTooltip
                   contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                   formatter={(value: number, _name: string, entry: any) => [
@@ -139,21 +153,32 @@ const InteligenciaPrecios = () => {
   const [aiAnalysis, setAIAnalysis] = useState<AIAnalysis | null>(null);
   const [aiLoading, setAILoading] = useState(false);
   const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+  const [selectedRooms, setSelectedRooms] = useState<string | undefined>(undefined);
 
   const propertyTypes = useMemo(() => {
     if (!data?.properties) return [];
     return getPropertyTypes(data.properties);
   }, [data?.properties]);
 
+  const roomsSegments = useMemo(() => {
+    if (!data?.properties) return [];
+    return getSegmentValues(data.properties, "rooms");
+  }, [data?.properties]);
+
   const factors = useMemo(() => {
     if (!data?.properties) return [];
-    return computeFactorAnalysis(data.properties, selectedType);
-  }, [data?.properties, selectedType]);
+    return computeFactorAnalysis(data.properties, {
+      propertyType: selectedType,
+      rooms: selectedRooms,
+    });
+  }, [data?.properties, selectedType, selectedRooms]);
 
   const topFactor = factors[0];
-  const filteredProps = selectedType
-    ? data?.properties.filter(p => p.propertyType === selectedType) ?? []
-    : data?.properties ?? [];
+  const filteredProps = useMemo(() => {
+    let props = data?.properties ?? [];
+    if (selectedType) props = props.filter(p => p.propertyType === selectedType);
+    return props;
+  }, [data?.properties, selectedType]);
   const totalProperties = filteredProps.length;
   const withPriceData = filteredProps.filter(p => p.pricePerM2Total && p.pricePerM2Total > 0).length;
 
@@ -187,25 +212,56 @@ const InteligenciaPrecios = () => {
           <p className="text-muted-foreground">
             Factores que impactan el USD/m² y su relevancia para detectar oportunidades reales.
           </p>
+
+          {/* Segmentation: Property Type */}
           {propertyTypes.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              <Button
-                size="sm"
-                variant={selectedType === undefined ? "default" : "outline"}
-                onClick={() => setSelectedType(undefined)}
-              >
-                Todos los tipos
-              </Button>
-              {propertyTypes.map(t => (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Tipo de propiedad</p>
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  key={t}
                   size="sm"
-                  variant={selectedType === t ? "default" : "outline"}
-                  onClick={() => setSelectedType(t)}
+                  variant={selectedType === undefined ? "default" : "outline"}
+                  onClick={() => setSelectedType(undefined)}
                 >
-                  {t}
+                  Todos
                 </Button>
-              ))}
+                {propertyTypes.map(t => (
+                  <Button
+                    key={t}
+                    size="sm"
+                    variant={selectedType === t ? "default" : "outline"}
+                    onClick={() => setSelectedType(t)}
+                  >
+                    {t}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Segmentation: Rooms */}
+          {roomsSegments.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Segmentar por ambientes</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={selectedRooms === undefined ? "default" : "outline"}
+                  onClick={() => setSelectedRooms(undefined)}
+                >
+                  Todos
+                </Button>
+                {roomsSegments.map(r => (
+                  <Button
+                    key={r}
+                    size="sm"
+                    variant={selectedRooms === r ? "default" : "outline"}
+                    onClick={() => setSelectedRooms(r)}
+                  >
+                    {r}
+                  </Button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -302,11 +358,12 @@ const InteligenciaPrecios = () => {
                 <div className="flex items-start gap-3">
                   <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                   <div className="text-xs text-muted-foreground space-y-1">
-                    <p className="font-medium text-foreground">¿Cómo funciona el análisis de factores?</p>
+                    <p className="font-medium text-foreground">¿Cómo funciona?</p>
                     <p>
-                      El análisis se segmenta por <span className="font-semibold">tipo de propiedad</span> para comparaciones justas (ej: deptos vs. deptos).
-                      Para cada factor, calculamos la <span className="font-semibold">mediana de USD/m²</span> excluyendo propiedades sin ese dato, y la comparamos contra la mediana del segmento.
-                      Las barras <span className="opacity-40">tenues</span> muestran "Sin dato" como referencia, sin afectar el cálculo.
+                      El análisis se segmenta por <span className="font-semibold">tipo de propiedad</span> y opcionalmente por <span className="font-semibold">ambientes</span>.
+                      Para cada factor, calculamos la <span className="font-semibold">mediana de USD/m²</span> excluyendo propiedades sin ese dato.
+                      Las barras <span className="opacity-40">tenues</span> son referencias ("Sin dato" / "Sin cochera o s/d").
+                      Los factores marcados como <span className="font-semibold">"Confundido"</span> (Ambientes, Baños) correlacionan con superficie y no se usan en el cálculo de oportunidades.
                     </p>
                   </div>
                 </div>
