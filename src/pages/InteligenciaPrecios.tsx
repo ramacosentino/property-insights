@@ -2,11 +2,14 @@ import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
-import { computeFactorAnalysis, getPropertyTypes, getSegmentValues, FactorAnalysis } from "@/lib/priceFactors";
+import { computeFactorAnalysis, getPropertyTypes, getSegmentValues, FactorAnalysis, PriceMetric, METRIC_LABELS } from "@/lib/priceFactors";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, Cell, ReferenceLine,
 } from "recharts";
@@ -48,8 +51,9 @@ function premiumColor(premium: number) {
 }
 
 // ─── Factor Card ────────────────────────────────────────────────
-function FactorCard({ factor, aiInsight }: { factor: FactorAnalysis; aiInsight?: AIFactorInsight }) {
+function FactorCard({ factor, aiInsight, metric }: { factor: FactorAnalysis; aiInsight?: AIFactorInsight; metric: PriceMetric }) {
   const [expanded, setExpanded] = useState(false);
+  const metricUnit = metric === "price" ? "USD" : "USD/m²";
 
   const chartData = factor.levels.map(l => ({
     name: l.label,
@@ -102,7 +106,7 @@ function FactorCard({ factor, aiInsight }: { factor: FactorAnalysis; aiInsight?:
                 <RTooltip
                   contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                   formatter={(value: number, _name: string, entry: any) => [
-                    `${value > 0 ? "+" : ""}${value}% | USD ${entry.payload.mediana}/m² (${entry.payload.count} props)${entry.payload.isReference ? " [ref]" : ""}`,
+                    `${value > 0 ? "+" : ""}${value}% | ${metricUnit} ${entry.payload.mediana.toLocaleString()} (${entry.payload.count} props)${entry.payload.isReference ? " [ref]" : ""}`,
                     "Premium",
                   ]}
                 />
@@ -154,6 +158,7 @@ const InteligenciaPrecios = () => {
   const [aiLoading, setAILoading] = useState(false);
   const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
   const [selectedRooms, setSelectedRooms] = useState<string | undefined>(undefined);
+  const [metric, setMetric] = useState<PriceMetric>("pricePerM2Total");
 
   const propertyTypes = useMemo(() => {
     if (!data?.properties) return [];
@@ -170,8 +175,8 @@ const InteligenciaPrecios = () => {
     return computeFactorAnalysis(data.properties, {
       propertyType: selectedType,
       rooms: selectedRooms,
-    });
-  }, [data?.properties, selectedType, selectedRooms]);
+    }, metric);
+  }, [data?.properties, selectedType, selectedRooms, metric]);
 
   const topFactor = factors[0];
   const filteredProps = useMemo(() => {
@@ -264,6 +269,21 @@ const InteligenciaPrecios = () => {
               </div>
             </div>
           )}
+
+          {/* Metric selector */}
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Métrica base</p>
+            <Select value={metric} onValueChange={(v) => setMetric(v as PriceMetric)}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(METRIC_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {isLoading ? (
@@ -376,7 +396,7 @@ const InteligenciaPrecios = () => {
                 const aiInsight = aiAnalysis?.factors.find(
                   af => af.name.toLowerCase() === f.displayName.toLowerCase()
                 );
-                return <FactorCard key={f.name} factor={f} aiInsight={aiInsight} />;
+                return <FactorCard key={f.name} factor={f} aiInsight={aiInsight} metric={metric} />;
               })}
             </div>
           </>
