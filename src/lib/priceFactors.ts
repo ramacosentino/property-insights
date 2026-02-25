@@ -107,6 +107,15 @@ export const FACTOR_DEFS: FactorDef[] = [
   },
 ];
 
+// ─── Metric type ─────────────────────────────────────────────────
+export type PriceMetric = "pricePerM2Total" | "pricePerM2Covered" | "price";
+
+export const METRIC_LABELS: Record<PriceMetric, string> = {
+  pricePerM2Total: "USD/m² total",
+  pricePerM2Covered: "USD/m² cubierto",
+  price: "Precio total",
+};
+
 // ─── Types ───────────────────────────────────────────────────────
 export interface FactorLevel {
   label: string;
@@ -199,10 +208,18 @@ function detectInvertedAge(levels: FactorLevel[]): { inverted: boolean; note?: s
   return { inverted: false };
 }
 
+// ─── Extract metric value helper ─────────────────────────────────
+function getMetricValue(p: Property, metric: PriceMetric): number | null {
+  if (metric === "pricePerM2Covered") return p.pricePerM2Covered ?? p.pricePerM2Total;
+  if (metric === "price") return p.price > 0 ? p.price : null;
+  return p.pricePerM2Total;
+}
+
 // ─── Factor Analysis (for visualization) ─────────────────────────
 export function computeFactorAnalysis(
   properties: Property[],
-  segments?: { propertyType?: string; rooms?: string }
+  segments?: { propertyType?: string; rooms?: string },
+  metric: PriceMetric = "pricePerM2Total"
 ): FactorAnalysis[] {
   let filtered = properties;
   
@@ -216,10 +233,13 @@ export function computeFactorAnalysis(
     });
   }
 
-  const valid = filtered.filter(p => p.pricePerM2Total && p.pricePerM2Total > 0);
+  const valid = filtered.filter(p => {
+    const v = getMetricValue(p, metric);
+    return v != null && v > 0;
+  });
   if (valid.length === 0) return [];
 
-  const overallMedian = median(valid.map(p => p.pricePerM2Total!));
+  const overallMedian = median(valid.map(p => getMetricValue(p, metric)!));
   const results: FactorAnalysis[] = [];
 
   for (const def of FACTOR_DEFS) {
@@ -230,7 +250,7 @@ export function computeFactorAnalysis(
     for (const p of valid) {
       const key = def.extract(p);
       if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(p.pricePerM2Total!);
+      groups.get(key)!.push(getMetricValue(p, metric)!);
     }
 
     // Compute baseline median excluding "Sin dato" and reference labels
