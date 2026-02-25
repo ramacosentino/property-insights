@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.analyze-property]
 verify_jwt = false
+
+[functions.compute-price-model]
+verify_jwt = false
