@@ -13,8 +13,9 @@ import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List } from "lucide-react";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useMapDraw } from "@/hooks/useMapDraw";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -257,6 +258,9 @@ const MapView = () => {
   const [mobileSheet, setMobileSheet] = useState<"collapsed" | "half" | "full">("collapsed");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // Polygon draw filter
+  const { polygon: drawnPolygon, isDrawing, startDraw, clearDraw, cancelDraw, isInsidePolygon } = useMapDraw(mapInstanceRef);
+
   // Range filters
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 2000;
@@ -399,8 +403,18 @@ const MapView = () => {
       if (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax)
         result = result.filter((p) => p.expenses !== null && p.expenses >= expensesRange[0] && (expensesRange[1] >= EXPENSES_CAP || p.expenses <= expensesRange[1]));
     }
+    // Polygon draw filter
+    if (drawnPolygon) {
+      result = result.filter((p) => {
+        const geo = geocodedCoords.get(p.address || p.location);
+        if (geo) return isInsidePolygon(geo.lat, geo.lng);
+        const base = NEIGHBORHOOD_COORDS[p.neighborhood];
+        if (base) return isInsidePolygon(base[0], base[1]);
+        return false;
+      });
+    }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords]);
 
   const mappedProperties = filteredProperties;
 
@@ -896,6 +910,30 @@ const MapView = () => {
         <option value="30d">Último mes</option>
         <option value="90d">Últimos 3 meses</option>
       </select>
+
+      {/* Draw polygon filter */}
+      {drawnPolygon ? (
+        <button
+          onClick={clearDraw}
+          className="flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
+        >
+          <Pentagon className="h-3 w-3" />
+          Zona dibujada
+          <X className="h-3 w-3 ml-0.5" />
+        </button>
+      ) : (
+        <button
+          onClick={isDrawing ? cancelDraw : startDraw}
+          className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
+            isDrawing
+              ? "border-primary/30 text-primary bg-primary/10 animate-pulse"
+              : "border-border text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Pentagon className="h-3 w-3" />
+          {isDrawing ? "Dibujando..." : "Dibujar zona"}
+        </button>
+      )}
 
       {activeFilterCount > 0 && (
         <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border shrink-0">
