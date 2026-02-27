@@ -1,10 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronRight, MapPin, Search, X, Check } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 // Macro-zone definitions with approximate center coords for the mini map
 const MACRO_ZONES: Record<string, { label: string; center: [number, number]; zoom: number; localities?: string[] }> = {
