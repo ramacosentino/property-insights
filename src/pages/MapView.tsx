@@ -403,8 +403,18 @@ const MapView = () => {
       if (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax)
         result = result.filter((p) => p.expenses !== null && p.expenses >= expensesRange[0] && (expensesRange[1] >= EXPENSES_CAP || p.expenses <= expensesRange[1]));
     }
+    // Polygon draw filter
+    if (drawnPolygon) {
+      result = result.filter((p) => {
+        const geo = geocodedCoords.get(p.address || p.location);
+        if (geo) return isInsidePolygon(geo.lat, geo.lng);
+        const base = NEIGHBORHOOD_COORDS[p.neighborhood];
+        if (base) return isInsidePolygon(base[0], base[1]);
+        return false;
+      });
+    }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords]);
 
   const mappedProperties = filteredProperties;
 
