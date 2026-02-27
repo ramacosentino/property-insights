@@ -961,21 +961,37 @@ const MapView = () => {
   const thresholdContent = (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-medium text-foreground">Umbral oportunidad</span>
-        <span className="text-[11px] font-mono text-primary font-semibold">{dealThreshold}%</span>
+        <span className="text-[11px] font-medium text-foreground">Mostrar propiedades más baratas que el mercado</span>
       </div>
-      <Slider
-        min={0}
-        max={100}
-        step={5}
-        value={[dealThreshold]}
-        onValueChange={(v) => setDealThreshold(v[0])}
-        className="w-full"
-      />
-      <p className="text-[10px] text-muted-foreground mt-1.5">
-        {viewMode === "opportunities"
-          ? `${dealProperties.length} oportunidades (≥${dealThreshold}% bajo mediana)`
-          : `${mappedProperties.length} propiedades · ${dealProperties.length} oportunidades`}
+      {/* Custom visual bar: right=0%, left=max discount */}
+      <div className="relative w-full">
+        <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden">
+          <div
+            className="absolute top-0 right-0 h-full rounded-full transition-all"
+            style={{
+              width: `${100 - dealThreshold}%`,
+              background: `linear-gradient(to left, hsl(var(--primary) / 0.25), hsl(var(--primary)))`,
+            }}
+          />
+        </div>
+        <Slider
+          min={0}
+          max={80}
+          step={5}
+          value={[dealThreshold]}
+          onValueChange={(v) => setDealThreshold(v[0])}
+          className="w-full absolute top-1/2 -translate-y-1/2 left-0"
+          style={{ direction: "rtl" } as React.CSSProperties}
+        />
+      </div>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[10px] font-mono text-primary font-semibold">-{dealThreshold}% vs mercado</span>
+        <span className="text-[10px] text-muted-foreground">
+          {dealProperties.length} propiedad{dealProperties.length !== 1 ? "es" : ""}
+        </span>
+      </div>
+      <p className="text-[9px] text-muted-foreground mt-1">
+        Solo propiedades al menos {dealThreshold}% más baratas que su zona
       </p>
     </div>
   );
@@ -1405,9 +1421,8 @@ const MapView = () => {
                   {/* Compact threshold + stats button */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 flex-1">
-                      <span className="text-[10px] text-muted-foreground">Umbral</span>
-                      <span className="text-[10px] font-mono text-primary font-semibold">{dealThreshold}%</span>
-                      <span className="text-[10px] text-muted-foreground">· {dealProperties.length} oport.</span>
+                      <span className="text-[10px] font-mono text-primary font-semibold">-{dealThreshold}%</span>
+                      <span className="text-[10px] text-muted-foreground">vs mercado · {dealProperties.length} prop.</span>
                     </div>
                     <button
                       onClick={() => setMobileSheet("half")}
