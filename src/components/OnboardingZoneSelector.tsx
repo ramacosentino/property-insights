@@ -59,9 +59,6 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
   const [loading, setLoading] = useState(true);
   const [expandedMacro, setExpandedMacro] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.CircleMarker[]>([]);
 
   // Fetch zone data
   useEffect(() => {
