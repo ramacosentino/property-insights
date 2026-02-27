@@ -64,21 +64,6 @@ const INVESTMENT_GOALS = [
   { value: "desarrollo", label: "Desarrollo inmobiliario" },
 ];
 
-const POPULAR_ZONES = [
-  "Palermo",
-  "Belgrano",
-  "Recoleta",
-  "Caballito",
-  "Núñez",
-  "Villa Urquiza",
-  "San Telmo",
-  "Almagro",
-  "Villa Crespo",
-  "Colegiales",
-  "Barrio Norte",
-  "Flores",
-];
-
 const TOTAL_STEPS = 4; // step 5 (investment_goal) is conditional
 
 const Onboarding = () => {
