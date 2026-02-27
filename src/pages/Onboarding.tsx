@@ -83,7 +83,7 @@ const Onboarding = () => {
     investment_goal: null,
   });
 
-  const [zoneInput, setZoneInput] = useState("");
+  
 
   const isInvestor = data.user_type === "inversor_recurrente" || data.user_type === "inmobiliaria";
   const totalSteps = isInvestor ? TOTAL_STEPS + 1 : TOTAL_STEPS;
