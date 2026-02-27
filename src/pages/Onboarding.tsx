@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import OnboardingZoneSelector from "@/components/OnboardingZoneSelector";
 import {
   Home,
   TrendingUp,
@@ -14,11 +14,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Loader2,
-  MapPin,
   DollarSign,
   Layers,
   Target,
-  X,
 } from "lucide-react";
 
 const USER_TYPES = [
@@ -66,21 +64,6 @@ const INVESTMENT_GOALS = [
   { value: "desarrollo", label: "Desarrollo inmobiliario" },
 ];
 
-const POPULAR_ZONES = [
-  "Palermo",
-  "Belgrano",
-  "Recoleta",
-  "Caballito",
-  "Núñez",
-  "Villa Urquiza",
-  "San Telmo",
-  "Almagro",
-  "Villa Crespo",
-  "Colegiales",
-  "Barrio Norte",
-  "Flores",
-];
-
 const TOTAL_STEPS = 4; // step 5 (investment_goal) is conditional
 
 const Onboarding = () => {
@@ -100,7 +83,7 @@ const Onboarding = () => {
     investment_goal: null,
   });
 
-  const [zoneInput, setZoneInput] = useState("");
+  
 
   const isInvestor = data.user_type === "inversor_recurrente" || data.user_type === "inmobiliaria";
   const totalSteps = isInvestor ? TOTAL_STEPS + 1 : TOTAL_STEPS;
@@ -143,17 +126,6 @@ const Onboarding = () => {
   const toggleArray = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
-  const addZone = (zone: string) => {
-    const trimmed = zone.trim();
-    if (trimmed && !data.zones.includes(trimmed)) {
-      setData((d) => ({ ...d, zones: [...d.zones, trimmed] }));
-    }
-    setZoneInput("");
-  };
-
-  const removeZone = (zone: string) => {
-    setData((d) => ({ ...d, zones: d.zones.filter((z) => z !== zone) }));
-  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
@@ -203,60 +175,10 @@ const Onboarding = () => {
 
         {/* Step 1: Zones */}
         {step === 1 && (
-          <div className="space-y-4 animate-in fade-in duration-300">
-            <div className="text-center space-y-1">
-              <div className="flex items-center justify-center gap-2 text-primary">
-                <MapPin className="h-5 w-5" />
-              </div>
-              <h1 className="text-xl font-bold text-foreground">Zonas de interés</h1>
-              <p className="text-sm text-muted-foreground">¿En qué barrios o localidades buscás?</p>
-            </div>
-
-            {/* Selected zones */}
-            {data.zones.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {data.zones.map((z) => (
-                  <Badge key={z} variant="secondary" className="gap-1 pr-1">
-                    {z}
-                    <button onClick={() => removeZone(z)} className="ml-0.5 rounded-full hover:bg-foreground/10 p-0.5">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            {/* Input */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Escribí un barrio..."
-                value={zoneInput}
-                onChange={(e) => setZoneInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.preventDefault(); addZone(zoneInput); }
-                }}
-              />
-              <Button size="sm" variant="outline" onClick={() => addZone(zoneInput)} disabled={!zoneInput.trim()}>
-                Agregar
-              </Button>
-            </div>
-
-            {/* Popular */}
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground font-medium">Populares</p>
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_ZONES.filter((z) => !data.zones.includes(z)).map((z) => (
-                  <button
-                    key={z}
-                    onClick={() => addZone(z)}
-                    className="px-2.5 py-1 text-xs rounded-full border border-border bg-card hover:border-primary/40 hover:text-primary transition-all"
-                  >
-                    {z}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <OnboardingZoneSelector
+            selected={data.zones}
+            onChange={(zones) => setData((d) => ({ ...d, zones }))}
+          />
         )}
 
         {/* Step 2: Budget */}
