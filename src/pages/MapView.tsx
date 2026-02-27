@@ -911,6 +911,30 @@ const MapView = () => {
         <option value="90d">Últimos 3 meses</option>
       </select>
 
+      {/* Draw polygon filter */}
+      {drawnPolygon ? (
+        <button
+          onClick={clearDraw}
+          className="flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
+        >
+          <Pentagon className="h-3 w-3" />
+          Zona dibujada
+          <X className="h-3 w-3 ml-0.5" />
+        </button>
+      ) : (
+        <button
+          onClick={isDrawing ? cancelDraw : startDraw}
+          className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
+            isDrawing
+              ? "border-primary/30 text-primary bg-primary/10 animate-pulse"
+              : "border-border text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Pentagon className="h-3 w-3" />
+          {isDrawing ? "Dibujando..." : "Dibujar zona"}
+        </button>
+      )}
+
       {activeFilterCount > 0 && (
         <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border shrink-0">
           <X className="h-3 w-3" /> Limpiar
