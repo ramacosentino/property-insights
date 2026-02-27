@@ -210,7 +210,7 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         ) : (
           macroKeys.map((key) => {
             const items = filteredZones[key] || [];
-            if (query && items.length === 0) return null;
+            if (items.length === 0) return null;
             const macro = MACRO_ZONES[key];
             const isExpanded = expandedMacro === key || !!query;
             const allSelected = items.length > 0 && items.every((i) => selected.includes(i.name));
