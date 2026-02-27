@@ -126,17 +126,6 @@ const Onboarding = () => {
   const toggleArray = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
 
-  const addZone = (zone: string) => {
-    const trimmed = zone.trim();
-    if (trimmed && !data.zones.includes(trimmed)) {
-      setData((d) => ({ ...d, zones: [...d.zones, trimmed] }));
-    }
-    setZoneInput("");
-  };
-
-  const removeZone = (zone: string) => {
-    setData((d) => ({ ...d, zones: d.zones.filter((z) => z !== zone) }));
-  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
