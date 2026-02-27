@@ -177,12 +177,6 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         <p className="text-sm text-muted-foreground">Seleccioná las zonas donde buscás propiedades</p>
       </div>
 
-      {/* Mini map */}
-      <div
-        ref={mapRef}
-        className="w-full h-36 rounded-xl border border-border overflow-hidden"
-        style={{ zIndex: 0 }}
-      />
 
       {/* Selected badges */}
       {selected.length > 0 && (
