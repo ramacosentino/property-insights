@@ -258,6 +258,9 @@ const MapView = () => {
   const [mobileSheet, setMobileSheet] = useState<"collapsed" | "half" | "full">("collapsed");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // Polygon draw filter
+  const { polygon: drawnPolygon, isDrawing, startDraw, clearDraw, cancelDraw, isInsidePolygon } = useMapDraw(mapInstanceRef);
+
   // Range filters
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 2000;
