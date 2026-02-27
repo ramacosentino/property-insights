@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import OnboardingZoneSelector from "@/components/OnboardingZoneSelector";
 import {
   Home,
   TrendingUp,
@@ -14,11 +14,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Loader2,
-  MapPin,
   DollarSign,
   Layers,
   Target,
-  X,
 } from "lucide-react";
 
 const USER_TYPES = [
