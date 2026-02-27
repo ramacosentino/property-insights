@@ -1,22 +1,16 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronRight, MapPin, Search, X, Check } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 // Macro-zone definitions with approximate center coords for the mini map
-const MACRO_ZONES: Record<string, { label: string; center: [number, number]; zoom: number; localities?: string[] }> = {
+const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   caba: {
     label: "CABA",
-    center: [-34.6037, -58.3816],
-    zoom: 12,
   },
   gba_norte: {
     label: "GBA Norte",
-    center: [-34.47, -58.52],
-    zoom: 11,
     localities: [
       "Vicente López", "San Isidro", "Martínez", "Beccar", "Acassuso", "Punta Chica",
       "San Fernando", "Victoria", "Virreyes",
@@ -33,8 +27,6 @@ const MACRO_ZONES: Record<string, { label: string; center: [number, number]; zoo
   },
   gba_oeste: {
     label: "GBA Oeste",
-    center: [-34.63, -58.63],
-    zoom: 11,
     localities: [
       "Morón", "Haedo", "Castelar", "Ituzaingó", "Merlo", "Moreno", "Paso del Rey",
       "Ramos Mejía", "San Justo", "La Tablada", "Villa Luzuriaga", "Hurlingham", "William Morris",
@@ -43,8 +35,6 @@ const MACRO_ZONES: Record<string, { label: string; center: [number, number]; zoo
   },
   gba_sur: {
     label: "GBA Sur",
-    center: [-34.76, -58.4],
-    zoom: 11,
     localities: [
       "Avellaneda", "Lanús", "Lomas de Zamora", "Banfield", "Temperley", "Adrogué",
       "Quilmes", "Bernal", "Don Bosco", "Berazategui", "Florencio Varela",
@@ -69,9 +59,6 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
   const [loading, setLoading] = useState(true);
   const [expandedMacro, setExpandedMacro] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.CircleMarker[]>([]);
 
   // Fetch zone data
   useEffect(() => {
@@ -145,99 +132,6 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     fetchZones();
   }, []);
 
-  // Initialize mini map
-  useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
-
-    const map = L.map(mapRef.current, {
-      center: [-34.6037, -58.45],
-      zoom: 10,
-      zoomControl: false,
-      attributionControl: false,
-      dragging: true,
-      scrollWheelZoom: false,
-    });
-
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 16,
-    }).addTo(map);
-
-    mapInstance.current = map;
-
-    return () => {
-      map.remove();
-      mapInstance.current = null;
-    };
-  }, []);
-
-  // Update map markers when selection changes
-  useEffect(() => {
-    if (!mapInstance.current) return;
-
-    // Clear existing
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
-
-    if (selected.length === 0) {
-      mapInstance.current.setView([-34.6037, -58.45], 10);
-      return;
-    }
-
-    // Add markers for selected zones using approximate coords
-    const getApproxCoords = async () => {
-      const { data } = await supabase
-        .from("geocoded_addresses")
-        .select("norm_neighborhood, norm_locality, lat, lng")
-        .not("lat", "is", null);
-
-      if (!data || !mapInstance.current) return;
-
-      const zoneCoords: Record<string, { lat: number; lng: number; count: number }> = {};
-
-      data.forEach((addr) => {
-        const key = addr.norm_neighborhood || addr.norm_locality;
-        if (!key || !selected.some((s) => s === key || addr.norm_locality === s || addr.norm_neighborhood === s)) return;
-        // Try matching by neighborhood name for CABA
-        const matchKey = selected.find((s) => s === key || s === addr.norm_locality);
-        if (!matchKey) return;
-
-        if (!zoneCoords[matchKey]) {
-          zoneCoords[matchKey] = { lat: addr.lat!, lng: addr.lng!, count: 1 };
-        } else {
-          zoneCoords[matchKey].lat += addr.lat!;
-          zoneCoords[matchKey].lng += addr.lng!;
-          zoneCoords[matchKey].count++;
-        }
-      });
-
-      const bounds = L.latLngBounds([]);
-
-      Object.entries(zoneCoords).forEach(([name, { lat, lng, count }]) => {
-        const avgLat = lat / count;
-        const avgLng = lng / count;
-        const point = L.latLng(avgLat, avgLng);
-        bounds.extend(point);
-
-        const marker = L.circleMarker(point, {
-          radius: 8,
-          fillColor: "hsl(200, 85%, 42%)",
-          fillOpacity: 0.7,
-          color: "hsl(200, 85%, 32%)",
-          weight: 2,
-        })
-          .bindTooltip(name, { direction: "top", offset: [0, -10] })
-          .addTo(mapInstance.current!);
-
-        markersRef.current.push(marker);
-      });
-
-      if (bounds.isValid()) {
-        mapInstance.current!.fitBounds(bounds, { padding: [30, 30], maxZoom: 13 });
-      }
-    };
-
-    getApproxCoords();
-  }, [selected]);
 
   const toggle = (zone: string) => {
     onChange(
@@ -283,12 +177,6 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         <p className="text-sm text-muted-foreground">Seleccioná las zonas donde buscás propiedades</p>
       </div>
 
-      {/* Mini map */}
-      <div
-        ref={mapRef}
-        className="w-full h-36 rounded-xl border border-border overflow-hidden"
-        style={{ zIndex: 0 }}
-      />
 
       {/* Selected badges */}
       {selected.length > 0 && (
@@ -322,7 +210,7 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         ) : (
           macroKeys.map((key) => {
             const items = filteredZones[key] || [];
-            if (query && items.length === 0) return null;
+            if (items.length === 0) return null;
             const macro = MACRO_ZONES[key];
             const isExpanded = expandedMacro === key || !!query;
             const allSelected = items.length > 0 && items.every((i) => selected.includes(i.name));
