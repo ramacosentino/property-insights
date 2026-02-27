@@ -35,8 +35,6 @@ const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   },
   gba_sur: {
     label: "GBA Sur",
-    center: [-34.76, -58.4],
-    zoom: 11,
     localities: [
       "Avellaneda", "Lanús", "Lomas de Zamora", "Banfield", "Temperley", "Adrogué",
       "Quilmes", "Bernal", "Don Bosco", "Berazategui", "Florencio Varela",
