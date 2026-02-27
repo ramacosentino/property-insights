@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import Landing from "./pages/Landing";
 import MapView from "./pages/MapView";
 import PropertyList from "./pages/PropertyList";
@@ -14,6 +15,7 @@ import Alertas from "./pages/Alertas";
 import Tasacion from "./pages/Tasacion";
 import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import Planes from "./pages/Planes";
 import NotFound from "./pages/NotFound";
 import LogoPreview from "./pages/LogoPreview";
@@ -24,6 +26,16 @@ function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   return user ? <Navigate to="/mapa" replace /> : <Landing />;
+}
+
+function RequireOnboarding({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
+  const { completed, loading: onbLoading } = useOnboarding();
+
+  if (authLoading || onbLoading) return null;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (completed === false) return <Navigate to="/onboarding" replace />;
+  return <>{children}</>;
 }
 
 const App = () => (
