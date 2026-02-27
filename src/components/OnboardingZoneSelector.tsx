@@ -8,11 +8,8 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 
-// Macro-zone definitions with approximate center coords for the mini map
 const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
-  caba: {
-    label: "CABA",
-  },
+  caba: { label: "CABA" },
   gba_norte: {
     label: "GBA Norte",
     localities: [
@@ -80,14 +77,12 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
   const drawMapRef = useRef<HTMLDivElement>(null);
   const drawMapInstance = useRef<L.Map | null>(null);
   const drawHandlerRef = useRef<any>(null);
-  const drawnLayerRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
-  const propertyMarkersRef = useRef<L.CircleMarker[]>([]);
+  const drawnLayerRef = useRef<L.FeatureGroup | null>(null);
   const [propertyCoords, setPropertyCoords] = useState<{ name: string; lat: number; lng: number }[]>([]);
 
   // Fetch zone data
   useEffect(() => {
     const fetchZones = async () => {
-      // Fetch CABA neighborhoods
       const { data: cabaData } = await supabase
         .from("properties")
         .select("neighborhood")
@@ -104,7 +99,6 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         .map(([name, count]) => ({ name, count, type: "neighborhood" as const }))
         .sort((a, b) => b.count - a.count);
 
-      // Fetch GBA localities
       const { data: gbaData } = await supabase
         .from("properties")
         .select("norm_locality")
@@ -117,12 +111,8 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         gbaCounts[n] = (gbaCounts[n] || 0) + 1;
       });
 
-      // Classify GBA into macro zones
       const gbaClassified: Record<string, ZoneItem[]> = {
-        gba_norte: [],
-        gba_oeste: [],
-        gba_sur: [],
-        gba_otros: [],
+        gba_norte: [], gba_oeste: [], gba_sur: [],
       };
 
       Object.entries(gbaCounts).forEach(([name, count]) => {
@@ -136,59 +126,43 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
             break;
           }
         }
-        if (!placed) gbaClassified.gba_norte.push(item); // fallback
+        if (!placed) gbaClassified.gba_norte.push(item);
       });
 
-      // Sort each group
       for (const key of Object.keys(gbaClassified)) {
         gbaClassified[key].sort((a, b) => b.count - a.count);
       }
 
-      setZones({
-        caba: cabaZones,
-        gba_norte: gbaClassified.gba_norte,
-        gba_oeste: gbaClassified.gba_oeste,
-        gba_sur: gbaClassified.gba_sur,
-      });
+      setZones({ caba: cabaZones, ...gbaClassified });
       setLoading(false);
     };
-
     fetchZones();
   }, []);
 
-  // Fetch property coordinates for map mode
+  // Fetch property coords for map mode
   useEffect(() => {
+    if (mode !== "map") return;
     const fetchCoords = async () => {
-      const { data } = await supabase
+      const { data: geoData } = await supabase
         .from("geocoded_addresses")
-        .select("address, lat, lng, norm_neighborhood, norm_locality")
+        .select("address, lat, lng")
         .not("lat", "is", null);
-      
-      if (!data) return;
-
-      // Get properties to map addresses to neighborhoods
       const { data: props } = await supabase
         .from("properties")
         .select("address, neighborhood, norm_locality");
 
+      if (!geoData || !props) return;
       const addrToZone = new Map<string, string>();
-      props?.forEach((p) => {
+      props.forEach((p) => {
         if (p.address) addrToZone.set(p.address, p.neighborhood || p.norm_locality || "");
       });
-
-      const coords = data
-        .filter((d) => d.lat && d.lng)
-        .map((d) => ({
-          name: addrToZone.get(d.address) || d.norm_locality || d.norm_neighborhood || "",
-          lat: d.lat!,
-          lng: d.lng!,
-        }))
-        .filter((c) => c.name);
-      
-      setPropertyCoords(coords);
+      setPropertyCoords(
+        geoData
+          .filter((d) => d.lat && d.lng && addrToZone.get(d.address))
+          .map((d) => ({ name: addrToZone.get(d.address)!, lat: d.lat!, lng: d.lng! }))
+      );
     };
-
-    if (mode === "map") fetchCoords();
+    fetchCoords();
   }, [mode]);
 
   // Initialize draw map
@@ -206,101 +180,58 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
       maxZoom: 16,
     }).addTo(map);
 
-    drawnLayerRef.current = new L.FeatureGroup();
-    drawnLayerRef.current.addTo(map);
+    const featureGroup = new L.FeatureGroup();
+    featureGroup.addTo(map);
+    drawnLayerRef.current = featureGroup;
 
-    // Add property dots
+    // Property dots
     propertyCoords.forEach((c) => {
-      const marker = L.circleMarker([c.lat, c.lng], {
+      L.circleMarker([c.lat, c.lng], {
         radius: 3,
         fillColor: "hsl(200, 85%, 42%)",
         fillOpacity: 0.3,
         color: "transparent",
         weight: 0,
       }).addTo(map);
-      propertyMarkersRef.current.push(marker);
     });
 
-    // Draw event
     map.on(L.Draw.Event.CREATED, (e: any) => {
-      drawnLayerRef.current.clearLayers();
+      featureGroup.clearLayers();
       const layer = e.layer as L.Polygon;
-      drawnLayerRef.current.addLayer(layer);
+      featureGroup.addLayer(layer);
       const latlngs = layer.getLatLngs()[0] as L.LatLng[];
-
-      // Find zones inside polygon
       const zonesInside = new Set<string>();
       propertyCoords.forEach((c) => {
-        if (isPointInPolygon(c.lat, c.lng, latlngs)) {
-          zonesInside.add(c.name);
-        }
+        if (isPointInPolygon(c.lat, c.lng, latlngs)) zonesInside.add(c.name);
       });
-
-      // Merge with existing selection
-      const newSelection = [...new Set([...selected, ...zonesInside])];
-      onChange(newSelection);
+      onChange([...new Set([...selected, ...zonesInside])]);
     });
 
     drawMapInstance.current = map;
-
-    return () => {
-      propertyMarkersRef.current = [];
-      map.remove();
-      drawMapInstance.current = null;
-    };
+    return () => { map.remove(); drawMapInstance.current = null; };
   }, [mode, propertyCoords]);
 
-  // Start drawing handler
   const handleStartDraw = useCallback(() => {
     const map = drawMapInstance.current;
     if (!map) return;
-    if (drawHandlerRef.current) {
-      try { drawHandlerRef.current.disable(); } catch {}
-    }
+    if (drawHandlerRef.current) try { drawHandlerRef.current.disable(); } catch {}
     const handler = new (L.Draw as any).Polygon(map, {
-      shapeOptions: {
-        color: "hsl(200, 85%, 42%)",
-        fillColor: "hsl(200, 85%, 42%)",
-        fillOpacity: 0.1,
-        weight: 2,
-      },
+      shapeOptions: { color: "hsl(200, 85%, 42%)", fillColor: "hsl(200, 85%, 42%)", fillOpacity: 0.1, weight: 2 },
     });
     handler.enable();
     drawHandlerRef.current = handler;
   }, []);
-function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolean {
-  let inside = false;
-  const n = polygon.length;
-  for (let i = 0, j = n - 1; i < n; j = i++) {
-    const xi = polygon[i].lat, yi = polygon[i].lng;
-    const xj = polygon[j].lat, yj = polygon[j].lng;
-    const intersect = ((yi > lng) !== (yj > lng)) &&
-      (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
-
 
   const toggle = (zone: string) => {
-    onChange(
-      selected.includes(zone)
-        ? selected.filter((z) => z !== zone)
-        : [...selected, zone]
-    );
+    onChange(selected.includes(zone) ? selected.filter((z) => z !== zone) : [...selected, zone]);
   };
 
   const toggleMacro = (macroKey: string) => {
     const items = zones[macroKey] || [];
     const names = items.map((i) => i.name);
     const allSelected = names.every((n) => selected.includes(n));
-
-    if (allSelected) {
-      onChange(selected.filter((s) => !names.includes(s)));
-    } else {
-      const toAdd = names.filter((n) => !selected.includes(n));
-      onChange([...selected, ...toAdd]);
-    }
+    if (allSelected) onChange(selected.filter((s) => !names.includes(s)));
+    else onChange([...selected, ...names.filter((n) => !selected.includes(n))]);
   };
 
   const filteredZones = useMemo(() => {
@@ -364,7 +295,6 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
 
       {mode === "list" && (
         <>
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -375,7 +305,6 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
             />
           </div>
 
-          {/* Hierarchical selector */}
           <div className="border border-border rounded-xl overflow-hidden max-h-52 overflow-y-auto">
             {loading ? (
               <div className="p-4 text-center text-sm text-muted-foreground">Cargando zonas...</div>
@@ -395,22 +324,14 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
                         onClick={() => setExpandedMacro(isExpanded && !query ? null : key)}
                         className="flex items-center gap-2 flex-1 px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 transition-colors text-left"
                       >
-                        {isExpanded ? (
-                          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                        ) : (
-                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
+                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                         <span>{macro.label}</span>
                         <span className="text-xs text-muted-foreground font-normal">({items.length})</span>
-                        {selectedCount > 0 && (
-                          <span className="ml-auto text-xs text-primary font-medium">{selectedCount} sel.</span>
-                        )}
+                        {selectedCount > 0 && <span className="ml-auto text-xs text-primary font-medium">{selectedCount} sel.</span>}
                       </button>
                       <button
                         onClick={() => toggleMacro(key)}
-                        className={`px-3 py-2 text-xs font-medium transition-colors ${
-                          allSelected ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                        }`}
+                        className={`px-3 py-2 text-xs font-medium transition-colors ${allSelected ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
                       >
                         {allSelected ? "Quitar todos" : "Todos"}
                       </button>
@@ -447,11 +368,7 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
 
       {mode === "map" && (
         <div className="space-y-3">
-          <div
-            ref={drawMapRef}
-            className="w-full h-64 rounded-xl border border-border overflow-hidden"
-            style={{ zIndex: 0 }}
-          />
+          <div ref={drawMapRef} className="w-full h-64 rounded-xl border border-border overflow-hidden" style={{ zIndex: 0 }} />
           <div className="flex items-center justify-center gap-2">
             <button
               onClick={handleStartDraw}
@@ -461,9 +378,7 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
               Dibujar zona
             </button>
             <button
-              onClick={() => {
-                drawnLayerRef.current.clearLayers();
-              }}
+              onClick={() => drawnLayerRef.current?.clearLayers()}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-all"
             >
               <X className="h-3.5 w-3.5" />
@@ -471,7 +386,7 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
             </button>
           </div>
           <p className="text-[11px] text-muted-foreground text-center">
-            Dibujá un polígono en el mapa y se seleccionarán automáticamente los barrios dentro de la zona
+            Dibujá un polígono en el mapa haciendo click en los vértices. Los barrios dentro de la zona se seleccionan automáticamente.
           </p>
         </div>
       )}
