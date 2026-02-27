@@ -11,8 +11,6 @@ const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   },
   gba_norte: {
     label: "GBA Norte",
-    center: [-34.47, -58.52],
-    zoom: 11,
     localities: [
       "Vicente López", "San Isidro", "Martínez", "Beccar", "Acassuso", "Punta Chica",
       "San Fernando", "Victoria", "Virreyes",
