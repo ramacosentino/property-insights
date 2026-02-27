@@ -8,8 +8,6 @@ import { ChevronDown, ChevronRight, MapPin, Search, X, Check } from "lucide-reac
 const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   caba: {
     label: "CABA",
-    center: [-34.6037, -58.3816],
-    zoom: 12,
   },
   gba_norte: {
     label: "GBA Norte",
