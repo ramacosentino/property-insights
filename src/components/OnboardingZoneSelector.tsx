@@ -58,6 +58,19 @@ interface ZoneSelectorProps {
   onChange: (zones: string[]) => void;
 }
 
+function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolean {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i].lat, yi = polygon[i].lng;
+    const xj = polygon[j].lat, yj = polygon[j].lng;
+    const intersect = ((yi > lng) !== (yj > lng)) &&
+      (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
 export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelectorProps) {
   const [zones, setZones] = useState<Record<string, ZoneItem[]>>({});
   const [loading, setLoading] = useState(true);
