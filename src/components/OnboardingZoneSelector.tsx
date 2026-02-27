@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronRight, MapPin, Search, X, Check } from "lucide-react";
 
 // Macro-zone definitions with approximate center coords for the mini map
-const MACRO_ZONES: Record<string, { label: string; center: [number, number]; zoom: number; localities?: string[] }> = {
+const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   caba: {
     label: "CABA",
     center: [-34.6037, -58.3816],
