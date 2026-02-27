@@ -143,6 +143,119 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     fetchZones();
   }, []);
 
+  // Fetch property coordinates for map mode
+  useEffect(() => {
+    const fetchCoords = async () => {
+      const { data } = await supabase
+        .from("geocoded_addresses")
+        .select("address, lat, lng, norm_neighborhood, norm_locality")
+        .not("lat", "is", null);
+      
+      if (!data) return;
+
+      // Get properties to map addresses to neighborhoods
+      const { data: props } = await supabase
+        .from("properties")
+        .select("address, neighborhood, norm_locality");
+
+      const addrToZone = new Map<string, string>();
+      props?.forEach((p) => {
+        if (p.address) addrToZone.set(p.address, p.neighborhood || p.norm_locality || "");
+      });
+
+      const coords = data
+        .filter((d) => d.lat && d.lng)
+        .map((d) => ({
+          name: addrToZone.get(d.address) || d.norm_locality || d.norm_neighborhood || "",
+          lat: d.lat!,
+          lng: d.lng!,
+        }))
+        .filter((c) => c.name);
+      
+      setPropertyCoords(coords);
+    };
+
+    if (mode === "map") fetchCoords();
+  }, [mode]);
+
+  // Initialize draw map
+  useEffect(() => {
+    if (mode !== "map" || !drawMapRef.current || drawMapInstance.current) return;
+
+    const map = L.map(drawMapRef.current, {
+      center: [-34.55, -58.45],
+      zoom: 11,
+      zoomControl: true,
+      attributionControl: false,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 16,
+    }).addTo(map);
+
+    drawnLayerRef.current = new L.FeatureGroup();
+    drawnLayerRef.current.addTo(map);
+
+    // Add property dots
+    propertyCoords.forEach((c) => {
+      const marker = L.circleMarker([c.lat, c.lng], {
+        radius: 3,
+        fillColor: "hsl(200, 85%, 42%)",
+        fillOpacity: 0.3,
+        color: "transparent",
+        weight: 0,
+      }).addTo(map);
+      propertyMarkersRef.current.push(marker);
+    });
+
+    // Draw event
+    map.on(L.Draw.Event.CREATED, (e: any) => {
+      drawnLayerRef.current.clearLayers();
+      const layer = e.layer as L.Polygon;
+      drawnLayerRef.current.addLayer(layer);
+      const latlngs = layer.getLatLngs()[0] as L.LatLng[];
+
+      // Find zones inside polygon
+      const zonesInside = new Set<string>();
+      propertyCoords.forEach((c) => {
+        if (isPointInPolygon(c.lat, c.lng, latlngs)) {
+          zonesInside.add(c.name);
+        }
+      });
+
+      // Merge with existing selection
+      const newSelection = [...new Set([...selected, ...zonesInside])];
+      onChange(newSelection);
+    });
+
+    drawMapInstance.current = map;
+
+    return () => {
+      propertyMarkersRef.current = [];
+      map.remove();
+      drawMapInstance.current = null;
+    };
+  }, [mode, propertyCoords]);
+
+  // Start drawing handler
+  const handleStartDraw = useCallback(() => {
+    const map = drawMapInstance.current;
+    if (!map) return;
+    if (drawHandlerRef.current) {
+      try { drawHandlerRef.current.disable(); } catch {}
+    }
+    const handler = new (L.Draw as any).Polygon(map, {
+      shapeOptions: {
+        color: "hsl(200, 85%, 42%)",
+        fillColor: "hsl(200, 85%, 42%)",
+        fillOpacity: 0.1,
+        weight: 2,
+      },
+    });
+    handler.enable();
+    drawHandlerRef.current = handler;
+  }, []);
+
 
   const toggle = (zone: string) => {
     onChange(
