@@ -46,16 +46,17 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RootRedirect />} />
-          <Route path="/mapa" element={<MapView />} />
-          <Route path="/propiedades" element={<PropertyList />} />
-          <Route path="/mis-proyectos" element={<MisProyectos />} />
-          <Route path="/busqueda" element={<Busqueda />} />
-          <Route path="/alertas" element={<Alertas />} />
-          <Route path="/tasacion" element={<Tasacion />} />
-          <Route path="/inteligencia-precios" element={<InteligenciaPrecios />} />
-          <Route path="/configuracion" element={<Settings />} />
-          <Route path="/planes" element={<Planes />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/mapa" element={<RequireOnboarding><MapView /></RequireOnboarding>} />
+          <Route path="/propiedades" element={<RequireOnboarding><PropertyList /></RequireOnboarding>} />
+          <Route path="/mis-proyectos" element={<RequireOnboarding><MisProyectos /></RequireOnboarding>} />
+          <Route path="/busqueda" element={<RequireOnboarding><Busqueda /></RequireOnboarding>} />
+          <Route path="/alertas" element={<RequireOnboarding><Alertas /></RequireOnboarding>} />
+          <Route path="/tasacion" element={<RequireOnboarding><Tasacion /></RequireOnboarding>} />
+          <Route path="/inteligencia-precios" element={<RequireOnboarding><InteligenciaPrecios /></RequireOnboarding>} />
+          <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
+          <Route path="/planes" element={<RequireOnboarding><Planes /></RequireOnboarding>} />
           <Route path="/logo-preview" element={<LogoPreview />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
