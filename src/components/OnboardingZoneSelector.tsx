@@ -27,8 +27,6 @@ const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   },
   gba_oeste: {
     label: "GBA Oeste",
-    center: [-34.63, -58.63],
-    zoom: 11,
     localities: [
       "Morón", "Haedo", "Castelar", "Ituzaingó", "Merlo", "Moreno", "Paso del Rey",
       "Ramos Mejía", "San Justo", "La Tablada", "Villa Luzuriaga", "Hurlingham", "William Morris",
