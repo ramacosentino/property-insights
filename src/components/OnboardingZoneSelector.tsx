@@ -326,6 +326,27 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
         <p className="text-sm text-muted-foreground">Seleccioná las zonas donde buscás propiedades</p>
       </div>
 
+      {/* Mode toggle */}
+      <div className="flex items-center justify-center gap-1 rounded-full border border-border overflow-hidden w-fit mx-auto">
+        <button
+          onClick={() => setMode("list")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${
+            mode === "list" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <List className="h-3.5 w-3.5" />
+          Lista
+        </button>
+        <button
+          onClick={() => setMode("map")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${
+            mode === "map" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Pentagon className="h-3.5 w-3.5" />
+          Dibujar en mapa
+        </button>
+      </div>
 
       {/* Selected badges */}
       {selected.length > 0 && (
@@ -341,96 +362,119 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar barrio o localidad..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-9 h-9 text-sm"
-        />
-      </div>
+      {mode === "list" && (
+        <>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar barrio o localidad..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
 
-      {/* Hierarchical selector */}
-      <div className="border border-border rounded-xl overflow-hidden max-h-52 overflow-y-auto">
-        {loading ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">Cargando zonas...</div>
-        ) : (
-          macroKeys.map((key) => {
-            const items = filteredZones[key] || [];
-            if (items.length === 0) return null;
-            const macro = MACRO_ZONES[key];
-            const isExpanded = expandedMacro === key || !!query;
-            const allSelected = items.length > 0 && items.every((i) => selected.includes(i.name));
-            const someSelected = items.some((i) => selected.includes(i.name));
-            const selectedCount = items.filter((i) => selected.includes(i.name)).length;
+          {/* Hierarchical selector */}
+          <div className="border border-border rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+            {loading ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">Cargando zonas...</div>
+            ) : (
+              macroKeys.map((key) => {
+                const items = filteredZones[key] || [];
+                if (items.length === 0) return null;
+                const macro = MACRO_ZONES[key];
+                const isExpanded = expandedMacro === key || !!query;
+                const allSelected = items.length > 0 && items.every((i) => selected.includes(i.name));
+                const selectedCount = items.filter((i) => selected.includes(i.name)).length;
 
-            return (
-              <div key={key}>
-                {/* Macro header */}
-                <div className="flex items-center border-b border-border bg-muted/50 sticky top-0 z-10">
-                  <button
-                    onClick={() => setExpandedMacro(isExpanded && !query ? null : key)}
-                    className="flex items-center gap-2 flex-1 px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 transition-colors text-left"
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                return (
+                  <div key={key}>
+                    <div className="flex items-center border-b border-border bg-muted/50 sticky top-0 z-10">
+                      <button
+                        onClick={() => setExpandedMacro(isExpanded && !query ? null : key)}
+                        className="flex items-center gap-2 flex-1 px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 transition-colors text-left"
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                        <span>{macro.label}</span>
+                        <span className="text-xs text-muted-foreground font-normal">({items.length})</span>
+                        {selectedCount > 0 && (
+                          <span className="ml-auto text-xs text-primary font-medium">{selectedCount} sel.</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => toggleMacro(key)}
+                        className={`px-3 py-2 text-xs font-medium transition-colors ${
+                          allSelected ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {allSelected ? "Quitar todos" : "Todos"}
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="grid grid-cols-2">
+                        {items.map((item) => {
+                          const isSelected = selected.includes(item.name);
+                          return (
+                            <button
+                              key={item.name}
+                              onClick={() => toggle(item.name)}
+                              className={`flex items-center justify-between px-3 py-1.5 text-xs text-left border-b border-r border-border/50 transition-colors ${
+                                isSelected ? "bg-primary/5 text-primary font-medium" : "text-foreground hover:bg-muted/50"
+                              }`}
+                            >
+                              <span className="truncate">{item.name}</span>
+                              <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                                <span className="text-[10px] text-muted-foreground">{item.count}</span>
+                                {isSelected && <Check className="h-3 w-3 text-primary" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                    <span>{macro.label}</span>
-                    <span className="text-xs text-muted-foreground font-normal">
-                      ({items.length})
-                    </span>
-                    {selectedCount > 0 && (
-                      <span className="ml-auto text-xs text-primary font-medium">
-                        {selectedCount} sel.
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => toggleMacro(key)}
-                    className={`px-3 py-2 text-xs font-medium transition-colors ${
-                      allSelected
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {allSelected ? "Quitar todos" : "Todos"}
-                  </button>
-                </div>
-
-                {/* Items */}
-                {isExpanded && (
-                  <div className="grid grid-cols-2">
-                    {items.map((item) => {
-                      const isSelected = selected.includes(item.name);
-                      return (
-                        <button
-                          key={item.name}
-                          onClick={() => toggle(item.name)}
-                          className={`flex items-center justify-between px-3 py-1.5 text-xs text-left border-b border-r border-border/50 transition-colors ${
-                            isSelected
-                              ? "bg-primary/5 text-primary font-medium"
-                              : "text-foreground hover:bg-muted/50"
-                          }`}
-                        >
-                          <span className="truncate">{item.name}</span>
-                          <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-                            <span className="text-[10px] text-muted-foreground">{item.count}</span>
-                            {isSelected && <Check className="h-3 w-3 text-primary" />}
-                          </div>
-                        </button>
-                      );
-                    })}
                   </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
+
+      {mode === "map" && (
+        <div className="space-y-3">
+          <div
+            ref={drawMapRef}
+            className="w-full h-64 rounded-xl border border-border overflow-hidden"
+            style={{ zIndex: 0 }}
+          />
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={handleStartDraw}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+            >
+              <Pentagon className="h-3.5 w-3.5" />
+              Dibujar zona
+            </button>
+            <button
+              onClick={() => {
+                drawnLayerRef.current.clearLayers();
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-all"
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpiar dibujo
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground text-center">
+            Dibujá un polígono en el mapa y se seleccionarán automáticamente los barrios dentro de la zona
+          </p>
+        </div>
+      )}
     </div>
   );
 }
