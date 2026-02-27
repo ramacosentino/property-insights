@@ -65,24 +65,30 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          onboarding_completed: boolean
           updated_at: string
           user_id: string
+          user_type: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarding_completed?: boolean
           updated_at?: string
           user_id: string
+          user_type?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarding_completed?: boolean
           updated_at?: string
           user_id?: string
+          user_type?: string | null
         }
         Relationships: []
       }
@@ -382,6 +388,48 @@ export type Database = {
           started_at?: string
           status?: string
           total_rows?: number | null
+        }
+        Relationships: []
+      }
+      user_onboarding: {
+        Row: {
+          budget_currency: string | null
+          budget_max: number | null
+          budget_min: number | null
+          created_at: string
+          id: string
+          investment_goal: string | null
+          property_types: string[] | null
+          updated_at: string
+          user_id: string
+          user_type: string
+          zones: string[] | null
+        }
+        Insert: {
+          budget_currency?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
+          created_at?: string
+          id?: string
+          investment_goal?: string | null
+          property_types?: string[] | null
+          updated_at?: string
+          user_id: string
+          user_type: string
+          zones?: string[] | null
+        }
+        Update: {
+          budget_currency?: string | null
+          budget_max?: number | null
+          budget_min?: number | null
+          created_at?: string
+          id?: string
+          investment_goal?: string | null
+          property_types?: string[] | null
+          updated_at?: string
+          user_id?: string
+          user_type?: string
+          zones?: string[] | null
         }
         Relationships: []
       }
