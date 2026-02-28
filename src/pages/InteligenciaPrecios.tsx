@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
+import { Property } from "@/lib/propertyData";
 import { computeFactorAnalysis, getPropertyTypes, getSegmentValues, FactorAnalysis, PriceMetric, METRIC_LABELS } from "@/lib/priceFactors";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, Cell, ReferenceLine,
+  LineChart, Line, CartesianGrid, Legend,
 } from "recharts";
 import {
   TrendingUp, TrendingDown, BarChart3, Loader2, Sparkles, AlertTriangle,
@@ -145,6 +147,148 @@ function FactorCard({ factor, aiInsight, metric }: { factor: FactorAnalysis; aiI
             )}
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Price History Chart ────────────────────────────────────────
+function PriceHistoryChart({ properties }: { properties: Property[] }) {
+  const [selectedZones, setSelectedZones] = useState<string[]>([]);
+
+  // Group by month + neighborhood
+  const { chartData, availableZones } = useMemo(() => {
+    const monthMap = new Map<string, Map<string, number[]>>();
+    const zoneSet = new Set<string>();
+
+    for (const p of properties) {
+      if (!p.pricePerM2Total || p.pricePerM2Total <= 0 || !p.createdAt) continue;
+      const date = new Date(p.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const zone = p.neighborhood;
+      zoneSet.add(zone);
+
+      if (!monthMap.has(monthKey)) monthMap.set(monthKey, new Map());
+      const zoneMap = monthMap.get(monthKey)!;
+      if (!zoneMap.has(zone)) zoneMap.set(zone, []);
+      zoneMap.get(zone)!.push(p.pricePerM2Total);
+    }
+
+    const sortedMonths = Array.from(monthMap.keys()).sort();
+    const zones = Array.from(zoneSet).sort();
+
+    // Auto-select top 5 zones by property count if nothing selected
+    const zoneCounts = new Map<string, number>();
+    for (const p of properties) {
+      if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
+      zoneCounts.set(p.neighborhood, (zoneCounts.get(p.neighborhood) || 0) + 1);
+    }
+    const topZones = Array.from(zoneCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([z]) => z);
+
+    const activeZones = selectedZones.length > 0 ? selectedZones : topZones;
+
+    const data = sortedMonths.map(month => {
+      const entry: Record<string, any> = { month };
+      const zoneMap = monthMap.get(month)!;
+      for (const zone of activeZones) {
+        const vals = zoneMap.get(zone);
+        if (vals && vals.length >= 2) {
+          const sorted = [...vals].sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          entry[zone] = Math.round(sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2);
+        }
+      }
+      return entry;
+    });
+
+    return { chartData: data, availableZones: zones };
+  }, [properties, selectedZones]);
+
+  const COLORS = [
+    "hsl(var(--primary))",
+    "hsl(var(--accent))",
+    "hsl(200, 70%, 50%)",
+    "hsl(150, 60%, 45%)",
+    "hsl(280, 60%, 55%)",
+    "hsl(30, 80%, 55%)",
+    "hsl(340, 70%, 50%)",
+  ];
+
+  const activeZones = selectedZones.length > 0
+    ? selectedZones
+    : availableZones.slice(0, 5);
+
+  if (chartData.length < 2) return null;
+
+  const toggleZone = (zone: string) => {
+    setSelectedZones(prev => {
+      const current = prev.length > 0 ? prev : availableZones.slice(0, 5);
+      return current.includes(zone) ? current.filter(z => z !== zone) : [...current, zone];
+    });
+  };
+
+  return (
+    <Card className="mb-8">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          Tendencia de USD/m² por zona
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Evolución mensual de la mediana de USD/m² para detectar zonas en baja (oportunidad) o en alza.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Zone selector */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {availableZones.slice(0, 30).map((zone, i) => {
+            const isActive = activeZones.includes(zone);
+            return (
+              <button
+                key={zone}
+                onClick={() => toggleZone(zone)}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
+                  isActive
+                    ? "bg-primary/20 text-primary border-primary/30"
+                    : "bg-secondary/50 text-muted-foreground border-border hover:text-foreground"
+                }`}
+              >
+                {zone}
+              </button>
+            );
+          })}
+          {availableZones.length > 30 && (
+            <span className="text-[10px] text-muted-foreground self-center">+{availableZones.length - 30} más</span>
+          )}
+        </div>
+
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="month" fontSize={10} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+              <RTooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                formatter={(value: number, name: string) => [`$${value.toLocaleString()}/m²`, name]}
+              />
+              {activeZones.map((zone, i) => (
+                <Line
+                  key={zone}
+                  type="monotone"
+                  dataKey={zone}
+                  stroke={COLORS[i % COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  connectNulls
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
@@ -341,6 +485,9 @@ const InteligenciaPrecios = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Price History by Zone */}
+            <PriceHistoryChart properties={filteredProps} />
 
             {/* AI Executive Summary */}
             {aiAnalysis && (
