@@ -223,6 +223,15 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
             </div>
           )}
 
+          {/* ROI Simulator */}
+          {raw.valor_potencial_total != null && (
+            <ROISimulator
+              property={property}
+              valorPotencialTotal={raw.valor_potencial_total}
+              renovCostEstimate={raw.oportunidad_neta != null ? Math.round((raw.valor_potencial_total || 0) - property.price - raw.oportunidad_neta) : undefined}
+            />
+          )}
+
           {/* Informe */}
           <div>
             <div className="flex items-center gap-1">
