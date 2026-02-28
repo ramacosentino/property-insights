@@ -1,6 +1,7 @@
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
 import PropertyCard from "@/components/PropertyCard";
 import NeighborhoodSection from "@/components/NeighborhoodSection";
+import ROISimulator from "@/components/ROISimulator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, Loader2, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info } from "lucide-react";
 
