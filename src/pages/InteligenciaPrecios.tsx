@@ -343,6 +343,9 @@ const InteligenciaPrecios = () => {
               </Card>
             </div>
 
+            {/* Price History by Zone */}
+            <PriceHistoryChart properties={filteredProps} />
+
             {/* AI Executive Summary */}
             {aiAnalysis && (
               <Card className="mb-8 border-primary/20 bg-primary/[0.03]">
