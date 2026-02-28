@@ -226,6 +226,8 @@ const MapView = () => {
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
   const { data, isLoading } = useProperties();
+  const onboardingFilters = useOnboardingFilters();
+  const [onboardingApplied, setOnboardingApplied] = useState(false);
   const properties = data?.properties ?? [];
   const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
 
