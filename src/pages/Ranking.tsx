@@ -84,6 +84,21 @@ const Ranking = () => {
 
   const topScore = ranked[0]?.opportunityScore ?? 1;
 
+  // Apply onboarding filters once (after all hooks)
+  if (onboardingFilters.loaded && !onboardingApplied) {
+    setOnboardingApplied(true);
+    if (onboardingFilters.neighborhoodFilter.included.size > 0) {
+      setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
+    }
+    if (onboardingFilters.propertyTypeFilter.included.size > 0) {
+      setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
+    }
+  }
+
+  if (!authLoading && !user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
     <Layout>
       <div className="container px-6 py-8">
