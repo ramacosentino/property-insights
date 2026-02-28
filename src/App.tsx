@@ -56,6 +56,7 @@ const App = () => (
           <Route path="/busqueda" element={<RequireOnboarding><Busqueda /></RequireOnboarding>} />
           <Route path="/alertas" element={<RequireOnboarding><Alertas /></RequireOnboarding>} />
           <Route path="/ranking" element={<RequireOnboarding><Ranking /></RequireOnboarding>} />
+          <Route path="/comparador" element={<RequireOnboarding><Comparador /></RequireOnboarding>} />
           <Route path="/tasacion" element={<RequireOnboarding><Tasacion /></RequireOnboarding>} />
           <Route path="/inteligencia-precios" element={<RequireOnboarding><InteligenciaPrecios /></RequireOnboarding>} />
           <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />

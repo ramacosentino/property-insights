@@ -18,6 +18,7 @@ const navItems = [
   { path: "/mapa", label: "Mapa", icon: Map },
   { path: "/propiedades", label: "Propiedades", icon: List },
   { path: "/ranking", label: "Ranking", icon: Trophy },
+  { path: "/comparador", label: "Comparador", icon: Columns },
   { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badgeKey: "preselection" as const },
   { path: "/busqueda", label: "Búsqueda", icon: Search },
   { path: "/tasacion", label: "Tasación", icon: Calculator },
