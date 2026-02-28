@@ -310,6 +310,25 @@ const MapView = () => {
     }
   }, [properties.length, dataRanges, rangesInitialized]);
 
+  // Apply onboarding preferences as initial filters (once)
+  useEffect(() => {
+    if (!onboardingFilters.loaded || onboardingApplied || !rangesInitialized) return;
+    setOnboardingApplied(true);
+
+    if (onboardingFilters.neighborhoodFilter.included.size > 0) {
+      setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
+    }
+    if (onboardingFilters.propertyTypeFilter.included.size > 0) {
+      setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
+    }
+    if (onboardingFilters.priceRange) {
+      setPriceRange([
+        Math.max(onboardingFilters.priceRange[0], dataRanges.priceMin),
+        Math.min(onboardingFilters.priceRange[1], dataRanges.priceMax),
+      ]);
+    }
+  }, [onboardingFilters.loaded, onboardingApplied, rangesInitialized, dataRanges]);
+
   const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter, propertyTypeFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0
   ) + (rangesInitialized && (priceRange[0] > dataRanges.priceMin || priceRange[1] < dataRanges.priceMax) ? 1 : 0)
