@@ -16,6 +16,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
+import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
+import { getOpportunityLabel } from "@/lib/opportunityLabels";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -224,6 +226,8 @@ const MapView = () => {
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
   const { data, isLoading } = useProperties();
+  const onboardingFilters = useOnboardingFilters();
+  const [onboardingApplied, setOnboardingApplied] = useState(false);
   const properties = data?.properties ?? [];
   const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
 
@@ -305,6 +309,25 @@ const MapView = () => {
       setRangesInitialized(true);
     }
   }, [properties.length, dataRanges, rangesInitialized]);
+
+  // Apply onboarding preferences as initial filters (once)
+  useEffect(() => {
+    if (!onboardingFilters.loaded || onboardingApplied || !rangesInitialized) return;
+    setOnboardingApplied(true);
+
+    if (onboardingFilters.neighborhoodFilter.included.size > 0) {
+      setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
+    }
+    if (onboardingFilters.propertyTypeFilter.included.size > 0) {
+      setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
+    }
+    if (onboardingFilters.priceRange) {
+      setPriceRange([
+        Math.max(onboardingFilters.priceRange[0], dataRanges.priceMin),
+        Math.min(onboardingFilters.priceRange[1], dataRanges.priceMax),
+      ]);
+    }
+  }, [onboardingFilters.loaded, onboardingApplied, rangesInitialized, dataRanges]);
 
   const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter, propertyTypeFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0
@@ -668,9 +691,9 @@ const MapView = () => {
             </div><br/>` : ""}
             ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
               ⚠ Poca información
-            </div><br/>` : isDeal ? `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
-              ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
-            </div><br/>` : ""}
+            </div><br/>` : isDeal ? (() => { const lbl = getOpportunityLabel(p.opportunityScore); return `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+              ${lbl.emoji} ${lbl.shortText}
+            </div><br/>`; })() : ""}
             ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${p.propertyType}</span><br/>` : ""}
             <strong>${p.neighborhood}</strong><br/>
             <span style="color:#666;">${p.location}</span><br/><br/>
@@ -739,9 +762,9 @@ const MapView = () => {
               </div><br/>` : ""}
               ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
                 ⚠ Poca información
-              </div><br/>` : `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
-                ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
-              </div><br/>`}
+              </div><br/>` : (() => { const lbl = getOpportunityLabel(p.opportunityScore); return `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+                ${lbl.emoji} ${lbl.shortText}
+              </div><br/>`; })()} 
               ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${p.propertyType}</span><br/>` : ""}
               <strong>${p.neighborhood}</strong><br/>
               <span style="color:#666;">${p.location}</span><br/><br/>
@@ -1113,12 +1136,15 @@ const MapView = () => {
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">⚠ Poca información</span>
               </div>
-            ) : p.opportunityScore > 0 ? (
-              <div className="flex items-center gap-1.5 mb-2">
-                <TrendingDown className="h-3 w-3 text-primary" />
-                <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
-              </div>
-            ) : null}
+            ) : p.opportunityScore !== 0 ? (() => {
+              const lbl = getOpportunityLabel(p.opportunityScore);
+              return (
+                <div className="flex items-center gap-1.5 mb-2">
+                  {lbl.emoji && <span className="text-[11px]">{lbl.emoji}</span>}
+                  <span className={`text-[11px] font-medium ${lbl.tone === "expensive" ? "text-destructive" : lbl.tone === "neutral" ? "text-muted-foreground" : "text-primary"}`}>{lbl.shortText}</span>
+                </div>
+              );
+            })() : null}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
               <div>
                 <span className="text-muted-foreground">USD/m²</span>

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Property } from "@/lib/propertyData";
 import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw } from "lucide-react";
 import { usePreselection } from "@/hooks/usePreselection";
+import { getOpportunityLabel, getOpportunityBadgeClasses } from "@/lib/opportunityLabels";
 
 interface PropertyCardProps {
   property: Property;
@@ -156,15 +157,17 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             {property.isTopOpportunity && (
               <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30 rounded-full">
-                Top Oportunidad
+                🔥 {getOpportunityLabel(property.opportunityScore).shortText}
               </Badge>
             )}
-            {property.isNeighborhoodDeal && (
-              <Badge variant="outline" className="text-xs border-primary/30 text-primary rounded-full">
-                <TrendingDown className="h-3 w-3 mr-1" />
-                {property.opportunityScore.toFixed(0)}% bajo mediana
-              </Badge>
-            )}
+            {property.isNeighborhoodDeal && !property.isTopOpportunity && (() => {
+              const lbl = getOpportunityLabel(property.opportunityScore);
+              return (
+                <Badge variant="outline" className={`text-xs rounded-full ${getOpportunityBadgeClasses(lbl.tone)}`}>
+                  {lbl.emoji} {lbl.shortText}
+                </Badge>
+              );
+            })()}
           </div>
         </>
       )}
