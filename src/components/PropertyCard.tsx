@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Property } from "@/lib/propertyData";
 import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw } from "lucide-react";
 import { usePreselection } from "@/hooks/usePreselection";
+import { getOpportunityLabel, getOpportunityBadgeClasses } from "@/lib/opportunityLabels";
+import { usePreselection } from "@/hooks/usePreselection";
 
 interface PropertyCardProps {
   property: Property;
