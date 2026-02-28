@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, Cell, ReferenceLine,
+  LineChart, Line, CartesianGrid, Legend,
 } from "recharts";
 import {
   TrendingUp, TrendingDown, BarChart3, Loader2, Sparkles, AlertTriangle,
