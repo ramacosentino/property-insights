@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
+import { Property } from "@/lib/propertyData";
 import { computeFactorAnalysis, getPropertyTypes, getSegmentValues, FactorAnalysis, PriceMetric, METRIC_LABELS } from "@/lib/priceFactors";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
