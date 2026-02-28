@@ -13,6 +13,7 @@ import Busqueda from "./pages/Busqueda";
 import Settings from "./pages/Settings";
 import Alertas from "./pages/Alertas";
 import Ranking from "./pages/Ranking";
+import Comparador from "./pages/Comparador";
 import Tasacion from "./pages/Tasacion";
 import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
