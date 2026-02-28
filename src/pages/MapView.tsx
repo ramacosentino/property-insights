@@ -762,9 +762,9 @@ const MapView = () => {
               </div><br/>` : ""}
               ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
                 ⚠ Poca información
-              </div><br/>` : `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
-                ⭐ -${p.opportunityScore.toFixed(0)}% vs barrio
-              </div><br/>`}
+              </div><br/>` : (() => { const lbl = getOpportunityLabel(p.opportunityScore); return `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+                ${lbl.emoji} ${lbl.shortText}
+              </div><br/>`; })()} 
               ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${p.propertyType}</span><br/>` : ""}
               <strong>${p.neighborhood}</strong><br/>
               <span style="color:#666;">${p.location}</span><br/><br/>
