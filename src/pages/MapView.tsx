@@ -16,6 +16,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
+import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
+import { getOpportunityLabel } from "@/lib/opportunityLabels";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
