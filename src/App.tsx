@@ -12,6 +12,7 @@ import MisProyectos from "./pages/MisProyectos";
 import Busqueda from "./pages/Busqueda";
 import Settings from "./pages/Settings";
 import Alertas from "./pages/Alertas";
+import Ranking from "./pages/Ranking";
 import Tasacion from "./pages/Tasacion";
 import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/mis-proyectos" element={<RequireOnboarding><MisProyectos /></RequireOnboarding>} />
           <Route path="/busqueda" element={<RequireOnboarding><Busqueda /></RequireOnboarding>} />
           <Route path="/alertas" element={<RequireOnboarding><Alertas /></RequireOnboarding>} />
+          <Route path="/ranking" element={<RequireOnboarding><Ranking /></RequireOnboarding>} />
           <Route path="/tasacion" element={<RequireOnboarding><Tasacion /></RequireOnboarding>} />
           <Route path="/inteligencia-precios" element={<RequireOnboarding><InteligenciaPrecios /></RequireOnboarding>} />
           <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />

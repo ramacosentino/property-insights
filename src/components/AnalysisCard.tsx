@@ -1,6 +1,7 @@
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
 import PropertyCard from "@/components/PropertyCard";
 import NeighborhoodSection from "@/components/NeighborhoodSection";
+import ROISimulator from "@/components/ROISimulator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, Loader2, TrendingUp, TrendingDown, DollarSign, Target, Wrench, Info } from "lucide-react";
 
@@ -220,6 +221,15 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
                 );
               })()}
             </div>
+          )}
+
+          {/* ROI Simulator */}
+          {raw.valor_potencial_total != null && (
+            <ROISimulator
+              property={property}
+              valorPotencialTotal={raw.valor_potencial_total}
+              renovCostEstimate={raw.oportunidad_neta != null ? Math.round((raw.valor_potencial_total || 0) - property.price - raw.oportunidad_neta) : undefined}
+            />
           )}
 
           {/* Informe */}
