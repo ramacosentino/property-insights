@@ -1136,12 +1136,15 @@ const MapView = () => {
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">⚠ Poca información</span>
               </div>
-            ) : p.opportunityScore > 0 ? (
-              <div className="flex items-center gap-1.5 mb-2">
-                <TrendingDown className="h-3 w-3 text-primary" />
-                <span className="text-[11px] font-medium text-primary">-{p.opportunityScore.toFixed(0)}% vs barrio</span>
-              </div>
-            ) : null}
+            ) : p.opportunityScore !== 0 ? (() => {
+              const lbl = getOpportunityLabel(p.opportunityScore);
+              return (
+                <div className="flex items-center gap-1.5 mb-2">
+                  {lbl.emoji && <span className="text-[11px]">{lbl.emoji}</span>}
+                  <span className={`text-[11px] font-medium ${lbl.tone === "expensive" ? "text-destructive" : lbl.tone === "neutral" ? "text-muted-foreground" : "text-primary"}`}>{lbl.shortText}</span>
+                </div>
+              );
+            })() : null}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
               <div>
                 <span className="text-muted-foreground">USD/m²</span>
