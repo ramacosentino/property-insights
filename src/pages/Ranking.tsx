@@ -35,21 +35,6 @@ const Ranking = () => {
   const [importDateFilter, setImportDateFilter] = useState<string>("all");
   const [onboardingApplied, setOnboardingApplied] = useState(false);
 
-  // Apply onboarding filters once
-  if (onboardingFilters.loaded && !onboardingApplied) {
-    setOnboardingApplied(true);
-    if (onboardingFilters.neighborhoodFilter.included.size > 0) {
-      setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
-    }
-    if (onboardingFilters.propertyTypeFilter.included.size > 0) {
-      setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
-    }
-  }
-
-  if (!authLoading && !user) {
-    return <Navigate to="/auth" replace />;
-  }
-
   // Build neighborhood groups
   const neighborhoodsByProvince = useMemo(() => {
     const hoodCounts = new Map<string, number>();
