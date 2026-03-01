@@ -9,6 +9,7 @@ export interface OnboardingFilters {
   priceRange: [number, number] | null;
   priceCurrency: string;
   loaded: boolean;
+  revision: number;
 }
 
 const TYPE_MAP: Record<string, string> = {
