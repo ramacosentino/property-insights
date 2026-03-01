@@ -1,12 +1,10 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Navigate } from "react-router-dom";
-import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { getOpportunityLabel } from "@/lib/opportunityLabels";
-import { Columns, X, ExternalLink, DollarSign, Sparkles, Loader2 } from "lucide-react";
+import { Columns, X, ExternalLink, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
