@@ -234,6 +234,13 @@ const PropertyList = () => {
   const filtered = useMemo(() => {
     let result = properties;
 
+    // Ignored filter
+    if (showIgnored) {
+      result = result.filter((p) => ignoredIds.has(p.id));
+    } else {
+      result = result.filter((p) => !ignoredIds.has(p.id));
+    }
+
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(
@@ -308,7 +315,7 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges, importDateFilter]);
+  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges, importDateFilter, ignoredIds, showIgnored]);
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
