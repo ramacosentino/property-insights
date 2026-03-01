@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import FlagLocationButton from "@/components/FlagLocationButton";
 import { usePreselection, togglePreselection, isPreselected, isDiscardedProject } from "@/hooks/usePreselection";
+import { useIgnoredOpportunities, isIgnoredOpportunity, toggleIgnoreOpportunity } from "@/hooks/useIgnoredOpportunities";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
 import ReactDOM from "react-dom";
 import Layout from "@/components/Layout";
