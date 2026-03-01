@@ -18,8 +18,19 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useMapDraw } from "@/hooks/useMapDraw";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
 import { getOpportunityLabel } from "@/lib/opportunityLabels";
+import { supabase } from "@/integrations/supabase/client";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+function escapeHtml(unsafe: string | null | undefined): string {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
