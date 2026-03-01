@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
 import { useProperties } from "@/hooks/useProperties";
 import { Property } from "@/lib/propertyData";
