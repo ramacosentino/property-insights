@@ -6,8 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LOCATIONIQ_URL = "https://us1.locationiq.com/v1/search";
-const DELAY_MS = 500; // Safe rate for sustained LocationIQ usage (~2 req/sec limit)
+const GOOGLE_GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
+const DELAY_MS = 100; // Google allows ~50 req/sec, but we stay conservative
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,74 +22,46 @@ function sleep(ms: number) {
  */
 function cleanAddress(raw: string): string {
   let s = raw;
-  // Remove "al" before a number: "Potosí al 800" → "Potosí 800"
   s = s.replace(/\bal\s+(\d)/gi, "$1");
-  // Remove "entre ... y ..." or "entre ... e ..."
   s = s.replace(/\bentre\s+.+?\s+[ye]\s+\S+/gi, "");
-  // Remove floor/dept: "2º A", "Piso 3", "Depto B", "PB", "1°B"
   s = s.replace(/\b(piso|depto|dpto|departamento|unidad)\s*\S*/gi, "");
   s = s.replace(/\d+[°º]\s*[A-Za-z]?\b/g, "");
-  // Normalize spaces
   s = s.replace(/\s{2,}/g, " ").trim();
-  // Remove trailing comma
   s = s.replace(/,\s*$/, "");
   return s;
 }
 
-/**
- * Generate query variants for retry geocoding.
- * Tries different formulations to find a match when the original failed.
- */
-function generateQueryVariants(address: string, neighborhood?: string, province?: string): string[] {
-  const clean = cleanAddress(address);
-  const variants: string[] = [];
-
-  // Extract street and number from cleaned address (e.g. "Mosconi 3500, San Isidro, San Isidro")
-  const parts = clean.split(",").map((s) => s.trim());
-  const streetPart = parts[0] || "";
-  const locality = parts.length > 1 ? parts[parts.length - 1] : (province || "");
-
-  // Variant 1: "Calle [street], [locality], Argentina"  
-  variants.push(`Calle ${streetPart}, ${locality}, Argentina`);
-
-  // Variant 2: Just street + locality (skip intermediate parts)
-  if (locality) {
-    variants.push(`${streetPart}, ${locality}, Buenos Aires, Argentina`);
-  }
-
-  // Variant 3: Street with "Avenida" prefix
-  variants.push(`Avenida ${streetPart}, ${locality}, Argentina`);
-
-  // Variant 4: Use structured query with neighborhood + province
-  if (neighborhood && province) {
-    variants.push(`${streetPart}, ${neighborhood}, ${province}, Argentina`);
-  }
-
-  // Variant 5: Just neighborhood + province as last resort
-  if (neighborhood || province) {
-    const fallbackParts = [neighborhood, province].filter(Boolean);
-    variants.push(`${fallbackParts.join(", ")}, Argentina`);
-  }
-
-  return variants;
-}
-
-function extractNormalizedGeo(address: any): {
+function extractNormalizedGeo(components: any[]): {
   norm_neighborhood: string | null;
   norm_locality: string | null;
   norm_province: string | null;
 } {
-  if (!address) return { norm_neighborhood: null, norm_locality: null, norm_province: null };
-  return {
-    norm_neighborhood: address.suburb || address.neighbourhood || address.city_district || null,
-    norm_locality: address.city || address.town || address.municipality || address.city_district || null,
-    norm_province: address.state || null,
-  };
+  if (!components || !Array.isArray(components)) {
+    return { norm_neighborhood: null, norm_locality: null, norm_province: null };
+  }
+
+  let norm_neighborhood: string | null = null;
+  let norm_locality: string | null = null;
+  let norm_province: string | null = null;
+
+  for (const c of components) {
+    const types: string[] = c.types || [];
+    if (types.includes("sublocality") || types.includes("sublocality_level_1") || types.includes("neighborhood")) {
+      norm_neighborhood = norm_neighborhood || c.long_name;
+    }
+    if (types.includes("locality")) {
+      norm_locality = c.long_name;
+    }
+    if (types.includes("administrative_area_level_1")) {
+      norm_province = c.long_name;
+    }
+  }
+
+  return { norm_neighborhood, norm_locality, norm_province };
 }
 
 /**
  * Paginated fetch of all rows from a table/query.
- * Supabase limits to 1000 rows per request.
  */
 async function fetchAllRows(supabase: any, table: string, select: string, filters?: (q: any) => any): Promise<any[]> {
   const PAGE_SIZE = 1000;
@@ -117,20 +89,15 @@ async function fetchAllRows(supabase: any, table: string, select: string, filter
 
 /**
  * Auto-seed: find properties whose address is not yet in geocoded_addresses and insert them.
- * Uses pagination to handle >1000 rows.
  */
 async function autoSeedMissingAddresses(supabase: any): Promise<number> {
   const allProps = await fetchAllRows(supabase, "properties", "address, neighborhood, city", (q: any) => q.not("address", "is", null));
 
-  if (allProps.length === 0) {
-    console.log("No properties found for seeding");
-    return 0;
-  }
+  if (allProps.length === 0) return 0;
 
   const existingRows = await fetchAllRows(supabase, "geocoded_addresses", "address");
   const existingSet = new Set(existingRows.map((r: any) => r.address));
 
-  // Deduplicate by address
   const toInsertMap = new Map<string, any>();
   for (const p of allProps) {
     if (p.address && !existingSet.has(p.address) && !toInsertMap.has(p.address)) {
@@ -148,7 +115,6 @@ async function autoSeedMissingAddresses(supabase: any): Promise<number> {
   const toInsert = Array.from(toInsertMap.values());
   if (toInsert.length === 0) return 0;
 
-  // Insert in batches of 500
   let seeded = 0;
   for (let i = 0; i < toInsert.length; i += 500) {
     const batch = toInsert.slice(i, i + 500);
@@ -166,6 +132,63 @@ async function autoSeedMissingAddresses(supabase: any): Promise<number> {
   return seeded;
 }
 
+/**
+ * Geocode a single address using Google Maps Geocoding API.
+ * Returns { lat, lng, address_components, formatted_address } or null.
+ */
+async function geocodeWithGoogle(
+  query: string,
+  apiKey: string,
+  bounds?: string
+): Promise<{ lat: number; lng: number; address_components: any[]; formatted_address: string } | null> {
+  const params = new URLSearchParams({
+    address: query,
+    key: apiKey,
+    region: "ar",
+    language: "es",
+  });
+
+  // Bias results to Argentina bounding box
+  if (bounds) {
+    params.set("bounds", bounds);
+  }
+
+  const url = `${GOOGLE_GEOCODE_URL}?${params.toString()}`;
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    console.warn(`Google Geocoding HTTP ${res.status} for: ${query}`);
+    return null;
+  }
+
+  const data = await res.json();
+
+  if (data.status === "OK" && data.results && data.results.length > 0) {
+    const result = data.results[0];
+    return {
+      lat: result.geometry.location.lat,
+      lng: result.geometry.location.lng,
+      address_components: result.address_components || [],
+      formatted_address: result.formatted_address || "",
+    };
+  }
+
+  if (data.status === "ZERO_RESULTS") {
+    return null;
+  }
+
+  if (data.status === "OVER_QUERY_LIMIT" || data.status === "REQUEST_DENIED") {
+    console.error(`Google Geocoding error: ${data.status} - ${data.error_message || ""}`);
+    throw new Error(`Google API: ${data.status}`);
+  }
+
+  console.warn(`Google Geocoding status: ${data.status} for: ${query}`);
+  return null;
+}
+
+// Argentina bounding box for biasing
+const AR_BOUNDS = "-55.0,-73.5|-21.0,-53.5";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -174,11 +197,11 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const locationiqKey = Deno.env.get("LOCATIONIQ_API_KEY");
-    
-    if (!locationiqKey) {
+    const googleApiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+
+    if (!googleApiKey) {
       return new Response(
-        JSON.stringify({ error: "LOCATIONIQ_API_KEY not configured" }),
+        JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -203,15 +226,15 @@ Deno.serve(async (req) => {
     if (addresses.length === 0) {
       autonomousMode = true;
 
-      // Step 0: Check for flagged addresses (user-reported incorrect geocoding)
+      // Step 0: Check for flagged addresses
       const { data: flagged, error: flagError } = await supabase
         .from("geocoded_addresses")
         .select("address, neighborhood, province")
         .eq("source", "flagged")
-        .limit(30);
+        .limit(50);
 
       if (!flagError && flagged && flagged.length > 0) {
-        console.log(`Found ${flagged.length} flagged addresses to retry with variants`);
+        console.log(`Found ${flagged.length} flagged addresses to retry`);
         retryVariantsMode = true;
         addresses = flagged.map((row: any) => ({
           address: row.address,
@@ -221,89 +244,90 @@ Deno.serve(async (req) => {
       }
 
       if (addresses.length === 0) {
-      // Step 1: Auto-seed any missing addresses from properties table
-      const seeded = await autoSeedMissingAddresses(supabase);
+        const seeded = await autoSeedMissingAddresses(supabase);
 
-      // Step 2: Fetch pending rows to geocode (lat IS NULL = never attempted)
-      const { data: uncached, error } = await supabase
-        .from("geocoded_addresses")
-        .select("address, neighborhood, province")
-        .is("lat", null)
-        .limit(30);
-
-      if (error) {
-        console.error("Error fetching uncached addresses:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Step 3: If no pending, check for not_found addresses to retry with fallback
-      if (!uncached || uncached.length === 0) {
-        const { data: notFound, error: nfError } = await supabase
+        // Fetch pending rows
+        const { data: uncached, error } = await supabase
           .from("geocoded_addresses")
           .select("address, neighborhood, province")
-          .eq("source", "not_found")
-          .limit(30);
+          .is("lat", null)
+          .limit(50);
 
-        if (nfError || !notFound || notFound.length === 0) {
-          // Step 4: For not_found_final, assign generic neighborhood coords from properties table
-          const { data: finalFails, error: ffError } = await supabase
+        if (error) {
+          console.error("Error fetching uncached addresses:", error);
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        if (!uncached || uncached.length === 0) {
+          // Check not_found to retry with Google (may succeed where LocationIQ failed)
+          const { data: notFound, error: nfError } = await supabase
             .from("geocoded_addresses")
-            .select("address")
-            .eq("source", "not_found_final")
-            .limit(30);
+            .select("address, neighborhood, province")
+            .eq("source", "not_found")
+            .limit(50);
 
-          if (ffError || !finalFails || finalFails.length === 0) {
-            console.log("All addresses geocoded. Nothing to do.");
-            return new Response(
-              JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
-              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
+          if (nfError || !notFound || notFound.length === 0) {
+            // Try not_found_final too
+            const { data: notFoundFinal } = await supabase
+              .from("geocoded_addresses")
+              .select("address, neighborhood, province")
+              .eq("source", "not_found_final")
+              .limit(50);
+
+            if (!notFoundFinal || notFoundFinal.length === 0) {
+              // Try needs_manual
+              const { data: needsManual } = await supabase
+                .from("geocoded_addresses")
+                .select("address, neighborhood, province")
+                .eq("source", "needs_manual")
+                .limit(50);
+
+              if (!needsManual || needsManual.length === 0) {
+                console.log("All addresses geocoded. Nothing to do.");
+                return new Response(
+                  JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
+                  { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+              }
+
+              console.log(`Retrying ${needsManual.length} needs_manual addresses with Google`);
+              fallbackMode = true;
+              addresses = needsManual.map((row: any) => ({
+                address: row.address,
+                neighborhood: row.neighborhood,
+                province: row.province,
+              }));
+            } else {
+              console.log(`Retrying ${notFoundFinal.length} not_found_final addresses with Google`);
+              fallbackMode = true;
+              neighborhoodFallbackMode = true;
+              addresses = notFoundFinal.map((row: any) => ({
+                address: row.address,
+                neighborhood: row.neighborhood,
+                province: row.province,
+              }));
+            }
+          } else {
+            console.log(`Retrying ${notFound.length} not_found addresses with Google`);
+            fallbackMode = true;
+            addresses = notFound.map((row: any) => ({
+              address: row.address,
+              neighborhood: row.neighborhood,
+              province: row.province,
+            }));
           }
-
-          // Look up the real neighborhood from properties and geocode that
-          const failAddresses = finalFails.map((f: any) => f.address);
-          const { data: props } = await supabase
-            .from("properties")
-            .select("address, neighborhood, city")
-            .in("address", failAddresses);
-
-          if (!props || props.length === 0) {
-            console.log("No matching properties for final fails.");
-            return new Response(
-              JSON.stringify({ message: "All addresses geocoded", geocoded: 0, seeded, remaining: 0 }),
-              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
-          }
-
-          console.log(`Final fallback: geocoding ${props.length} addresses by neighborhood+city`);
-          fallbackMode = true;
-          neighborhoodFallbackMode = true;
-          addresses = props.map((p: any) => ({
-            address: p.address,
-            neighborhood: p.neighborhood,
-            province: p.city,
-          }));
         } else {
-          console.log(`Retrying ${notFound.length} not_found addresses with fallback query`);
-          fallbackMode = true;
-          addresses = notFound.map((row: any) => ({
+          console.log(`Found ${uncached.length} pending addresses to geocode`);
+          addresses = uncached.map((row: any) => ({
             address: row.address,
             neighborhood: row.neighborhood,
             province: row.province,
           }));
         }
-      } else {
-        console.log(`Found ${uncached.length} pending addresses to geocode`);
-        addresses = uncached.map((row: any) => ({
-          address: row.address,
-          neighborhood: row.neighborhood,
-          province: row.province,
-        }));
       }
-      } // end inner if (addresses.length === 0)
     }
 
     // In client mode, insert missing addresses into the table
@@ -356,204 +380,87 @@ Deno.serve(async (req) => {
       addresses = toGeocode;
     }
 
-    // Geocode batch using LocationIQ
+    // Geocode batch using Google Maps
     const results: any[] = [];
-    const batchSize = Math.min(addresses.length, 30);
+    const batchSize = Math.min(addresses.length, 50);
     let successCount = 0;
     let notFoundCount = 0;
     let errorCount = 0;
 
     for (let i = 0; i < batchSize; i++) {
       const item = addresses[i];
+      const cleanAddr = cleanAddress(item.address);
 
-      // For flagged addresses, try multiple query variants
-      if (retryVariantsMode) {
-        const variants = generateQueryVariants(item.address, item.neighborhood, item.province);
-        let found = false;
-
-        for (const variant of variants) {
-          console.log(`Retry variant for "${item.address}": "${variant}"`);
-          try {
-            const params = new URLSearchParams({
-              key: locationiqKey, q: variant, format: "json", limit: "1", countrycodes: "ar", addressdetails: "1",
-            });
-            const res = await fetch(`${LOCATIONIQ_URL}?${params.toString()}`);
-
-            if (res.status === 429) {
-              await sleep(2000);
-              continue;
-            }
-            if (!res.ok) {
-              await res.text(); // consume body
-              await sleep(DELAY_MS);
-              continue;
-            }
-
-            const data = await res.json();
-            if (data && data.length > 0) {
-              const lat = parseFloat(data[0].lat);
-              const lng = parseFloat(data[0].lon);
-              const addressDetails = data[0].address || {};
-              const normalized = extractNormalizedGeo(addressDetails);
-
-              await supabase.from("geocoded_addresses").upsert({
-                address: item.address, neighborhood: item.neighborhood, province: item.province,
-                lat, lng,
-                norm_neighborhood: normalized.norm_neighborhood, norm_locality: normalized.norm_locality, norm_province: normalized.norm_province,
-                raw_address_details: addressDetails,
-                source: "locationiq_retry",
-              }, { onConflict: "address" });
-
-              results.push({ ...item, lat, lng, ...normalized, source: "locationiq_retry" });
-              successCount++;
-              found = true;
-              break;
-            }
-          } catch (e) {
-            console.warn(`Variant failed for "${item.address}": ${e}`);
-          }
-          await sleep(DELAY_MS);
-        }
-
-        if (!found) {
-          // All variants failed — mark as needs_manual
-          await supabase.from("geocoded_addresses").upsert({
-            address: item.address, lat: 0, lng: 0, source: "needs_manual",
-          }, { onConflict: "address" });
-          results.push({ ...item, lat: null, lng: null, source: "needs_manual" });
-          notFoundCount++;
-        }
-
-        if (i < batchSize - 1) await sleep(DELAY_MS);
-        continue;
-      }
-
-      // Normal mode: single query
+      // Build query: Google is smart enough to handle most formats directly
       let query: string;
-      if (fallbackMode && (item.neighborhood || item.province)) {
+      if (neighborhoodFallbackMode && (item.neighborhood || item.province)) {
+        // Last resort: just neighborhood + city
         const parts = [item.neighborhood, item.province].filter(Boolean);
         query = `${parts.join(", ")}, Argentina`;
-        console.log(`Fallback query for "${item.address}": "${query}"`);
+        console.log(`Neighborhood fallback for "${item.address}": "${query}"`);
+      } else if (fallbackMode || retryVariantsMode) {
+        // For retries, add more context
+        const parts = [cleanAddr];
+        if (item.neighborhood) parts.push(item.neighborhood);
+        if (item.province) parts.push(item.province);
+        parts.push("Argentina");
+        query = parts.join(", ");
+        console.log(`Retry query for "${item.address}": "${query}"`);
       } else {
-        const cleanAddr = cleanAddress(item.address);
         query = `${cleanAddr}, Argentina`;
       }
 
       try {
-        const params = new URLSearchParams({
-          key: locationiqKey,
-          q: query,
-          format: "json",
-          limit: "1",
-          countrycodes: "ar",
-          addressdetails: "1",
-        });
-        const url = `${LOCATIONIQ_URL}?${params.toString()}`;
-        const res = await fetch(url);
+        const result = await geocodeWithGoogle(query, googleApiKey, AR_BOUNDS);
 
-        if (res.status === 429) {
-          console.warn(`Rate limited at item ${i + 1}/${batchSize}. Waiting 2s and retrying...`);
-          await sleep(2000);
-          // Retry once
-          const retryRes = await fetch(url);
-          if (retryRes.status === 429) {
-            console.warn(`Still rate limited. Stopping batch early.`);
-            break;
-          }
-          if (!retryRes.ok) {
-            console.warn(`HTTP ${retryRes.status} on retry for: ${item.address}`);
-            errorCount++;
-            await sleep(DELAY_MS);
-            continue;
-          }
-          const retryData = await retryRes.json();
-          if (retryData && retryData.length > 0) {
-            const lat = parseFloat(retryData[0].lat);
-            const lng = parseFloat(retryData[0].lon);
-            const addressDetails = retryData[0].address || {};
-            const normalized = extractNormalizedGeo(addressDetails);
-
-            await supabase.from("geocoded_addresses").upsert({
-              address: item.address,
-              neighborhood: item.neighborhood,
-              province: item.province,
-              lat,
-              lng,
-              norm_neighborhood: normalized.norm_neighborhood,
-              norm_locality: normalized.norm_locality,
-              norm_province: normalized.norm_province,
-              raw_address_details: addressDetails,
-              source: "locationiq",
-            }, { onConflict: "address" });
-
-            results.push({ ...item, lat, lng, ...normalized, source: "locationiq" });
-            successCount++;
-          }
-          await sleep(DELAY_MS);
-          continue;
-        }
-
-        if (!res.ok) {
-          const errorBody = await res.text();
-          // LocationIQ returns 404 for not found
-          if (res.status === 404) {
-            await supabase.from("geocoded_addresses").upsert({
-              address: item.address,
-              neighborhood: item.neighborhood,
-              province: item.province,
-              lat: 0,
-              lng: 0,
-              source: neighborhoodFallbackMode ? "not_found_forever" : (fallbackMode ? "not_found_final" : "not_found"),
-            }, { onConflict: "address" });
-            results.push({ ...item, lat: null, lng: null, source: "not_found" });
-            notFoundCount++;
-            await sleep(DELAY_MS);
-            continue;
-          }
-          console.warn(`HTTP ${res.status} for: ${item.address}. Body: ${errorBody}`);
-          results.push({ ...item, lat: null, lng: null, source: "error" });
-          errorCount++;
-          await sleep(DELAY_MS);
-          continue;
-        }
-
-        const data = await res.json();
-
-        if (data && data.length > 0) {
-          const lat = parseFloat(data[0].lat);
-          const lng = parseFloat(data[0].lon);
-          const addressDetails = data[0].address || {};
-          const normalized = extractNormalizedGeo(addressDetails);
+        if (result) {
+          const normalized = extractNormalizedGeo(result.address_components);
 
           await supabase.from("geocoded_addresses").upsert({
             address: item.address,
             neighborhood: item.neighborhood,
             province: item.province,
-            lat,
-            lng,
+            lat: result.lat,
+            lng: result.lng,
             norm_neighborhood: normalized.norm_neighborhood,
             norm_locality: normalized.norm_locality,
             norm_province: normalized.norm_province,
-            raw_address_details: addressDetails,
-            source: neighborhoodFallbackMode ? "locationiq_neighborhood" : (fallbackMode ? "locationiq_fallback" : "locationiq"),
+            raw_address_details: {
+              address_components: result.address_components,
+              formatted_address: result.formatted_address,
+            },
+            source: retryVariantsMode ? "google_retry" : (fallbackMode ? "google_fallback" : "google"),
           }, { onConflict: "address" });
 
-          results.push({ ...item, lat, lng, ...normalized, source: "locationiq" });
+          results.push({ ...item, lat: result.lat, lng: result.lng, ...normalized, source: "google" });
           successCount++;
         } else {
+          // Not found — mark appropriately
+          const source = neighborhoodFallbackMode
+            ? "not_found_forever"
+            : fallbackMode
+              ? "not_found_final"
+              : "not_found";
+
           await supabase.from("geocoded_addresses").upsert({
             address: item.address,
             neighborhood: item.neighborhood,
             province: item.province,
             lat: 0,
             lng: 0,
-            source: neighborhoodFallbackMode ? "not_found_forever" : (fallbackMode ? "not_found_final" : "not_found"),
+            source,
           }, { onConflict: "address" });
 
           results.push({ ...item, lat: null, lng: null, source: "not_found" });
           notFoundCount++;
         }
       } catch (e) {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        if (errMsg.includes("OVER_QUERY_LIMIT")) {
+          console.warn(`Rate limited at item ${i + 1}/${batchSize}. Stopping batch.`);
+          break;
+        }
+
         console.error(`Geocoding failed for: ${item.address}`, e);
         await supabase.from("geocoded_addresses").upsert({
           address: item.address,
