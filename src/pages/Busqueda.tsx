@@ -383,10 +383,9 @@ const Busqueda = () => {
   const onboardingFilters = useOnboardingFilters();
   const [onboardingApplied, setOnboardingApplied] = useState(false);
 
-  // Apply onboarding preferences to search filters and neighborhood dropdown (once)
+  // Apply onboarding preferences (re-apply when revision changes from Settings)
   useEffect(() => {
-    if (!onboardingFilters.loaded || onboardingApplied) return;
-    setOnboardingApplied(true);
+    if (!onboardingFilters.loaded) return;
     if (onboardingFilters.neighborhoodFilter.included.size > 0) {
       setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
     }
@@ -401,7 +400,9 @@ const Busqueda = () => {
         price_max: onboardingFilters.priceRange![1] || null,
       }));
     }
-  }, [onboardingFilters.loaded, onboardingApplied]);
+    setOnboardingApplied(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onboardingFilters.revision]);
 
   // Derive available filter values from properties
   const availableTypes = [...new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])].sort();

@@ -344,10 +344,9 @@ const MapView = () => {
     }
   }, [properties.length, dataRanges, rangesInitialized]);
 
-  // Apply onboarding preferences as initial filters (once)
+  // Apply onboarding preferences (re-apply when revision changes from Settings)
   useEffect(() => {
-    if (!onboardingFilters.loaded || onboardingApplied || !rangesInitialized) return;
-    setOnboardingApplied(true);
+    if (!onboardingFilters.loaded || !rangesInitialized) return;
 
     if (onboardingFilters.neighborhoodFilter.included.size > 0) {
       setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
@@ -361,7 +360,9 @@ const MapView = () => {
         Math.min(onboardingFilters.priceRange[1], dataRanges.priceMax),
       ]);
     }
-  }, [onboardingFilters.loaded, onboardingApplied, rangesInitialized, dataRanges]);
+    setOnboardingApplied(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onboardingFilters.revision, rangesInitialized]);
 
   const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter, propertyTypeFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0

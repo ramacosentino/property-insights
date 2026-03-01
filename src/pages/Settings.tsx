@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ONBOARDING_FILTERS_UPDATED } from "@/hooks/useOnboardingFilters";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target } from "lucide-react";
@@ -340,6 +341,7 @@ const PreferencesSection = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      window.dispatchEvent(new Event(ONBOARDING_FILTERS_UPDATED));
       toast({ title: "✅ Preferencias guardadas", description: "Tus filtros predeterminados se actualizaron." });
     }
   };
