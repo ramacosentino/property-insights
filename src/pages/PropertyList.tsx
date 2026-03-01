@@ -22,8 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search, SlidersHorizontal, TrendingDown, Star, X } from "lucide-react";
+import { Search, SlidersHorizontal, TrendingDown, Star, X, Trophy, ChevronDown, ChevronUp, EyeOff, RotateCcw } from "lucide-react";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 
 function getParkingLabel(parking: number | null): string {
   if (!parking || parking === 0) return "Sin cochera";
@@ -80,6 +81,9 @@ const PropertyList = () => {
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const onboardingFilters = useOnboardingFilters();
   const [onboardingApplied, setOnboardingApplied] = useState(false);
+  const { ignoredIds, ignore, restore, isIgnored } = useIgnoredOpportunities();
+  const [showIgnored, setShowIgnored] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(true);
 
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 2000;
@@ -122,7 +126,7 @@ const PropertyList = () => {
   const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
   const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
   const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
-  const [sortBy, setSortBy] = useState<string>("pricePerSqm");
+  const [sortBy, setSortBy] = useState<string>("opportunity");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
   const [rangesInitialized, setRangesInitialized] = useState(false);
   const [importDateFilter, setImportDateFilter] = useState<string>("all");
@@ -230,6 +234,13 @@ const PropertyList = () => {
   const filtered = useMemo(() => {
     let result = properties;
 
+    // Ignored filter
+    if (showIgnored) {
+      result = result.filter((p) => ignoredIds.has(p.id));
+    } else {
+      result = result.filter((p) => !ignoredIds.has(p.id));
+    }
+
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(
@@ -304,16 +315,19 @@ const PropertyList = () => {
     });
 
     return result;
-  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges, importDateFilter]);
+  }, [properties, search, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, sortBy, showOnlyDeals, rangesInitialized, dataRanges, importDateFilter, ignoredIds, showIgnored]);
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
+    const withScore = filtered.filter((p) => p.opportunityScore > 0);
+    const bestDiscount = withScore.length ? Math.max(...withScore.map((p) => p.opportunityScore)) : 0;
     return {
       total: filtered.length,
       deals: deals.length,
       avgPricePerSqm: filtered.length
         ? Math.round(filtered.reduce((a, b) => a + (b.pricePerM2Total ?? 0), 0) / filtered.length)
         : 0,
+      bestDiscount,
     };
   }, [filtered]);
 
@@ -321,17 +335,55 @@ const PropertyList = () => {
     <Layout>
       <div className="container px-6 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight mb-1">Propiedades</h2>
-          <p className="text-muted-foreground">Explorá y filtrá el mercado inmobiliario</p>
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Trophy className="h-6 w-6 text-primary" />
+            <h2 className="text-3xl font-bold tracking-tight">Propiedades</h2>
+          </div>
+          <p className="text-muted-foreground">Explorá y filtrá el mercado inmobiliario — ordenado por oportunidad de inversión</p>
         </div>
 
-        {/* Header stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-          <StatCard label="Total propiedades" value={segmentStats.total.toLocaleString()} />
-          <StatCard label="Oportunidades" value={segmentStats.deals.toLocaleString()} highlight />
-          <StatCard label="Prom. USD/m²" value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
-          <StatCard label="Barrios" value={neighborhoods.length.toLocaleString()} />
+        {/* Ignored toggle */}
+        {ignoredIds.size > 0 && (
+          <div className="flex gap-1 mb-4 border-b border-border">
+            <button
+              onClick={() => setShowIgnored(false)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                !showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              Propiedades
+            </button>
+            <button
+              onClick={() => setShowIgnored(true)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              Ignoradas ({ignoredIds.size})
+            </button>
+          </div>
+        )}
+
+        {/* Collapsible ranking stats */}
+        <div className="mb-6">
+          <button
+            onClick={() => setStatsOpen(!statsOpen)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          >
+            {statsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <span className="font-medium">Resumen del mercado</span>
+          </button>
+          {statsOpen && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              <StatCard label="Total propiedades" value={segmentStats.total.toLocaleString()} />
+              <StatCard label="Oportunidades" value={segmentStats.deals.toLocaleString()} highlight />
+              <StatCard label="Mejor descuento" value={segmentStats.bestDiscount ? `${segmentStats.bestDiscount.toFixed(0)}%` : "—"} highlight />
+              <StatCard label="Prom. USD/m²" value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -370,9 +422,9 @@ const PropertyList = () => {
                   <SelectValue placeholder="Ordenar" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="opportunity">Oportunidad ↓</SelectItem>
                   <SelectItem value="pricePerSqm">USD/m² ↑</SelectItem>
                   <SelectItem value="price">Precio ↑</SelectItem>
-                  <SelectItem value="opportunity">Oportunidad ↓</SelectItem>
                   <SelectItem value="area">Superficie ↓</SelectItem>
                 </SelectContent>
               </Select>
