@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import FlagLocationButton from "@/components/FlagLocationButton";
 import { usePreselection, togglePreselection, isPreselected, isDiscardedProject } from "@/hooks/usePreselection";
+import { useIgnoredOpportunities, isIgnoredOpportunity, toggleIgnoreOpportunity } from "@/hooks/useIgnoredOpportunities";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
 import ReactDOM from "react-dom";
 import Layout from "@/components/Layout";
@@ -13,7 +14,7 @@ import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon } from "lucide-react";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
@@ -241,12 +242,15 @@ const MapView = () => {
   const [onboardingApplied, setOnboardingApplied] = useState(false);
   const properties = data?.properties ?? [];
   const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
+  const { ignoredIds, ignore: ignoreOpp, restore: restoreOpp, isIgnored: isIgnoredHook } = useIgnoredOpportunities();
 
   // Expose toggle and flag for raw HTML popups
   useEffect(() => {
     (window as any).__togglePreselection = togglePreselection;
     (window as any).__isPreselected = isPreselected;
     (window as any).__isDiscardedProject = isDiscardedProject;
+    (window as any).__isIgnoredOpportunity = isIgnoredOpportunity;
+    (window as any).__toggleIgnoreOpportunity = toggleIgnoreOpportunity;
     (window as any).__flagAddress = async (address: string, el: HTMLElement) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -494,8 +498,8 @@ const MapView = () => {
 
   // Dynamic deal detection based on threshold
   const dealProperties = useMemo(
-    () => mappedProperties.filter((p) => p.price && p.pricePerM2Total && p.opportunityScore >= dealThreshold),
-    [mappedProperties, dealThreshold]
+    () => mappedProperties.filter((p) => p.price && p.pricePerM2Total && p.opportunityScore >= dealThreshold && !ignoredIds.has(p.id)),
+    [mappedProperties, dealThreshold, ignoredIds]
   );
 
   const selectedDeals = useMemo(
@@ -747,6 +751,7 @@ const MapView = () => {
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
               <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
               <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${escapeHtml(p.id)}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
+              <a href="#" onclick="event.preventDefault();window.__toggleIgnoreOpportunity('${escapeHtml(p.id)}').then(function(v){this.innerHTML=v?'👁‍🗨 Ignorada':'👁 Ignorar';}.bind(this));" style="color:#999;text-decoration:none;font-size:11px;cursor:pointer;">${isIgnoredOpportunity(p.id) ? '👁‍🗨 Ignorada' : '👁 Ignorar'}</a>
             </div>
             ${p.address ? `<a href="#" onclick="event.preventDefault();window.__flagAddress('${escapeHtml(p.address)}',this);" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
           </div>`
@@ -806,8 +811,9 @@ const MapView = () => {
               ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
               ${p.luminosity ? `<strong>Luminosidad:</strong> ${escapeHtml(p.luminosity)}<br/>` : ""}
               <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+              <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
                 <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${escapeHtml(p.id)}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
+                <a href="#" onclick="event.preventDefault();window.__toggleIgnoreOpportunity('${escapeHtml(p.id)}').then(function(v){this.innerHTML=v?'👁‍🗨 Ignorada':'👁 Ignorar';}.bind(this));" style="color:#999;text-decoration:none;font-size:11px;cursor:pointer;">${isIgnoredOpportunity(p.id) ? '👁‍🗨 Ignorada' : '👁 Ignorar'}</a>
               </div>
               ${p.address ? `<a href="#" onclick="event.preventDefault();window.__flagAddress('${escapeHtml(p.address)}',this);" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
             </div>`
@@ -1148,6 +1154,23 @@ const MapView = () => {
                 <span className="text-[11px] text-foreground line-clamp-2 block">{p.location}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                {isIgnoredHook(p.id) ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); restoreOpp(p.id); }}
+                    className="p-1 rounded-full text-primary hover:bg-primary/10 transition-colors"
+                    title="Restaurar oportunidad"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); ignoreOpp(p.id); }}
+                    className="p-1 rounded-full text-muted-foreground hover:text-destructive transition-colors"
+                    title="Ignorar oportunidad"
+                  >
+                    <EyeOff className="h-3 w-3" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); togglePreselect(p.id); }}
                   className={`p-1 rounded-full transition-colors ${

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/lib/propertyData";
-import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw } from "lucide-react";
+import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw, EyeOff } from "lucide-react";
 import { usePreselection } from "@/hooks/usePreselection";
+import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 import { getOpportunityLabel, getOpportunityBadgeClasses } from "@/lib/opportunityLabels";
 
 interface PropertyCardProps {
@@ -15,6 +16,7 @@ interface PropertyCardProps {
 
 const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDiscarded }: PropertyCardProps) => {
   const { isSelected, toggle } = usePreselection();
+  const { isIgnored, ignore, restore } = useIgnoredOpportunities();
   const isHighlighted = property.isTopOpportunity || property.isNeighborhoodDeal;
   const isPinned = isSelected(property.id);
 
@@ -60,6 +62,26 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
               <XCircle className="h-3.5 w-3.5" />
             </button>
           ) : null}
+          {/* Ignore opportunity button */}
+          {(property.isTopOpportunity || property.isNeighborhoodDeal) && (
+            isIgnored(property.id) ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); restore(property.id); }}
+                className="p-1 rounded-full text-primary hover:bg-primary/10 transition-colors"
+                title="Restaurar oportunidad"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); ignore(property.id); }}
+                className="p-1 rounded-full text-muted-foreground hover:text-destructive transition-colors"
+                title="Ignorar oportunidad"
+              >
+                <EyeOff className="h-3.5 w-3.5" />
+              </button>
+            )
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); toggle(property.id); }}
             className={`p-1 rounded-full transition-colors ${

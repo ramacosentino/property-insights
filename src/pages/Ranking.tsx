@@ -9,9 +9,10 @@ import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import RangeSliderFilter from "@/components/RangeSliderFilter";
 import { Badge } from "@/components/ui/badge";
 import { usePreselection } from "@/hooks/usePreselection";
-import { Trophy, ExternalLink, Star, SlidersHorizontal, TrendingDown, ArrowUpDown } from "lucide-react";
+import { Trophy, ExternalLink, Star, SlidersHorizontal, TrendingDown, ArrowUpDown, EyeOff, RotateCcw } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 
 function formatPrice(v: number): string {
   if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
@@ -26,7 +27,9 @@ const Ranking = () => {
   const { data, isLoading } = useProperties();
   const properties = data?.properties ?? [];
   const { isSelected, toggle } = usePreselection();
+  const { ignoredIds, ignore, restore, isIgnored } = useIgnoredOpportunities();
   const onboardingFilters = useOnboardingFilters();
+  const [showIgnored, setShowIgnored] = useState(false);
 
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<FilterState>(createFilterState());
@@ -59,6 +62,13 @@ const Ranking = () => {
   const ranked = useMemo(() => {
     let result = properties.filter((p) => p.price > 0 && p.pricePerM2Total && p.pricePerM2Total > 0 && p.opportunityScore > 0);
 
+    // Filter out ignored unless showing ignored tab
+    if (!showIgnored) {
+      result = result.filter((p) => !ignoredIds.has(p.id));
+    } else {
+      result = result.filter((p) => ignoredIds.has(p.id));
+    }
+
     if (neighborhoodFilter.included.size > 0 || neighborhoodFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(p.neighborhood, neighborhoodFilter));
     if (propertyTypeFilter.included.size > 0 || propertyTypeFilter.excluded.size > 0)
@@ -80,7 +90,7 @@ const Ranking = () => {
     });
 
     return result.slice(0, 100);
-  }, [properties, neighborhoodFilter, propertyTypeFilter, importDateFilter, sortBy]);
+  }, [properties, neighborhoodFilter, propertyTypeFilter, importDateFilter, sortBy, ignoredIds, showIgnored]);
 
   const topScore = ranked[0]?.opportunityScore ?? 1;
 
@@ -166,6 +176,30 @@ const Ranking = () => {
           </button>
         </div>
 
+        {/* Ignored toggle */}
+        <div className="flex gap-1 mb-4 border-b border-border">
+          <button
+            onClick={() => setShowIgnored(false)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+              !showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Trophy className="h-3.5 w-3.5" />
+            Oportunidades
+          </button>
+          {ignoredIds.size > 0 && (
+            <button
+              onClick={() => setShowIgnored(true)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              Ignoradas ({ignoredIds.size})
+            </button>
+          )}
+        </div>
+
         {showFilters && (
           <div className="glass-card rounded-2xl p-4 mb-6 relative z-10">
             <NeighborhoodDropdown
@@ -197,7 +231,7 @@ const Ranking = () => {
         {/* Ranking table */}
         <div className="glass-card rounded-2xl overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_3rem] gap-2 px-4 py-3 border-b border-border text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_5rem] gap-2 px-4 py-3 border-b border-border text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             <span>#</span>
             <span>Propiedad</span>
             <span className="text-right">USD/m²</span>
@@ -224,7 +258,7 @@ const Ranking = () => {
                 return (
                   <div
                     key={p.id}
-                    className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_3rem] gap-2 px-4 py-3 items-center hover:bg-secondary/30 transition-colors group"
+                    className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_5rem] gap-2 px-4 py-3 items-center hover:bg-secondary/30 transition-colors group"
                   >
                     {/* Rank */}
                     <span className={`text-sm font-bold font-mono ${i < 3 ? "text-primary" : "text-muted-foreground"}`}>
@@ -275,6 +309,23 @@ const Ranking = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-0.5">
+                      {showIgnored ? (
+                        <button
+                          onClick={() => restore(p.id)}
+                          className="p-1 rounded-full text-primary opacity-0 group-hover:opacity-100 hover:bg-primary/10 transition-all"
+                          title="Restaurar"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => ignore(p.id)}
+                          className="p-1 rounded-full text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-all"
+                          title="Ignorar oportunidad"
+                        >
+                          <EyeOff className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button
                         onClick={() => toggle(p.id)}
                         className={`p-1 rounded-full transition-colors ${
