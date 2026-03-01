@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/lib/propertyData";
-import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw } from "lucide-react";
+import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw, EyeOff } from "lucide-react";
 import { usePreselection } from "@/hooks/usePreselection";
+import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 import { getOpportunityLabel, getOpportunityBadgeClasses } from "@/lib/opportunityLabels";
 
 interface PropertyCardProps {
