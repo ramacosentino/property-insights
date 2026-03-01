@@ -30,6 +30,7 @@ export function useOnboardingFilters() {
     priceRange: null,
     priceCurrency: "USD",
     loaded: false,
+    revision: 0,
   });
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export function useOnboardingFilters() {
           priceRange,
           priceCurrency: data.budget_currency || "USD",
           loaded: true,
+          revision,
         });
       });
   }, [user, authLoading, revision]);
