@@ -1154,6 +1154,23 @@ const MapView = () => {
                 <span className="text-[11px] text-foreground line-clamp-2 block">{p.location}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                {isIgnoredHook(p.id) ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); restoreOpp(p.id); }}
+                    className="p-1 rounded-full text-primary hover:bg-primary/10 transition-colors"
+                    title="Restaurar oportunidad"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); ignoreOpp(p.id); }}
+                    className="p-1 rounded-full text-muted-foreground hover:text-destructive transition-colors"
+                    title="Ignorar oportunidad"
+                  >
+                    <EyeOff className="h-3 w-3" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); togglePreselect(p.id); }}
                   className={`p-1 rounded-full transition-colors ${
