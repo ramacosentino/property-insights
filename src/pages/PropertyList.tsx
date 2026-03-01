@@ -81,6 +81,9 @@ const PropertyList = () => {
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const onboardingFilters = useOnboardingFilters();
   const [onboardingApplied, setOnboardingApplied] = useState(false);
+  const { ignoredIds, ignore, restore, isIgnored } = useIgnoredOpportunities();
+  const [showIgnored, setShowIgnored] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(true);
 
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 2000;
@@ -123,7 +126,7 @@ const PropertyList = () => {
   const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
   const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
   const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
-  const [sortBy, setSortBy] = useState<string>("pricePerSqm");
+  const [sortBy, setSortBy] = useState<string>("opportunity");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
   const [rangesInitialized, setRangesInitialized] = useState(false);
   const [importDateFilter, setImportDateFilter] = useState<string>("all");
