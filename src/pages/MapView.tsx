@@ -751,6 +751,7 @@ const MapView = () => {
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
               <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
               <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${escapeHtml(p.id)}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
+              <a href="#" onclick="event.preventDefault();window.__toggleIgnoreOpportunity('${escapeHtml(p.id)}').then(function(v){this.innerHTML=v?'👁‍🗨 Ignorada':'👁 Ignorar';}.bind(this));" style="color:#999;text-decoration:none;font-size:11px;cursor:pointer;">${isIgnoredOpportunity(p.id) ? '👁‍🗨 Ignorada' : '👁 Ignorar'}</a>
             </div>
             ${p.address ? `<a href="#" onclick="event.preventDefault();window.__flagAddress('${escapeHtml(p.address)}',this);" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
           </div>`
