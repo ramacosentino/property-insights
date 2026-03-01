@@ -722,7 +722,7 @@ const MapView = () => {
             ${!p.price || !p.pricePerM2Total ? `<div style="background:#888;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
               ⚠ Poca información
             </div><br/>` : isDeal ? (() => { const lbl = getOpportunityLabel(p.opportunityScore); return `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
-              ${lbl.emoji} ${lbl.shortText}
+              ${lbl.emoji} ${lbl.shortText} <span style="opacity:0.85;font-weight:400;">(${Math.abs(p.opportunityScore).toFixed(0)}% ${p.opportunityScore >= 0 ? 'bajo' : 'sobre'} mediana)</span>
             </div><br/>`; })() : ""}
             ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
             <strong>${escapeHtml(p.neighborhood)}</strong><br/>
