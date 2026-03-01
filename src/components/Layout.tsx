@@ -42,7 +42,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/auth");
+    navigate("/");
   };
 
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
