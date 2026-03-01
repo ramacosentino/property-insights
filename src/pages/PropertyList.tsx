@@ -78,6 +78,9 @@ const PropertyList = () => {
   const { data, isLoading } = useProperties();
   const properties = data?.properties ?? [];
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
+  const onboardingFilters = useOnboardingFilters();
+  const [onboardingApplied, setOnboardingApplied] = useState(false);
+  const neighborhoodStats = data?.neighborhoodStats ?? new Map();
 
   const PRICE_CAP = 2000000;
   const SURFACE_CAP = 2000;
