@@ -1172,6 +1172,7 @@ const MapView = () => {
                 <div className="flex items-center gap-1.5 mb-2">
                   {lbl.emoji && <span className="text-[11px]">{lbl.emoji}</span>}
                   <span className={`text-[11px] font-medium ${lbl.tone === "expensive" ? "text-destructive" : lbl.tone === "neutral" ? "text-muted-foreground" : "text-primary"}`}>{lbl.shortText}</span>
+                  <span className="text-[10px] text-muted-foreground">({Math.abs(p.opportunityScore).toFixed(0)}% {p.opportunityScore >= 0 ? "bajo" : "sobre"} mediana)</span>
                 </div>
               );
             })() : null}
