@@ -242,11 +242,30 @@ const MapView = () => {
   const properties = data?.properties ?? [];
   const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
 
-  // Expose toggle for raw HTML popups
+  // Expose toggle and flag for raw HTML popups
   useEffect(() => {
     (window as any).__togglePreselection = togglePreselection;
     (window as any).__isPreselected = isPreselected;
     (window as any).__isDiscardedProject = isDiscardedProject;
+    (window as any).__flagAddress = async (address: string, el: HTMLElement) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          el.textContent = '⚠ Iniciá sesión';
+          el.style.color = '#c00';
+          return;
+        }
+        await supabase.functions.invoke("flag-address", {
+          body: { address },
+        });
+        el.textContent = '✓ Reportada';
+        el.style.color = '#888';
+        el.onclick = null;
+      } catch {
+        el.textContent = '✗ Error';
+        el.style.color = '#c00';
+      }
+    };
   }, []);
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
