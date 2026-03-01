@@ -324,19 +324,50 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+
+  // --- Auth: validate JWT and verify user_id ---
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  let authenticatedUserId: string;
+
+  // Check if this is a service role call (from run-search)
+  if (token === serviceKey) {
+    // Service role call — trust the user_id in the body
+    authenticatedUserId = "__service_role__";
+  } else {
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    authenticatedUserId = claimsData.claims.sub as string;
+  }
+  // --- End auth ---
+
   const supabase = createClient(supabaseUrl, serviceKey);
 
   if (!firecrawlKey) {
     return new Response(
-      JSON.stringify({ success: false, error: "FIRECRAWL_API_KEY not configured" }),
+      JSON.stringify({ success: false, error: "Service unavailable" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
   if (!lovableKey) {
     return new Response(
-      JSON.stringify({ success: false, error: "LOVABLE_API_KEY not configured" }),
+      JSON.stringify({ success: false, error: "Service unavailable" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -355,6 +386,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: "user_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify user_id matches authenticated user (skip for service role)
+    if (authenticatedUserId !== "__service_role__" && authenticatedUserId !== user_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: "user_id mismatch" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
