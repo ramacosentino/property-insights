@@ -18,8 +18,11 @@ const TYPE_MAP: Record<string, string> = {
   "Terreno": "terreno",
 };
 
+export const ONBOARDING_FILTERS_UPDATED = "onboarding-filters-updated";
+
 export function useOnboardingFilters() {
   const { user, loading: authLoading } = useAuth();
+  const [revision, setRevision] = useState(0);
   const [filters, setFilters] = useState<OnboardingFilters>({
     neighborhoodFilter: createFilterState(),
     propertyTypeFilter: createFilterState(),
@@ -27,6 +30,12 @@ export function useOnboardingFilters() {
     priceCurrency: "USD",
     loaded: false,
   });
+
+  useEffect(() => {
+    const handler = () => setRevision((r) => r + 1);
+    window.addEventListener(ONBOARDING_FILTERS_UPDATED, handler);
+    return () => window.removeEventListener(ONBOARDING_FILTERS_UPDATED, handler);
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user) {
@@ -45,13 +54,11 @@ export function useOnboardingFilters() {
           return;
         }
 
-        // Map zones to neighborhood include filter
         const neighborhoodFilter = createFilterState();
         if (data.zones && data.zones.length > 0) {
           data.zones.forEach((z: string) => neighborhoodFilter.included.add(z));
         }
 
-        // Map property types
         const propertyTypeFilter = createFilterState();
         if (data.property_types && data.property_types.length > 0) {
           data.property_types.forEach((t: string) => {
@@ -60,7 +67,6 @@ export function useOnboardingFilters() {
           });
         }
 
-        // Price range
         const priceRange: [number, number] | null =
           data.budget_min != null || data.budget_max != null
             ? [data.budget_min ?? 0, data.budget_max ?? 2000000]
@@ -74,7 +80,7 @@ export function useOnboardingFilters() {
           loaded: true,
         });
       });
-  }, [user, authLoading]);
+  }, [user, authLoading, revision]);
 
   return filters;
 }
