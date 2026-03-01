@@ -242,6 +242,7 @@ const MapView = () => {
   const [onboardingApplied, setOnboardingApplied] = useState(false);
   const properties = data?.properties ?? [];
   const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
+  const { ignoredIds, ignore: ignoreOpp, restore: restoreOpp, isIgnored: isIgnoredHook } = useIgnoredOpportunities();
 
   // Expose toggle and flag for raw HTML popups
   useEffect(() => {
