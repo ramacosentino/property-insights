@@ -293,25 +293,31 @@ const Comparador = () => {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground w-40">Métrica</th>
-                  {compared.map(p => (
-                    <th key={p.id} className="px-4 py-3 text-left min-w-[200px]">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          {p.propertyType && <span className="text-[10px] text-muted-foreground capitalize block">{p.propertyType}</span>}
-                          <span className="text-sm font-semibold text-foreground line-clamp-2">{p.location || p.neighborhood}</span>
-                          <span className="text-[11px] text-muted-foreground block">{p.neighborhood}, {p.city}</span>
-                        </div>
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                          <button onClick={() => removeProperty(p.id)} className="p-1 text-muted-foreground hover:text-destructive">
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </th>
-                  ))}
+                   {compared.map(p => {
+                     const titleParts = [
+                       p.propertyType ? p.propertyType.charAt(0).toUpperCase() + p.propertyType.slice(1) : null,
+                       [p.location || p.street, p.neighborhood].filter(Boolean).join(", "),
+                     ].filter(Boolean);
+                     const titleText = titleParts.join(" - ");
+                     return (
+                     <th key={p.id} className="px-4 py-3 text-left min-w-[200px]">
+                       <div className="flex items-start justify-between gap-2">
+                         <div className="min-w-0">
+                           <span className="text-sm font-semibold text-foreground line-clamp-2">{titleText}</span>
+                           <span className="text-[11px] text-primary font-medium block">USD {p.price.toLocaleString()}</span>
+                         </div>
+                         <div className="flex items-center gap-0.5 shrink-0">
+                           <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
+                             <ExternalLink className="h-3 w-3" />
+                           </a>
+                           <button onClick={() => removeProperty(p.id)} className="p-1 text-muted-foreground hover:text-destructive">
+                             <X className="h-3 w-3" />
+                           </button>
+                         </div>
+                       </div>
+                     </th>
+                     );
+                   })}
                 </tr>
               </thead>
               <tbody>
