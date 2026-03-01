@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import OnboardingZoneSelector from "@/components/OnboardingZoneSelector";
 
 interface UploadLog {
   id: string;
@@ -268,6 +271,228 @@ const RenovationCostsSection = () => {
   );
 };
 
+const PROPERTY_TYPES_OPTIONS = ["Departamento", "Casa", "PH", "Local comercial", "Terreno", "Oficina", "Cochera"];
+const INVESTMENT_GOALS = [
+  { value: "refaccion_venta", label: "Refacción + Venta" },
+  { value: "renta", label: "Renta / Alquiler" },
+  { value: "pozo", label: "Desde el pozo" },
+  { value: "reventa", label: "Compra y reventa rápida" },
+  { value: "desarrollo", label: "Desarrollo inmobiliario" },
+];
+
+const PreferencesSection = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [zones, setZones] = useState<string[]>([]);
+  const [budgetMin, setBudgetMin] = useState<number | null>(null);
+  const [budgetMax, setBudgetMax] = useState<number | null>(null);
+  const [budgetCurrency, setBudgetCurrency] = useState("USD");
+  const [propertyTypes, setPropertyTypes] = useState<string[]>([]);
+  const [investmentGoal, setInvestmentGoal] = useState<string | null>(null);
+  const [userType, setUserType] = useState<string>("");
+
+  useEffect(() => {
+    if (!user || !open) return;
+    setLoading(true);
+    supabase
+      .from("user_onboarding")
+      .select("*")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setZones(data.zones ?? []);
+          setBudgetMin(data.budget_min);
+          setBudgetMax(data.budget_max);
+          setBudgetCurrency(data.budget_currency ?? "USD");
+          setPropertyTypes(data.property_types ?? []);
+          setInvestmentGoal(data.investment_goal);
+          setUserType(data.user_type ?? "");
+        }
+        setLoading(false);
+      });
+  }, [user, open]);
+
+  const isInvestor = userType === "inversor_recurrente" || userType === "inmobiliaria";
+
+  const togglePT = (pt: string) =>
+    setPropertyTypes((prev) => prev.includes(pt) ? prev.filter((v) => v !== pt) : [...prev, pt]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("user_onboarding")
+      .upsert({
+        user_id: user.id,
+        user_type: userType,
+        zones,
+        budget_min: budgetMin,
+        budget_max: budgetMax,
+        budget_currency: budgetCurrency,
+        property_types: propertyTypes,
+        investment_goal: investmentGoal,
+      }, { onConflict: "user_id" });
+    setSaving(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "✅ Preferencias guardadas", description: "Tus filtros predeterminados se actualizaron." });
+    }
+  };
+
+  return (
+    <div className="glass-card rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 flex items-center gap-2 text-left hover:bg-secondary/30 transition-all"
+      >
+        <MapPinIcon className="h-5 w-5 text-primary" />
+        <div className="flex-1">
+          <h3 className="text-base font-semibold">Preferencias de búsqueda</h3>
+          <p className="text-xs text-muted-foreground">
+            Zonas, presupuesto y tipos de propiedad que se aplican como filtros automáticos
+          </p>
+        </div>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="px-5 pb-5 space-y-5">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              {/* Zones */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <MapPinIcon className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-medium">Zonas de interés</span>
+                </div>
+                <OnboardingZoneSelector selected={zones} onChange={setZones} />
+              </div>
+
+              {/* Budget */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-medium">Presupuesto</span>
+                </div>
+                <div className="flex gap-2 mb-2">
+                  {["USD", "ARS"].map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setBudgetCurrency(c)}
+                      className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                        budgetCurrency === c
+                          ? "border-primary bg-primary/10 text-primary font-medium"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Mínimo</label>
+                    <Input
+                      type="number"
+                      placeholder="50.000"
+                      value={budgetMin ?? ""}
+                      onChange={(e) => setBudgetMin(e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Máximo</label>
+                    <Input
+                      type="number"
+                      placeholder="200.000"
+                      value={budgetMax ?? ""}
+                      onChange={(e) => setBudgetMax(e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Property Types */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Layers className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-medium">Tipos de propiedad</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {PROPERTY_TYPES_OPTIONS.map((pt) => {
+                    const selected = propertyTypes.includes(pt);
+                    return (
+                      <button
+                        key={pt}
+                        onClick={() => togglePT(pt)}
+                        className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
+                          selected
+                            ? "border-primary bg-primary/10 text-primary font-medium"
+                            : "border-border text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        {pt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Investment Goal (conditional) */}
+              {isInvestor && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Target className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-sm font-medium">Objetivo de inversión</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {INVESTMENT_GOALS.map((g) => {
+                      const selected = investmentGoal === g.value;
+                      return (
+                        <button
+                          key={g.value}
+                          onClick={() => setInvestmentGoal(g.value)}
+                          className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
+                            selected
+                              ? "border-primary bg-primary/10 text-primary font-medium"
+                              : "border-border text-muted-foreground hover:border-primary/40"
+                          }`}
+                        >
+                          {g.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Save */}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-1.5 text-xs font-medium rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                  Guardar preferencias
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const GeocodingSection = () => {
   const [stats, setStats] = useState<{ total: number; geocoded: number } | null>(null);
   const [open, setOpen] = useState(false);
@@ -384,6 +609,9 @@ const Settings = () => {
             <p className="text-sm text-muted-foreground">Ajustes de análisis e historial de cargas</p>
           </div>
         </div>
+
+        {/* Search preferences */}
+        <PreferencesSection />
 
         {/* Renovation costs */}
         <RenovationCostsSection />
