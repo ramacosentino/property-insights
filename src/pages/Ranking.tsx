@@ -176,6 +176,30 @@ const Ranking = () => {
           </button>
         </div>
 
+        {/* Ignored toggle */}
+        <div className="flex gap-1 mb-4 border-b border-border">
+          <button
+            onClick={() => setShowIgnored(false)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+              !showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Trophy className="h-3.5 w-3.5" />
+            Oportunidades
+          </button>
+          {ignoredIds.size > 0 && (
+            <button
+              onClick={() => setShowIgnored(true)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              Ignoradas ({ignoredIds.size})
+            </button>
+          )}
+        </div>
+
         {showFilters && (
           <div className="glass-card rounded-2xl p-4 mb-6 relative z-10">
             <NeighborhoodDropdown
