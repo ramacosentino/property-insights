@@ -259,10 +259,9 @@ const Comparador = () => {
 
   return (
     <div>
-        <p className="text-muted-foreground text-sm mb-4">
-            Compará hasta {MAX_COMPARE} propiedades analizadas lado a lado.
-          </p>
-        </div>
+      <p className="text-muted-foreground text-sm mb-4">
+        Compará hasta {MAX_COMPARE} propiedades analizadas lado a lado.
+      </p>
 
         {/* Property selector */}
         {compareIds.length < MAX_COMPARE && (
@@ -471,8 +470,7 @@ const Comparador = () => {
             )}
           </>
         )}
-      </div>
-    </Layout>
+    </div>
   );
 };
 
