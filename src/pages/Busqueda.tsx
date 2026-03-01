@@ -380,6 +380,28 @@ const Busqueda = () => {
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   const [userAnalyses, setUserAnalyses] = useState<Record<string, UserAnalysis>>({});
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
+  const onboardingFilters = useOnboardingFilters();
+  const [onboardingApplied, setOnboardingApplied] = useState(false);
+
+  // Apply onboarding preferences to search filters and neighborhood dropdown (once)
+  useEffect(() => {
+    if (!onboardingFilters.loaded || onboardingApplied) return;
+    setOnboardingApplied(true);
+    if (onboardingFilters.neighborhoodFilter.included.size > 0) {
+      setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
+    }
+    if (onboardingFilters.propertyTypeFilter.included.size > 0) {
+      const types = [...onboardingFilters.propertyTypeFilter.included];
+      setFilters((f) => ({ ...f, property_types: types }));
+    }
+    if (onboardingFilters.priceRange) {
+      setFilters((f) => ({
+        ...f,
+        price_min: onboardingFilters.priceRange![0] || null,
+        price_max: onboardingFilters.priceRange![1] || null,
+      }));
+    }
+  }, [onboardingFilters.loaded, onboardingApplied]);
 
   // Derive available filter values from properties
   const availableTypes = [...new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])].sort();
