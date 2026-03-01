@@ -14,7 +14,7 @@ import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon } from "lucide-react";
+import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
