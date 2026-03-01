@@ -1,15 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
-import { getOpportunityLabel, getOpportunityBadgeClasses } from "@/lib/opportunityLabels";
-import { Badge } from "@/components/ui/badge";
-import { Columns, Star, X, ExternalLink, TrendingUp, TrendingDown, DollarSign, Info } from "lucide-react";
+import { getOpportunityLabel } from "@/lib/opportunityLabels";
+import { Columns, X, ExternalLink, DollarSign, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface CompareAnalysis {
   score_multiplicador: number | null;
@@ -24,32 +23,41 @@ interface CompareAnalysis {
 
 const MAX_COMPARE = 3;
 
+type HighlightDir = "min" | "max" | "none";
+
+interface RowDef {
+  label: string;
+  getValue: (p: Property, a: CompareAnalysis | null) => number | null;
+  format: (p: Property, a: CompareAnalysis | null) => string;
+  subtext?: (p: Property) => string | undefined;
+  best: HighlightDir;
+}
+
 const Comparador = () => {
   const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useProperties();
   const properties = data?.properties ?? [];
   const { selectedIds } = usePreselection();
+  const { toast } = useToast();
 
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [analyses, setAnalyses] = useState<Record<string, CompareAnalysis>>({});
+  const [aiAnalysis, setAiAnalysis] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Pre-populate with first 2 preselected that have analysis
   useEffect(() => {
     if (!user || compareIds.length > 0) return;
     supabase
       .from("user_property_analysis")
-      .select("property_id, score_multiplicador, estado_general, valor_potencial_total, oportunidad_ajustada, oportunidad_neta, comparables_count")
+      .select("property_id, score_multiplicador, estado_general, highlights, lowlights, valor_potencial_total, oportunidad_ajustada, oportunidad_neta, comparables_count")
       .eq("user_id", user.id)
       .then(({ data: rows }) => {
         if (!rows) return;
         const analysisMap: Record<string, CompareAnalysis> = {};
-        rows.forEach((r: any) => {
-          analysisMap[r.property_id] = r;
-        });
+        rows.forEach((r: any) => { analysisMap[r.property_id] = r; });
         setAnalyses(analysisMap);
-
-        // Auto-select first 2 analyzed preselected properties
         const analyzedPreselected = [...selectedIds].filter(id => analysisMap[id]);
         setCompareIds(analyzedPreselected.slice(0, 2));
       });
@@ -59,10 +67,12 @@ const Comparador = () => {
     if (compareIds.length >= MAX_COMPARE || compareIds.includes(id)) return;
     setCompareIds([...compareIds, id]);
     setSearchTerm("");
+    setAiAnalysis(""); // Reset AI analysis when properties change
   };
 
   const removeProperty = (id: string) => {
     setCompareIds(compareIds.filter(cid => cid !== id));
+    setAiAnalysis("");
   };
 
   const compared = useMemo(() =>
@@ -70,7 +80,6 @@ const Comparador = () => {
     [compareIds, properties]
   );
 
-  // Searchable properties (only analyzed ones)
   const searchResults = useMemo(() => {
     if (!searchTerm || searchTerm.length < 2) return [];
     const s = searchTerm.toLowerCase();
@@ -82,14 +91,6 @@ const Comparador = () => {
       )
       .slice(0, 8);
   }, [searchTerm, properties, compareIds, analyses]);
-
-  // All analyzed properties for quick-add
-  const analyzedProperties = useMemo(() =>
-    properties.filter(p => analyses[p.id] || p.score_multiplicador != null),
-    [properties, analyses]
-  );
-
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
   const getAnalysis = (p: Property): CompareAnalysis | null => {
     if (analyses[p.id]) return analyses[p.id];
@@ -106,106 +107,159 @@ const Comparador = () => {
     return null;
   };
 
-  // Find best value for highlighting
-  const bestPrice = compared.length > 0 ? Math.min(...compared.map(p => p.price)) : 0;
-  const bestPriceM2 = compared.length > 0 ? Math.min(...compared.filter(p => p.pricePerM2Total).map(p => p.pricePerM2Total!)) : 0;
-  const bestScore = compared.length > 0 ? Math.max(...compared.map(p => p.opportunityScore)) : 0;
-
-  const rows: { label: string; icon?: any; values: (p: Property) => { text: string; highlight?: boolean; subtext?: string } }[] = [
+  // Row definitions with best-direction for highlighting
+  const rows: RowDef[] = [
+    { label: "Precio", best: "min", getValue: p => p.price, format: p => `USD ${p.price.toLocaleString()}` },
+    { label: "USD/m²", best: "min", getValue: p => p.pricePerM2Total ?? null, format: p => p.pricePerM2Total ? `$${p.pricePerM2Total.toLocaleString()}` : "—" },
+    { label: "Superficie total", best: "max", getValue: p => p.surfaceTotal ?? null, format: p => p.surfaceTotal ? `${p.surfaceTotal} m²` : "—" },
+    { label: "Sup. cubierta", best: "max", getValue: p => p.surfaceCovered ?? null, format: p => p.surfaceCovered ? `${p.surfaceCovered} m²` : "—" },
+    { label: "Ambientes", best: "max", getValue: p => p.rooms ?? null, format: p => p.rooms ? `${p.rooms}` : "—" },
+    { label: "Dormitorios", best: "max", getValue: p => p.bedrooms ?? null, format: p => p.bedrooms ? `${p.bedrooms}` : "—" },
+    { label: "Baños", best: "max", getValue: p => p.bathrooms ?? null, format: p => p.bathrooms ? `${p.bathrooms}` : "—" },
+    { label: "Cocheras", best: "max", getValue: p => p.parking ?? null, format: p => p.parking ? `${p.parking}` : "—" },
+    { label: "Antigüedad", best: "min", getValue: p => p.ageYears ?? null, format: p => p.ageYears != null ? `${p.ageYears} años` : "—" },
+    { label: "Disposición", best: "none", getValue: () => null, format: p => p.disposition || "—" },
     {
-      label: "Precio",
-      icon: DollarSign,
-      values: (p) => ({
-        text: `USD ${p.price.toLocaleString()}`,
-        highlight: p.price === bestPrice && compared.length > 1,
-      }),
+      label: "Oportunidad", best: "max",
+      getValue: p => p.opportunityScore,
+      format: p => { const lbl = getOpportunityLabel(p.opportunityScore); return `${lbl.emoji} ${lbl.shortText}`; },
+      subtext: p => `${Math.abs(p.opportunityScore).toFixed(0)}% ${p.opportunityScore >= 0 ? "bajo" : "sobre"} mediana`,
     },
     {
-      label: "USD/m²",
-      values: (p) => ({
-        text: p.pricePerM2Total ? `$${p.pricePerM2Total.toLocaleString()}` : "—",
-        highlight: p.pricePerM2Total === bestPriceM2 && compared.length > 1,
-      }),
+      label: "Estado general", best: "none",
+      getValue: () => null,
+      format: (p, a) => a?.estado_general || "Sin análisis",
     },
     {
-      label: "Superficie total",
-      values: (p) => ({ text: p.surfaceTotal ? `${p.surfaceTotal} m²` : "—" }),
+      label: "x Valor", best: "max",
+      getValue: (_, a) => a?.score_multiplicador ?? null,
+      format: (_, a) => a?.score_multiplicador != null ? `${a.score_multiplicador.toFixed(2)}x` : "—",
     },
     {
-      label: "Sup. cubierta",
-      values: (p) => ({ text: p.surfaceCovered ? `${p.surfaceCovered} m²` : "—" }),
+      label: "Valor potencial", best: "max",
+      getValue: (_, a) => a?.valor_potencial_total ?? null,
+      format: (_, a) => a?.valor_potencial_total ? `USD ${a.valor_potencial_total.toLocaleString()}` : "—",
     },
     {
-      label: "Ambientes",
-      values: (p) => ({ text: p.rooms ? `${p.rooms}` : "—" }),
-    },
-    {
-      label: "Dormitorios",
-      values: (p) => ({ text: p.bedrooms ? `${p.bedrooms}` : "—" }),
-    },
-    {
-      label: "Baños",
-      values: (p) => ({ text: p.bathrooms ? `${p.bathrooms}` : "—" }),
-    },
-    {
-      label: "Cocheras",
-      values: (p) => ({ text: p.parking ? `${p.parking}` : "—" }),
-    },
-    {
-      label: "Antigüedad",
-      values: (p) => ({ text: p.ageYears != null ? `${p.ageYears} años` : "—" }),
-    },
-    {
-      label: "Disposición",
-      values: (p) => ({ text: p.disposition || "—" }),
-    },
-    {
-      label: "Oportunidad",
-      values: (p) => {
-        const lbl = getOpportunityLabel(p.opportunityScore);
-        return {
-          text: `${lbl.emoji} ${lbl.shortText}`,
-          highlight: p.opportunityScore === bestScore && compared.length > 1,
-          subtext: `${Math.abs(p.opportunityScore).toFixed(0)}% ${p.opportunityScore >= 0 ? "bajo" : "sobre"} mediana`,
-        };
-      },
-    },
-    {
-      label: "Estado general",
-      values: (p) => {
-        const a = getAnalysis(p);
-        return { text: a?.estado_general || "Sin análisis" };
-      },
-    },
-    {
-      label: "x Valor",
-      values: (p) => {
-        const a = getAnalysis(p);
-        return {
-          text: a?.score_multiplicador != null ? `${a.score_multiplicador.toFixed(2)}x` : "—",
-        };
-      },
-    },
-    {
-      label: "Valor potencial",
-      values: (p) => {
-        const a = getAnalysis(p);
-        return {
-          text: a?.valor_potencial_total ? `USD ${a.valor_potencial_total.toLocaleString()}` : "—",
-        };
-      },
-    },
-    {
-      label: "Ganancia neta est.",
-      values: (p) => {
-        const a = getAnalysis(p);
-        return {
-          text: a?.oportunidad_neta != null ? `${a.oportunidad_neta > 0 ? "+" : ""}USD ${(a.oportunidad_neta / 1000).toFixed(0)}K` : "—",
-          highlight: a?.oportunidad_neta != null && a.oportunidad_neta > 0,
-        };
-      },
+      label: "Ganancia neta est.", best: "max",
+      getValue: (_, a) => a?.oportunidad_neta ?? null,
+      format: (_, a) => a?.oportunidad_neta != null ? `${a.oportunidad_neta > 0 ? "+" : ""}USD ${(a.oportunidad_neta / 1000).toFixed(0)}K` : "—",
     },
   ];
+
+  // Compute best values per row
+  const bestValues = useMemo(() => {
+    if (compared.length < 2) return new Map<string, number | null>();
+    const map = new Map<string, number | null>();
+    rows.forEach(row => {
+      if (row.best === "none") { map.set(row.label, null); return; }
+      const values = compared.map(p => row.getValue(p, getAnalysis(p))).filter((v): v is number => v != null);
+      if (values.length < 2) { map.set(row.label, null); return; }
+      const allEqual = values.every(v => v === values[0]);
+      if (allEqual) { map.set(row.label, null); return; }
+      map.set(row.label, row.best === "min" ? Math.min(...values) : Math.max(...values));
+    });
+    return map;
+  }, [compared, analyses]);
+
+  const isWinner = (row: RowDef, p: Property) => {
+    const best = bestValues.get(row.label);
+    if (best == null) return false;
+    return row.getValue(p, getAnalysis(p)) === best;
+  };
+
+  // AI comparison
+  const runAiComparison = useCallback(async () => {
+    if (compared.length < 2) return;
+    setAiLoading(true);
+    setAiAnalysis("");
+
+    const propsPayload = compared.map(p => {
+      const a = getAnalysis(p);
+      return {
+        title: `${p.propertyType || ""} - ${p.location || p.street}, ${p.neighborhood}`,
+        propertyType: p.propertyType,
+        location: p.location,
+        neighborhood: p.neighborhood,
+        price: p.price,
+        pricePerM2Total: p.pricePerM2Total,
+        surfaceTotal: p.surfaceTotal,
+        surfaceCovered: p.surfaceCovered,
+        rooms: p.rooms,
+        bedrooms: p.bedrooms,
+        bathrooms: p.bathrooms,
+        parking: p.parking,
+        ageYears: p.ageYears,
+        disposition: p.disposition,
+        score: a?.score_multiplicador,
+        estado: a?.estado_general,
+        opportunityScore: p.opportunityScore,
+        valorPotencial: a?.valor_potencial_total,
+        gananciaNeta: a?.oportunidad_neta,
+        highlights: a?.highlights,
+        lowlights: a?.lowlights,
+      };
+    });
+
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/compare-properties`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ properties: propsPayload }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Error desconocido" }));
+        toast({ title: "Error", description: err.error || "No se pudo generar el análisis", variant: "destructive" });
+        setAiLoading(false);
+        return;
+      }
+
+      const reader = resp.body?.getReader();
+      if (!reader) { setAiLoading(false); return; }
+
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              fullText += content;
+              setAiAnalysis(fullText);
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("AI comparison error:", e);
+      toast({ title: "Error", description: "No se pudo conectar con el servicio de IA", variant: "destructive" });
+    }
+    setAiLoading(false);
+  }, [compared, analyses, toast]);
+
+  if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
   return (
     <Layout>
@@ -250,7 +304,6 @@ const Comparador = () => {
               )}
             </div>
 
-            {/* Quick-add from preselection */}
             {selectedIds.size > 0 && (
               <div className="mt-3">
                 <span className="text-[11px] text-muted-foreground font-medium">Tus proyectos analizados:</span>
@@ -287,98 +340,146 @@ const Comparador = () => {
             </p>
           </div>
         ) : (
-          <div className="glass-card rounded-2xl overflow-hidden overflow-x-auto">
-            <table className="w-full">
-              {/* Headers */}
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground w-40">Métrica</th>
-                   {compared.map(p => {
-                     const titleParts = [
-                       p.propertyType ? p.propertyType.charAt(0).toUpperCase() + p.propertyType.slice(1) : null,
-                       [p.location || p.street, p.neighborhood].filter(Boolean).join(", "),
-                     ].filter(Boolean);
-                     const titleText = titleParts.join(" - ");
-                     return (
-                     <th key={p.id} className="px-4 py-3 text-left min-w-[200px]">
-                       <div className="flex items-start justify-between gap-2">
-                         <div className="min-w-0">
-                           <span className="text-sm font-semibold text-foreground line-clamp-2">{titleText}</span>
-                           <span className="text-[11px] text-primary font-medium block">USD {p.price.toLocaleString()}</span>
-                         </div>
-                         <div className="flex items-center gap-0.5 shrink-0">
-                           <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
-                             <ExternalLink className="h-3 w-3" />
-                           </a>
-                           <button onClick={() => removeProperty(p.id)} className="p-1 text-muted-foreground hover:text-destructive">
-                             <X className="h-3 w-3" />
-                           </button>
-                         </div>
-                       </div>
-                     </th>
-                     );
-                   })}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, ri) => (
-                  <tr key={row.label} className={`border-b border-border/50 ${ri % 2 === 0 ? "" : "bg-secondary/20"}`}>
-                    <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground">{row.label}</td>
+          <>
+            <div className="glass-card rounded-2xl overflow-hidden overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground w-40">Métrica</th>
                     {compared.map(p => {
-                      const v = row.values(p);
+                      const titleParts = [
+                        p.propertyType ? p.propertyType.charAt(0).toUpperCase() + p.propertyType.slice(1) : null,
+                        [p.location || p.street, p.neighborhood].filter(Boolean).join(", "),
+                      ].filter(Boolean);
+                      const titleText = titleParts.join(" - ");
                       return (
-                        <td key={p.id} className="px-4 py-2.5">
-                          <span className={`text-sm font-mono ${v.highlight ? "font-bold text-primary" : "text-foreground"}`}>
-                            {v.text}
-                          </span>
-                          {v.subtext && <span className="block text-[10px] text-muted-foreground">{v.subtext}</span>}
+                        <th key={p.id} className="px-4 py-3 text-left min-w-[200px]">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="text-sm font-semibold text-foreground line-clamp-2">{titleText}</span>
+                              <span className="text-[11px] text-primary font-medium block">USD {p.price.toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                              <button onClick={() => removeProperty(p.id)} className="p-1 text-muted-foreground hover:text-destructive">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, ri) => (
+                    <tr key={row.label} className={`border-b border-border/50 ${ri % 2 === 0 ? "" : "bg-secondary/20"}`}>
+                      <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground">{row.label}</td>
+                      {compared.map(p => {
+                        const winner = isWinner(row, p);
+                        const a = getAnalysis(p);
+                        const text = row.format(p, a);
+                        const sub = row.subtext?.(p);
+                        return (
+                          <td key={p.id} className={`px-4 py-2.5 ${winner ? "bg-primary/5" : ""}`}>
+                            <span className={`text-sm font-mono ${winner ? "font-bold text-primary" : "text-foreground"}`}>
+                              {text}
+                            </span>
+                            {winner && <span className="ml-1.5 text-[10px] text-primary">★</span>}
+                            {sub && <span className="block text-[10px] text-muted-foreground">{sub}</span>}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  {/* Highlights */}
+                  <tr className="border-b border-border/50">
+                    <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground align-top">✅ Pros</td>
+                    {compared.map(p => {
+                      const a = getAnalysis(p);
+                      return (
+                        <td key={p.id} className="px-4 py-2.5 align-top">
+                          {a?.highlights && a.highlights.length > 0 ? (
+                            <ul className="space-y-0.5">
+                              {a.highlights.map((h, i) => (
+                                <li key={i} className="text-[11px] text-foreground/80 flex items-start gap-1">
+                                  <span className="text-primary mt-0.5 shrink-0">✓</span> {h}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : <span className="text-xs text-muted-foreground">—</span>}
                         </td>
                       );
                     })}
                   </tr>
-                ))}
-                {/* Highlights/Lowlights rows */}
-                <tr className="border-b border-border/50">
-                  <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground align-top">Highlights</td>
-                  {compared.map(p => {
-                    const a = getAnalysis(p);
-                    return (
-                      <td key={p.id} className="px-4 py-2.5 align-top">
-                        {a?.highlights && a.highlights.length > 0 ? (
-                          <ul className="space-y-0.5">
-                            {a.highlights.map((h, i) => (
-                              <li key={i} className="text-[11px] text-foreground/70 flex items-start gap-1">
-                                <span className="text-green-500 mt-0.5 shrink-0">✓</span> {h}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : <span className="text-xs text-muted-foreground">—</span>}
-                      </td>
-                    );
-                  })}
-                </tr>
-                <tr className="border-b border-border/50 bg-secondary/20">
-                  <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground align-top">Lowlights</td>
-                  {compared.map(p => {
-                    const a = getAnalysis(p);
-                    return (
-                      <td key={p.id} className="px-4 py-2.5 align-top">
-                        {a?.lowlights && a.lowlights.length > 0 ? (
-                          <ul className="space-y-0.5">
-                            {a.lowlights.map((l, i) => (
-                              <li key={i} className="text-[11px] text-foreground/70 flex items-start gap-1">
-                                <span className="text-red-400 mt-0.5 shrink-0">✕</span> {l}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : <span className="text-xs text-muted-foreground">—</span>}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  {/* Lowlights */}
+                  <tr className="border-b border-border/50 bg-secondary/20">
+                    <td className="px-4 py-2.5 text-xs font-medium text-muted-foreground align-top">❌ Contras</td>
+                    {compared.map(p => {
+                      const a = getAnalysis(p);
+                      return (
+                        <td key={p.id} className="px-4 py-2.5 align-top">
+                          {a?.lowlights && a.lowlights.length > 0 ? (
+                            <ul className="space-y-0.5">
+                              {a.lowlights.map((l, i) => (
+                                <li key={i} className="text-[11px] text-foreground/80 flex items-start gap-1">
+                                  <span className="text-destructive mt-0.5 shrink-0">✕</span> {l}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : <span className="text-xs text-muted-foreground">—</span>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* AI Comparison */}
+            {compared.length >= 2 && (
+              <div className="mt-6">
+                {!aiAnalysis && !aiLoading && (
+                  <button
+                    onClick={runAiComparison}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all mx-auto"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Análisis IA: ¿Cuál es mejor inversión?
+                  </button>
+                )}
+                {(aiLoading || aiAnalysis) && (
+                  <div className="glass-card rounded-2xl p-6 mt-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-semibold">Análisis comparativo IA</h3>
+                      {aiLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-2" />}
+                    </div>
+                    <div className="prose prose-sm max-w-none text-foreground/90 [&_h2]:text-base [&_h2]:font-bold [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-foreground [&_p]:mb-2 [&_ul]:mb-2 [&_li]:mb-0.5 [&_strong]:text-foreground">
+                      {aiAnalysis.split("\n").map((line, i) => {
+                        if (line.startsWith("## ")) return <h2 key={i}>{line.slice(3)}</h2>;
+                        if (line.startsWith("- ")) return <li key={i} className="text-sm list-disc ml-4">{line.slice(2)}</li>;
+                        if (line.startsWith("**") && line.endsWith("**")) return <p key={i} className="font-semibold text-sm">{line.slice(2, -2)}</p>;
+                        if (line.trim() === "") return <br key={i} />;
+                        return <p key={i} className="text-sm">{line}</p>;
+                      })}
+                    </div>
+                    {!aiLoading && aiAnalysis && (
+                      <button
+                        onClick={runAiComparison}
+                        className="mt-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-all"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        Regenerar análisis
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </Layout>
