@@ -94,16 +94,18 @@ const Ranking = () => {
 
   const topScore = ranked[0]?.opportunityScore ?? 1;
 
-  // Apply onboarding filters once (after all hooks)
-  if (onboardingFilters.loaded && !onboardingApplied) {
-    setOnboardingApplied(true);
+  // Apply onboarding filters (re-apply when revision changes from Settings)
+  useEffect(() => {
+    if (!onboardingFilters.loaded) return;
     if (onboardingFilters.neighborhoodFilter.included.size > 0) {
       setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
     }
     if (onboardingFilters.propertyTypeFilter.included.size > 0) {
       setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
     }
-  }
+    setOnboardingApplied(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onboardingFilters.revision]);
 
   if (!authLoading && !user) {
     return <Navigate to="/auth" replace />;
