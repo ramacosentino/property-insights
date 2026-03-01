@@ -610,6 +610,9 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Search preferences */}
+        <PreferencesSection />
+
         {/* Renovation costs */}
         <RenovationCostsSection />
 
