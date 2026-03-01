@@ -156,7 +156,7 @@ const MisProyectos = () => {
     toast({ title: "Proyecto restaurado" });
   };
 
-  const baseProjects = tab === "active" ? activeProjects : discardedProjects;
+  const baseProjects = tab === "active" ? activeProjects : tab === "discarded" ? discardedProjects : [];
   
   const displayProjects = [...baseProjects].sort((a, b) => {
     const aa = userAnalyses[a.id];
@@ -249,74 +249,80 @@ const MisProyectos = () => {
           </div>
         )}
 
-        {/* Sort */}
-        {baseProjects.length > 1 && (
-          <div className="flex items-center gap-2 mb-4">
-            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="text-xs bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-foreground"
-            >
-              <option value="none">Sin ordenar</option>
-              <option value="guardado">Últimos guardados</option>
-              <option value="ganancia">Ganancia Neta Est.</option>
-              <option value="oportunidad">Oportunidad</option>
-              <option value="precio">Precio</option>
-              <option value="usdm2">USD/m²</option>
-            </select>
-            {sortBy !== "none" && (
-              <button
-                onClick={() => setSortAsc((v) => !v)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {sortAsc ? "↑ Ascendente" : "↓ Descendente"}
-              </button>
-            )}
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
-        ) : displayProjects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            {tab === "active" ? (
-              <>
-                <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold text-muted-foreground mb-2">Sin propiedades activas</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Navegá el mapa o la lista de propiedades y hacé click en la estrella ⭐ para agregar propiedades a tu preselección.
-                </p>
-              </>
-            ) : (
-              <>
-                <Archive className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold text-muted-foreground mb-2">Sin proyectos descartados</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Los proyectos que descartes aparecerán acá. Podés restaurarlos en cualquier momento.
-                </p>
-              </>
-            )}
-          </div>
+        {tab === "compare" ? (
+          <Comparador />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayProjects.map((p) => (
-              <AnalysisCard
-                key={p.id}
-                property={p}
-                analysis={userAnalyses[p.id] || null}
-                onAnalyze={handleAnalyze}
-                isAnalyzing={analyzingIds.has(p.id)}
-                allProperties={properties}
-                neighborhoodStats={data?.neighborhoodStats ?? new Map()}
-                onDiscard={handleDiscard}
-                onRestore={handleRestore}
-                isDiscarded={tab === "discarded"}
-              />
-            ))}
-          </div>
+          <>
+            {/* Sort */}
+            {baseProjects.length > 1 && (
+              <div className="flex items-center gap-2 mb-4">
+                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="text-xs bg-secondary border border-border rounded-lg px-2.5 py-1.5 text-foreground"
+                >
+                  <option value="none">Sin ordenar</option>
+                  <option value="guardado">Últimos guardados</option>
+                  <option value="ganancia">Ganancia Neta Est.</option>
+                  <option value="oportunidad">Oportunidad</option>
+                  <option value="precio">Precio</option>
+                  <option value="usdm2">USD/m²</option>
+                </select>
+                {sortBy !== "none" && (
+                  <button
+                    onClick={() => setSortAsc((v) => !v)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {sortAsc ? "↑ Ascendente" : "↓ Descendente"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : displayProjects.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                {tab === "active" ? (
+                  <>
+                    <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">Sin propiedades activas</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Navegá el mapa o la lista de propiedades y hacé click en la estrella ⭐ para agregar propiedades a tu preselección.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Archive className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">Sin proyectos descartados</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Los proyectos que descartes aparecerán acá. Podés restaurarlos en cualquier momento.
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayProjects.map((p) => (
+                  <AnalysisCard
+                    key={p.id}
+                    property={p}
+                    analysis={userAnalyses[p.id] || null}
+                    onAnalyze={handleAnalyze}
+                    isAnalyzing={analyzingIds.has(p.id)}
+                    allProperties={properties}
+                    neighborhoodStats={data?.neighborhoodStats ?? new Map()}
+                    onDiscard={handleDiscard}
+                    onRestore={handleRestore}
+                    isDiscarded={tab === "discarded"}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </Layout>
