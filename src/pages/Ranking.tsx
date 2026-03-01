@@ -258,7 +258,7 @@ const Ranking = () => {
                 return (
                   <div
                     key={p.id}
-                    className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_3rem] gap-2 px-4 py-3 items-center hover:bg-secondary/30 transition-colors group"
+                    className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_5rem] gap-2 px-4 py-3 items-center hover:bg-secondary/30 transition-colors group"
                   >
                     {/* Rank */}
                     <span className={`text-sm font-bold font-mono ${i < 3 ? "text-primary" : "text-muted-foreground"}`}>
