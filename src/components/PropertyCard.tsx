@@ -157,7 +157,7 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             {property.isTopOpportunity && (
               <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30 rounded-full">
-                🔥 {getOpportunityLabel(property.opportunityScore).shortText}
+                🔥 {getOpportunityLabel(property.opportunityScore).shortText} ({Math.abs(property.opportunityScore).toFixed(0)}% {property.opportunityScore >= 0 ? "bajo" : "sobre"} mediana)
               </Badge>
             )}
             {property.isNeighborhoodDeal && !property.isTopOpportunity && (() => {
