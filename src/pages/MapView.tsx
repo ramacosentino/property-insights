@@ -776,21 +776,21 @@ const MapView = () => {
               </div><br/>` : (() => { const lbl = getOpportunityLabel(p.opportunityScore); return `<div style="background:hsl(200,85%,42%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
                 ${lbl.emoji} ${lbl.shortText}
               </div><br/>`; })()} 
-              ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${p.propertyType}</span><br/>` : ""}
-              <strong>${p.neighborhood}</strong><br/>
-              <span style="color:#666;">${p.location}</span><br/><br/>
+              ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
+              <strong>${escapeHtml(p.neighborhood)}</strong><br/>
+              <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
               <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
               <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
               ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
               ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
               ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
               ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
-              ${p.luminosity ? `<strong>Luminosidad:</strong> ${p.luminosity}<br/>` : ""}
+              ${p.luminosity ? `<strong>Luminosidad:</strong> ${escapeHtml(p.luminosity)}<br/>` : ""}
               <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                <a href="${p.url}" target="_blank" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
-                <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${p.id}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
+                <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+                <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${escapeHtml(p.id)}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
               </div>
-              ${p.address ? `<a href="#" onclick="event.preventDefault();fetch('${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flag-address',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},body:JSON.stringify({address:'${p.address.replace(/'/g, "\\'")}'})}).then(()=>{this.textContent='✓ Reportada';this.style.color='#888';this.onclick=null;});" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
+              ${p.address ? `<a href="#" onclick="event.preventDefault();window.__flagAddress('${escapeHtml(p.address)}',this);" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
             </div>`
           )
           .addTo(deals);
