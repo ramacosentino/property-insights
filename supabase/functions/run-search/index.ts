@@ -13,6 +13,28 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  // --- Auth: validate JWT and verify user_id ---
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const anonClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+  if (claimsErr || !claimsData?.claims) {
+    return new Response(JSON.stringify({ error: "Invalid token" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const authenticatedUserId = claimsData.claims.sub as string;
+  // --- End auth ---
+
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
@@ -22,6 +44,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: "search_id and user_id required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify user_id matches authenticated user
+    if (authenticatedUserId !== user_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: "user_id mismatch" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
