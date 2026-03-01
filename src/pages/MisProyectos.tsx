@@ -23,7 +23,7 @@ const MisProyectos = () => {
   const queryClient = useQueryClient();
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const { user, loading: authLoading } = useAuth();
-  const [tab, setTab] = useState<"active" | "discarded">("active");
+  const [tab, setTab] = useState<"active" | "discarded" | "compare">("active");
   const [userAnalyses, setUserAnalyses] = useState<Record<string, UserAnalysis>>({});
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<string>("guardado");
@@ -223,6 +223,17 @@ const MisProyectos = () => {
             >
               <Star className="h-3.5 w-3.5" />
               Activos ({activeProjects.length})
+            </button>
+            <button
+              onClick={() => setTab("compare")}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                tab === "compare"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Columns className="h-3.5 w-3.5" />
+              Comparador
             </button>
             <button
               onClick={() => setTab("discarded")}
