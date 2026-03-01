@@ -319,12 +319,15 @@ const PropertyList = () => {
 
   const segmentStats = useMemo(() => {
     const deals = filtered.filter((p) => p.isTopOpportunity || p.isNeighborhoodDeal);
+    const withScore = filtered.filter((p) => p.opportunityScore > 0);
+    const bestDiscount = withScore.length ? Math.max(...withScore.map((p) => p.opportunityScore)) : 0;
     return {
       total: filtered.length,
       deals: deals.length,
       avgPricePerSqm: filtered.length
         ? Math.round(filtered.reduce((a, b) => a + (b.pricePerM2Total ?? 0), 0) / filtered.length)
         : 0,
+      bestDiscount,
     };
   }, [filtered]);
 
