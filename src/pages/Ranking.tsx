@@ -167,7 +167,7 @@ const Ranking = () => {
         </div>
 
         {showFilters && (
-          <div className="glass-card rounded-2xl p-4 mb-6">
+          <div className="glass-card rounded-2xl p-4 mb-6 relative z-10">
             <NeighborhoodDropdown
               groups={neighborhoodsByProvince}
               state={neighborhoodFilter}
