@@ -164,7 +164,7 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
               const lbl = getOpportunityLabel(property.opportunityScore);
               return (
                 <Badge variant="outline" className={`text-xs rounded-full ${getOpportunityBadgeClasses(lbl.tone)}`}>
-                  {lbl.emoji} {lbl.shortText}
+                  {lbl.emoji} {lbl.shortText} ({Math.abs(property.opportunityScore).toFixed(0)}% {property.opportunityScore >= 0 ? "bajo" : "sobre"} mediana)
                 </Badge>
               );
             })()}

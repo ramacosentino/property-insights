@@ -392,7 +392,7 @@ const Tasacion = () => {
                                 </td>
                                 <td className="py-2 px-2 text-center">
                                   <Badge variant="outline" className={`text-[9px] ${getOpportunityLabel(p.opportunityScore).tone !== "neutral" ? "border-primary/20 text-primary" : "text-muted-foreground"}`}>
-                                    {lbl.emoji} {lbl.shortText}
+                                    {lbl.emoji} {lbl.shortText} ({Math.abs(p.opportunityScore).toFixed(0)}% {p.opportunityScore >= 0 ? "bajo" : "sobre"} mediana)
                                   </Badge>
                                 </td>
                                 <td className="py-2 px-2">
