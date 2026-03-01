@@ -6,12 +6,13 @@ import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
-import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, Archive, ArrowUpDown } from "lucide-react";
+import { Star, Trash2, Search, Loader2, CheckCircle, AlertCircle, Archive, ArrowUpDown, Columns } from "lucide-react";
 import { NeighborhoodStats } from "@/lib/propertyData";
 import { useToast } from "@/hooks/use-toast";
 import { getSurfaceType, getMinSurfaceEnabled, getRenovationCosts } from "@/pages/Settings";
 import { useQueryClient } from "@tanstack/react-query";
 import AnalysisCard, { UserAnalysis } from "@/components/AnalysisCard";
+import Comparador from "@/pages/Comparador";
 
 
 const MisProyectos = () => {
