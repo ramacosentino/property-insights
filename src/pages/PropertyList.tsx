@@ -139,6 +139,24 @@ const PropertyList = () => {
     }
   }, [properties.length, dataRanges, rangesInitialized]);
 
+  // Apply onboarding preferences as initial filters (once)
+  useEffect(() => {
+    if (!onboardingFilters.loaded || onboardingApplied || !rangesInitialized) return;
+    setOnboardingApplied(true);
+    if (onboardingFilters.neighborhoodFilter.included.size > 0) {
+      setNeighborhoodFilter(onboardingFilters.neighborhoodFilter);
+    }
+    if (onboardingFilters.propertyTypeFilter.included.size > 0) {
+      setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
+    }
+    if (onboardingFilters.priceRange) {
+      setPriceRange([
+        Math.max(onboardingFilters.priceRange[0], dataRanges.priceMin),
+        Math.min(onboardingFilters.priceRange[1], dataRanges.priceMax),
+      ]);
+    }
+  }, [onboardingFilters.loaded, onboardingApplied, rangesInitialized, dataRanges]);
+
   // Compute counts per filter category
   const counts = useMemo(() => {
     const rooms = new Map<string, number>();
