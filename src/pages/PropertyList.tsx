@@ -422,9 +422,9 @@ const PropertyList = () => {
                   <SelectValue placeholder="Ordenar" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="opportunity">Oportunidad ↓</SelectItem>
                   <SelectItem value="pricePerSqm">USD/m² ↑</SelectItem>
                   <SelectItem value="price">Precio ↑</SelectItem>
-                  <SelectItem value="opportunity">Oportunidad ↓</SelectItem>
                   <SelectItem value="area">Superficie ↓</SelectItem>
                 </SelectContent>
               </Select>
