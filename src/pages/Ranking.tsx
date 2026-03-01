@@ -62,6 +62,13 @@ const Ranking = () => {
   const ranked = useMemo(() => {
     let result = properties.filter((p) => p.price > 0 && p.pricePerM2Total && p.pricePerM2Total > 0 && p.opportunityScore > 0);
 
+    // Filter out ignored unless showing ignored tab
+    if (!showIgnored) {
+      result = result.filter((p) => !ignoredIds.has(p.id));
+    } else {
+      result = result.filter((p) => ignoredIds.has(p.id));
+    }
+
     if (neighborhoodFilter.included.size > 0 || neighborhoodFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(p.neighborhood, neighborhoodFilter));
     if (propertyTypeFilter.included.size > 0 || propertyTypeFilter.excluded.size > 0)
@@ -83,7 +90,7 @@ const Ranking = () => {
     });
 
     return result.slice(0, 100);
-  }, [properties, neighborhoodFilter, propertyTypeFilter, importDateFilter, sortBy]);
+  }, [properties, neighborhoodFilter, propertyTypeFilter, importDateFilter, sortBy, ignoredIds, showIgnored]);
 
   const topScore = ranked[0]?.opportunityScore ?? 1;
 
