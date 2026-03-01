@@ -231,7 +231,7 @@ const Ranking = () => {
         {/* Ranking table */}
         <div className="glass-card rounded-2xl overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_3rem] gap-2 px-4 py-3 border-b border-border text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="grid grid-cols-[3rem_1fr_6rem_6rem_6rem_5rem_5rem] gap-2 px-4 py-3 border-b border-border text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             <span>#</span>
             <span>Propiedad</span>
             <span className="text-right">USD/m²</span>
