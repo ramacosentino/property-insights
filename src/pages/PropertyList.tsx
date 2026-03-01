@@ -22,8 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search, SlidersHorizontal, TrendingDown, Star, X } from "lucide-react";
+import { Search, SlidersHorizontal, TrendingDown, Star, X, Trophy, ChevronDown, ChevronUp, EyeOff, RotateCcw } from "lucide-react";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 
 function getParkingLabel(parking: number | null): string {
   if (!parking || parking === 0) return "Sin cochera";
