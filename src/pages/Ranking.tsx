@@ -309,6 +309,23 @@ const Ranking = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-0.5">
+                      {showIgnored ? (
+                        <button
+                          onClick={() => restore(p.id)}
+                          className="p-1 rounded-full text-primary opacity-0 group-hover:opacity-100 hover:bg-primary/10 transition-all"
+                          title="Restaurar"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => ignore(p.id)}
+                          className="p-1 rounded-full text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-all"
+                          title="Ignorar oportunidad"
+                        >
+                          <EyeOff className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button
                         onClick={() => toggle(p.id)}
                         className={`p-1 rounded-full transition-colors ${
