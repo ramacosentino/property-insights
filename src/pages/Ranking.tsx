@@ -27,7 +27,9 @@ const Ranking = () => {
   const { data, isLoading } = useProperties();
   const properties = data?.properties ?? [];
   const { isSelected, toggle } = usePreselection();
+  const { ignoredIds, ignore, restore, isIgnored } = useIgnoredOpportunities();
   const onboardingFilters = useOnboardingFilters();
+  const [showIgnored, setShowIgnored] = useState(false);
 
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<FilterState>(createFilterState());
