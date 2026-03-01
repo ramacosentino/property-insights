@@ -498,8 +498,8 @@ const MapView = () => {
 
   // Dynamic deal detection based on threshold
   const dealProperties = useMemo(
-    () => mappedProperties.filter((p) => p.price && p.pricePerM2Total && p.opportunityScore >= dealThreshold),
-    [mappedProperties, dealThreshold]
+    () => mappedProperties.filter((p) => p.price && p.pricePerM2Total && p.opportunityScore >= dealThreshold && !ignoredIds.has(p.id)),
+    [mappedProperties, dealThreshold, ignoredIds]
   );
 
   const selectedDeals = useMemo(
