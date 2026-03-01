@@ -1,12 +1,10 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Navigate } from "react-router-dom";
-import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { getOpportunityLabel } from "@/lib/opportunityLabels";
-import { Columns, X, ExternalLink, DollarSign, Sparkles, Loader2 } from "lucide-react";
+import { Columns, X, ExternalLink, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -259,20 +257,11 @@ const Comparador = () => {
     setAiLoading(false);
   }, [compared, analyses, toast]);
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
   return (
-    <Layout>
-      <div className="container px-6 py-8">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Columns className="h-6 w-6 text-primary" />
-            <h2 className="text-3xl font-bold tracking-tight">Comparador</h2>
-          </div>
-          <p className="text-muted-foreground">
-            Compará hasta {MAX_COMPARE} propiedades analizadas lado a lado.
-          </p>
-        </div>
+    <div>
+      <p className="text-muted-foreground text-sm mb-4">
+        Compará hasta {MAX_COMPARE} propiedades analizadas lado a lado.
+      </p>
 
         {/* Property selector */}
         {compareIds.length < MAX_COMPARE && (
@@ -481,8 +470,7 @@ const Comparador = () => {
             )}
           </>
         )}
-      </div>
-    </Layout>
+    </div>
   );
 };
 
