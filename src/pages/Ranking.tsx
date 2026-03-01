@@ -9,9 +9,10 @@ import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import RangeSliderFilter from "@/components/RangeSliderFilter";
 import { Badge } from "@/components/ui/badge";
 import { usePreselection } from "@/hooks/usePreselection";
-import { Trophy, ExternalLink, Star, SlidersHorizontal, TrendingDown, ArrowUpDown } from "lucide-react";
+import { Trophy, ExternalLink, Star, SlidersHorizontal, TrendingDown, ArrowUpDown, EyeOff, RotateCcw } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 
 function formatPrice(v: number): string {
   if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
