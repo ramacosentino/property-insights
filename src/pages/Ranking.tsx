@@ -236,7 +236,7 @@ const Ranking = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium truncate">{p.location || p.neighborhood}</span>
                         <Badge variant="outline" className={`text-[9px] shrink-0 ${getOpportunityBadgeClasses(lbl.tone)}`}>
-                          {lbl.emoji} {lbl.shortText}
+                          {lbl.emoji} {lbl.shortText} ({Math.abs(p.opportunityScore).toFixed(0)}% {p.opportunityScore >= 0 ? "bajo" : "sobre"} mediana)
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
