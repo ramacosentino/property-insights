@@ -16,6 +16,7 @@ interface PropertyCardProps {
 
 const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDiscarded }: PropertyCardProps) => {
   const { isSelected, toggle } = usePreselection();
+  const { isIgnored, ignore, restore } = useIgnoredOpportunities();
   const isHighlighted = property.isTopOpportunity || property.isNeighborhoodDeal;
   const isPinned = isSelected(property.id);
 
