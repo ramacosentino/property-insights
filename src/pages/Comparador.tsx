@@ -92,8 +92,6 @@ const Comparador = () => {
       .slice(0, 8);
   }, [searchTerm, properties, compareIds, analyses]);
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
   const getAnalysis = (p: Property): CompareAnalysis | null => {
     if (analyses[p.id]) return analyses[p.id];
     if (p.score_multiplicador != null) return {
