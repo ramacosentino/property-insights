@@ -257,17 +257,9 @@ const Comparador = () => {
     setAiLoading(false);
   }, [compared, analyses, toast]);
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
   return (
-    <Layout>
-      <div className="container px-6 py-8">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Columns className="h-6 w-6 text-primary" />
-            <h2 className="text-3xl font-bold tracking-tight">Comparador</h2>
-          </div>
-          <p className="text-muted-foreground">
+    <div>
+        <p className="text-muted-foreground text-sm mb-4">
             Compará hasta {MAX_COMPARE} propiedades analizadas lado a lado.
           </p>
         </div>
