@@ -249,6 +249,8 @@ const MapView = () => {
     (window as any).__togglePreselection = togglePreselection;
     (window as any).__isPreselected = isPreselected;
     (window as any).__isDiscardedProject = isDiscardedProject;
+    (window as any).__isIgnoredOpportunity = isIgnoredOpportunity;
+    (window as any).__toggleIgnoreOpportunity = toggleIgnoreOpportunity;
     (window as any).__flagAddress = async (address: string, el: HTMLElement) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
