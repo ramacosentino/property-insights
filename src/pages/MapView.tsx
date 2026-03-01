@@ -362,7 +362,7 @@ const MapView = () => {
     }
     setOnboardingApplied(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onboardingFilters.revision, rangesInitialized]);
+  }, [onboardingFilters.loaded, onboardingFilters.revision, rangesInitialized]);
 
   const activeFilterCount = [roomsFilter, parkingFilter, neighborhoodFilter, propertyTypeFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter].reduce(
     (acc, f) => acc + f.included.size + f.excluded.size, 0

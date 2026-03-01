@@ -160,7 +160,7 @@ const PropertyList = () => {
     }
     setOnboardingApplied(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onboardingFilters.revision, rangesInitialized]);
+  }, [onboardingFilters.loaded, onboardingFilters.revision, rangesInitialized]);
 
   // Compute counts per filter category
   const counts = useMemo(() => {
