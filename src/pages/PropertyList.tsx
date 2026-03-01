@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
+import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
 import PropertyCard from "@/components/PropertyCard";
 import {
   getRoomsLabel,
