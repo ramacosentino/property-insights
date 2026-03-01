@@ -166,7 +166,7 @@ const Comparador = () => {
         return {
           text: `${lbl.emoji} ${lbl.shortText}`,
           highlight: p.opportunityScore === bestScore && compared.length > 1,
-          subtext: `-${p.opportunityScore.toFixed(0)}% vs zona`,
+          subtext: `${Math.abs(p.opportunityScore).toFixed(0)}% ${p.opportunityScore >= 0 ? "bajo" : "sobre"} mediana`,
         };
       },
     },
