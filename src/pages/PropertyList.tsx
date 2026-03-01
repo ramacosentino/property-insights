@@ -335,17 +335,55 @@ const PropertyList = () => {
     <Layout>
       <div className="container px-6 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight mb-1">Propiedades</h2>
-          <p className="text-muted-foreground">Explorá y filtrá el mercado inmobiliario</p>
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Trophy className="h-6 w-6 text-primary" />
+            <h2 className="text-3xl font-bold tracking-tight">Propiedades</h2>
+          </div>
+          <p className="text-muted-foreground">Explorá y filtrá el mercado inmobiliario — ordenado por oportunidad de inversión</p>
         </div>
 
-        {/* Header stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-          <StatCard label="Total propiedades" value={segmentStats.total.toLocaleString()} />
-          <StatCard label="Oportunidades" value={segmentStats.deals.toLocaleString()} highlight />
-          <StatCard label="Prom. USD/m²" value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
-          <StatCard label="Barrios" value={neighborhoods.length.toLocaleString()} />
+        {/* Ignored toggle */}
+        {ignoredIds.size > 0 && (
+          <div className="flex gap-1 mb-4 border-b border-border">
+            <button
+              onClick={() => setShowIgnored(false)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                !showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              Propiedades
+            </button>
+            <button
+              onClick={() => setShowIgnored(true)}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                showIgnored ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              Ignoradas ({ignoredIds.size})
+            </button>
+          </div>
+        )}
+
+        {/* Collapsible ranking stats */}
+        <div className="mb-6">
+          <button
+            onClick={() => setStatsOpen(!statsOpen)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          >
+            {statsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <span className="font-medium">Resumen del mercado</span>
+          </button>
+          {statsOpen && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              <StatCard label="Total propiedades" value={segmentStats.total.toLocaleString()} />
+              <StatCard label="Oportunidades" value={segmentStats.deals.toLocaleString()} highlight />
+              <StatCard label="Mejor descuento" value={segmentStats.bestDiscount ? `${segmentStats.bestDiscount.toFixed(0)}%` : "—"} highlight />
+              <StatCard label="Prom. USD/m²" value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
+            </div>
+          )}
         </div>
 
         {/* Filters */}
