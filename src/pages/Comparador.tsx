@@ -259,6 +259,8 @@ const Comparador = () => {
     setAiLoading(false);
   }, [compared, analyses, toast]);
 
+  if (!authLoading && !user) return <Navigate to="/auth" replace />;
+
   return (
     <Layout>
       <div className="container px-6 py-8">
