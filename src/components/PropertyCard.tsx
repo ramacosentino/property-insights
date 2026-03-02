@@ -130,11 +130,15 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
 
       {!compact && (
         <>
-          {/* Main specs */}
-          <div className="mt-2.5 grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+          {/* Main specs - 5 columns */}
+          <div className="mt-2.5 grid grid-cols-5 gap-1.5 text-xs text-muted-foreground">
             <div>
               <span className="block text-foreground font-mono">{property.surfaceTotal ?? "—"}</span>
               m² tot
+            </div>
+            <div>
+              <span className="block text-foreground font-mono">{property.surfaceCovered ?? "—"}</span>
+              m² cub
             </div>
             <div>
               <span className="block text-foreground font-mono">{property.rooms ?? "—"}</span>
@@ -150,22 +154,19 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
             </div>
           </div>
 
-          {/* Extra details inline */}
-          <div className="mt-2.5 grid grid-cols-3 gap-x-3 gap-y-1 text-[11px]">
+          {/* Extra details inline - denser 4-col layout */}
+          <div className="mt-2 grid grid-cols-4 gap-x-2 gap-y-0.5 text-[10px]">
             {property.propertyType && (
               <div><span className="text-muted-foreground">Tipo:</span> <span className="font-medium">{property.propertyType}</span></div>
             )}
-            {property.surfaceCovered != null && (
-              <div><span className="text-muted-foreground">m² cub:</span> <span className="font-mono font-medium">{property.surfaceCovered}</span></div>
-            )}
             {property.ageYears != null && (
-              <div><span className="text-muted-foreground">Antig:</span> <span className="font-mono font-medium">{property.ageYears} años</span></div>
+              <div><span className="text-muted-foreground">Antig:</span> <span className="font-mono font-medium">{property.ageYears}a</span></div>
             )}
-            {property.parking != null && property.parking > 0 && (
-              <div><span className="text-muted-foreground">Cocheras:</span> <span className="font-mono font-medium">{property.parking}</span></div>
+            {property.parking != null && (
+              <div><span className="text-muted-foreground">Coch:</span> <span className="font-mono font-medium">{property.parking}</span></div>
             )}
             {property.expenses != null && property.expenses > 0 && (
-              <div><span className="text-muted-foreground">Expensas:</span> <span className="font-mono font-medium">${property.expenses.toLocaleString()}</span></div>
+              <div><span className="text-muted-foreground">Exp:</span> <span className="font-mono font-medium">${property.expenses.toLocaleString()}</span></div>
             )}
             {property.disposition && (
               <div><span className="text-muted-foreground">Disp:</span> <span className="font-medium">{property.disposition}</span></div>
@@ -175,6 +176,9 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
             )}
             {property.luminosity && (
               <div><span className="text-muted-foreground">Luz:</span> <span className="font-medium">{property.luminosity}</span></div>
+            )}
+            {property.pricePerM2Covered != null && (
+              <div><span className="text-muted-foreground">USD/m²c:</span> <span className="font-mono font-medium">${property.pricePerM2Covered.toLocaleString()}</span></div>
             )}
           </div>
 
