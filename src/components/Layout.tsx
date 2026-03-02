@@ -15,14 +15,15 @@ interface LayoutProps {
   headerContent?: React.ReactNode;
 }
 
+const PREMIUM_PATHS = ["/tasacion", "/inteligencia-precios"];
+
 const navItems = [
   { path: "/mapa", label: "Mapa", icon: Map },
   { path: "/propiedades", label: "Propiedades", icon: List },
-  
   { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badgeKey: "preselection" as const },
   { path: "/busqueda", label: "Búsqueda", icon: Search },
-  { path: "/tasacion", label: "Tasación", icon: Calculator },
-  { path: "/inteligencia-precios", label: "Inteligencia de Precios", icon: TrendingUp },
+  { path: "/tasacion", label: "Tasación", icon: Calculator, premium: true },
+  { path: "/inteligencia-precios", label: "Inteligencia de Precios", icon: TrendingUp, premium: true },
   { path: "/alertas", label: "Alertas", icon: Bell },
 ];
 
