@@ -692,7 +692,86 @@ const MapView = () => {
     deals.clearLayers();
     cluster.clearLayers();
 
-    if (viewMode === "all" || viewMode === "projects") {
+    if (viewMode === "projects") {
+      // Projects view: individual markers colored by AI score (no clusters)
+      mappedProperties.forEach((p) => {
+        const coords = getCoord(p);
+        const score = p.score_multiplicador;
+        let markerColor: string;
+        let markerLabel: string;
+        if (score == null) {
+          markerColor = isDark ? "hsl(215, 15%, 55%)" : "hsl(215, 12%, 48%)";
+          markerLabel = "?";
+        } else if (score >= 1.3) {
+          markerColor = "hsl(155, 70%, 42%)";
+          markerLabel = `${score.toFixed(1)}x`;
+        } else if (score >= 1.0) {
+          markerColor = "hsl(38, 92%, 50%)";
+          markerLabel = `${score.toFixed(1)}x`;
+        } else {
+          markerColor = "hsl(0, 72%, 51%)";
+          markerLabel = `${score.toFixed(1)}x`;
+        }
+
+        const icon = L.divIcon({
+          className: "",
+          html: `<div style="
+            width: 28px;
+            height: 28px;
+            background: ${markerColor};
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            border: 2.5px solid ${isDark ? "rgba(255,255,255,0.5)" : "white"};
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          ">${markerLabel}</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        });
+
+        const marker = L.marker(coords, { icon });
+        marker.bindPopup(
+          `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
+            ${isDiscardedProject(p.id) ? `<div style="background:hsl(0,84%,60%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
+              ✕ Descartado
+            </div><br/>` : ""}
+            ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
+            <strong>${escapeHtml(p.neighborhood)}</strong><br/>
+            <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
+            <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+            <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
+            ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
+            ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
+            ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
+            ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
+            ${p.score_multiplicador != null ? `
+              <div style="border-top:1px solid ${isDark ? '#333' : '#eee'};margin-top:8px;padding-top:8px;">
+                <strong style="font-size:11px;">📊 Análisis IA</strong><br/>
+                <strong>Score:</strong> <span style="color:${markerColor};font-weight:700;">${Number(p.score_multiplicador).toFixed(1)}x</span><br/>
+                ${p.estado_general ? `<strong>Estado:</strong> ${escapeHtml(p.estado_general)}<br/>` : ""}
+                ${p.oportunidad_neta != null ? `<strong>Ganancia neta est.:</strong> USD ${Number(p.oportunidad_neta).toLocaleString()}<br/>` : ""}
+                ${p.oportunidad_ajustada != null ? `<strong>Oportunidad:</strong> ${Number(p.oportunidad_ajustada).toFixed(1)}%<br/>` : ""}
+                ${p.comparables_count != null ? `<strong>Comparables:</strong> ${p.comparables_count}<br/>` : ""}
+              </div>
+            ` : `<div style="border-top:1px solid ${isDark ? '#333' : '#eee'};margin-top:8px;padding-top:8px;color:#888;font-size:11px;">
+              Sin análisis IA aún
+            </div>`}
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+              <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
+              <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${escapeHtml(p.id)}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
+            </div>
+            ${p.address ? `<a href="#" onclick="event.preventDefault();window.__flagAddress('${escapeHtml(p.address)}',this);" style="color:#999;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;">📍 Ubicación incorrecta</a>` : ""}
+          </div>`
+        );
+        // Add directly to deals layer (not cluster) for individual markers
+        marker.addTo(deals);
+      });
+    } else if (viewMode === "all") {
       // Clustered view: show all filtered properties
       mappedProperties.forEach((p) => {
         const coords = getCoord(p);
@@ -739,16 +818,6 @@ const MapView = () => {
             ${p.rooms ? `<strong>Ambientes:</strong> ${p.rooms}<br/>` : ""}
             ${p.parking ? `<strong>Cochera:</strong> ${p.parking}<br/>` : ""}
             ${p.luminosity ? `<strong>Luminosidad:</strong> ${escapeHtml(p.luminosity)}<br/>` : ""}
-            ${viewMode === "projects" && p.score_multiplicador != null ? `
-              <div style="border-top:1px solid #eee;margin-top:8px;padding-top:8px;">
-                <strong style="font-size:11px;">📊 Análisis del proyecto</strong><br/>
-                ${p.score_multiplicador != null ? `<strong>Score:</strong> ${Number(p.score_multiplicador).toFixed(1)}x<br/>` : ""}
-                ${p.estado_general ? `<strong>Estado:</strong> ${escapeHtml(p.estado_general)}<br/>` : ""}
-                ${p.oportunidad_neta != null ? `<strong>Ganancia neta est.:</strong> USD ${Number(p.oportunidad_neta).toLocaleString()}<br/>` : ""}
-                ${p.oportunidad_ajustada != null ? `<strong>Oportunidad:</strong> ${Number(p.oportunidad_ajustada).toFixed(1)}%<br/>` : ""}
-                ${p.comparables_count != null ? `<strong>Comparables:</strong> ${p.comparables_count}<br/>` : ""}
-              </div>
-            ` : ""}
             <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
               <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" style="color:hsl(200,85%,42%);text-decoration:none;font-weight:600;">Ver publicación →</a>
               <a href="#" onclick="event.preventDefault();var sel=window.__togglePreselection('${escapeHtml(p.id)}');this.innerHTML=sel?'⭐':'☆';this.title=sel?'Quitar de preselección':'Agregar a preselección';" style="text-decoration:none;font-size:16px;cursor:pointer;" title="${isPreselected(p.id) ? 'Quitar de preselección' : 'Agregar a preselección'}">${isPreselected(p.id) ? '⭐' : '☆'}</a>
