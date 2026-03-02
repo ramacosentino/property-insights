@@ -39,7 +39,7 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
 
       {hasAnalysis ? (
         <TooltipProvider delayDuration={200}>
-        <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 space-y-3 -mt-1">
+        <div className="rounded-b-2xl border border-t-0 border-border bg-card p-4 space-y-4 -mt-1">
           {/* Estado + x Valor — side by side */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
