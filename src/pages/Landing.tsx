@@ -161,28 +161,32 @@ const plans = [
     name: "Free",
     icon: Star,
     features: ["Mapa y propiedades", "5 análisis IA / mes", "3 búsquedas / mes", "1 alerta activa"],
-    popular: false,
+    badge: null,
+    highlighted: false,
   },
   {
     id: "pro",
     name: "Pro",
     icon: Zap,
     features: ["Todo de Free", "50 análisis IA / mes", "30 búsquedas / mes", "10 alertas activas", "Exportar datos"],
-    popular: true,
+    badge: "Popular para compradores",
+    highlighted: true,
   },
   {
     id: "premium",
     name: "Premium",
     icon: Crown,
     features: ["Todo de Pro", "Análisis IA ilimitados", "Búsquedas ilimitadas", "Alertas ilimitadas", "Tasación automática", "Inteligencia de precios"],
-    popular: false,
+    badge: "Popular para inversores",
+    highlighted: true,
   },
   {
     id: "corporate",
     name: "Corporativo",
     icon: Building2,
     features: ["Todo de Premium", "Usuarios múltiples", "API dedicada", "Soporte prioritario", "Onboarding personalizado"],
-    popular: false,
+    badge: null,
+    highlighted: false,
   },
 ];
 
@@ -611,16 +615,16 @@ const Landing = () => {
                   viewport={{ once: true }}
                   whileHover={{ y: -6, transition: { duration: 0.3 } }}
                   className={`relative flex flex-col rounded-3xl border p-7 transition-all duration-500 overflow-hidden group ${
-                    plan.popular
+                    plan.highlighted
                       ? "border-primary/50 bg-card shadow-xl shadow-primary/10"
                       : "border-landing-card-border bg-card/60 hover:shadow-lg hover:shadow-primary/5"
                   }`}
                 >
-                  {plan.popular && (
+                  {plan.badge && (
                     <>
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
-                      <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold z-10">
-                        Más popular
+                      <div className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold z-10 whitespace-nowrap">
+                        {plan.badge}
                       </div>
                     </>
                   )}
@@ -628,8 +632,8 @@ const Landing = () => {
 
                   <div className="relative flex-1 flex flex-col">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${plan.popular ? "bg-primary/15" : "bg-muted"}`}>
-                        <plan.icon className={`h-4 w-4 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${plan.highlighted ? "bg-primary/15" : "bg-muted"}`}>
+                        <plan.icon className={`h-4 w-4 ${plan.highlighted ? "text-primary" : "text-muted-foreground"}`} />
                       </div>
                       <h3 className="font-bold text-lg text-landing-fg">{plan.name}</h3>
                     </div>
@@ -680,7 +684,7 @@ const Landing = () => {
                       className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                         isCurrent
                           ? "bg-primary/10 text-primary cursor-default"
-                          : plan.popular
+                          : plan.highlighted
                           ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
                           : isCorporate
                           ? "bg-muted border border-border text-foreground hover:bg-muted/80"
