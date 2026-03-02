@@ -412,7 +412,11 @@ const Comparador = () => {
                             <div className="min-w-0">
                               <span className="text-sm font-semibold text-foreground line-clamp-2">{titleText}</span>
                               <span className="text-[11px] text-primary font-medium block">{priceText}</span>
-                            </div>
+                              {analyzingIds.has(p.id) && (
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                                  <Loader2 className="h-3 w-3 animate-spin" /> Analizando...
+                                </span>
+                              )}
                             <div className="flex items-center gap-0.5 shrink-0">
                               <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
                                 <ExternalLink className="h-3 w-3" />
