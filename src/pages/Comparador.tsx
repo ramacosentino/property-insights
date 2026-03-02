@@ -344,9 +344,13 @@ const Comparador = () => {
                       onClick={() => addProperty(p.id)}
                       className="w-full px-4 py-2.5 text-left hover:bg-secondary/50 transition-colors flex items-center justify-between"
                     >
-                      <div>
-                        <span className="text-sm font-medium">{p.location || p.neighborhood}</span>
-                        <span className="text-xs text-muted-foreground ml-2">{p.neighborhood}, {p.city}</span>
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium truncate block">
+                          {[
+                            p.propertyType ? p.propertyType.charAt(0).toUpperCase() + p.propertyType.slice(1) : "",
+                            [p.street || p.location || "", p.neighborhood].filter(Boolean).join(", ")
+                          ].filter(Boolean).join(" · ")}
+                        </span>
                       </div>
                       <span className="text-xs text-muted-foreground font-mono">USD {p.price.toLocaleString()}</span>
                     </button>
