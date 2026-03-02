@@ -595,9 +595,6 @@ const Busqueda = () => {
     setShowHistory(false);
   };
 
-  if (!authLoading && !user) {
-    return <Navigate to="/auth" replace />;
-  }
 
   return (
     <Layout>
