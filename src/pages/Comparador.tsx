@@ -167,14 +167,75 @@ const Comparador = () => {
     return row.getValue(p, getAnalysis(p)) === best;
   };
 
-  // AI comparison
+  // Analyze a single property
+  const analyzeProperty = useCallback(async (propertyId: string): Promise<CompareAnalysis | null> => {
+    if (!user) return null;
+    try {
+      const costs = getRenovationCosts();
+      const renovationCosts: Record<string, number> = {};
+      costs.forEach(c => { renovationCosts[`${c.minScore}`] = c.costPerM2; });
+
+      const { data, error } = await supabase.functions.invoke("analyze-property", {
+        body: { property_id: propertyId, user_id: user.id, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        const a: CompareAnalysis = {
+          score_multiplicador: data.analysis.score_multiplicador,
+          estado_general: data.analysis.estado_general,
+          highlights: data.analysis.highlights,
+          lowlights: data.analysis.lowlights,
+          valor_potencial_total: data.analysis.valor_potencial_total,
+          oportunidad_ajustada: data.analysis.oportunidad_ajustada,
+          oportunidad_neta: data.analysis.oportunidad_neta,
+          comparables_count: data.analysis.comparables_count,
+        };
+        return a;
+      }
+    } catch (err) {
+      console.error("Auto-analysis error for", propertyId, err);
+    }
+    return null;
+  }, [user]);
+
+  // AI comparison — auto-analyzes unanalyzed properties first
   const runAiComparison = useCallback(async () => {
     if (compared.length < 2) return;
     setAiLoading(true);
     setAiAnalysis("");
 
+    // Step 1: auto-analyze any unanalyzed properties
+    const unanalyzed = compared.filter(p => !getAnalysis(p));
+    if (unanalyzed.length > 0) {
+      toast({ title: "🔍 Analizando propiedades...", description: `${unanalyzed.length} propiedad${unanalyzed.length > 1 ? "es" : ""} sin análisis previo.` });
+      const newIds = new Set(unanalyzed.map(p => p.id));
+      setAnalyzingIds(newIds);
+
+      const results = await Promise.all(unanalyzed.map(async (p) => {
+        const result = await analyzeProperty(p.id);
+        setAnalyzingIds(prev => { const next = new Set(prev); next.delete(p.id); return next; });
+        return { id: p.id, analysis: result };
+      }));
+
+      const updatedAnalyses = { ...analyses };
+      let anyFailed = false;
+      results.forEach(r => {
+        if (r.analysis) {
+          updatedAnalyses[r.id] = r.analysis;
+        } else {
+          anyFailed = true;
+        }
+      });
+      setAnalyses(updatedAnalyses);
+
+      if (anyFailed) {
+        toast({ title: "⚠️ Algunas propiedades no pudieron analizarse", description: "Se compararán con los datos disponibles.", variant: "destructive" });
+      }
+    }
+
+    // Step 2: run AI comparison
     const propsPayload = compared.map(p => {
-      const a = getAnalysis(p);
+      const a = getAnalysis(p) || (analyses[p.id] ?? null);
       return {
         title: `${p.propertyType || ""} - ${p.location || p.street}, ${p.neighborhood}`,
         propertyType: p.propertyType,
@@ -256,7 +317,7 @@ const Comparador = () => {
       toast({ title: "Error", description: "No se pudo conectar con el servicio de IA", variant: "destructive" });
     }
     setAiLoading(false);
-  }, [compared, analyses, toast]);
+  }, [compared, analyses, toast, analyzeProperty]);
 
   return (
     <div>
