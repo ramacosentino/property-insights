@@ -44,11 +44,6 @@ function buildOptionsWithCounts(
 }
 
 
-function formatPrice(v: number): string {
-  if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
-  if (v >= 1000) return `${Math.round(v / 1000)}K`;
-  return v.toString();
-}
 
 const PropertyList = () => {
   const { data, isLoading } = useProperties();
