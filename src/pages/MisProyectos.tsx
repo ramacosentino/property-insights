@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
