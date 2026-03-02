@@ -251,7 +251,8 @@ const MisProyectos = () => {
 
         {tab === "compare" ? (
           <Comparador />
-        ) : (
+        ) : null}
+        {tab !== "compare" && (
           <>
             {/* Sort */}
             {baseProjects.length > 1 && (
