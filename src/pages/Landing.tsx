@@ -177,7 +177,7 @@ const plans = [
     name: "Premium",
     icon: Crown,
     features: ["Todo de Pro", "Análisis IA ilimitados", "Búsquedas ilimitadas", "Alertas ilimitadas", "Tasación automática", "Inteligencia de precios"],
-    badge: "Popular para inversores",
+    badge: "Ideal si buscás una inversión",
     highlighted: true,
   },
   {
