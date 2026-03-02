@@ -36,37 +36,12 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
 
-function getParkingLabel(parking: number | null): string {
-  if (!parking || parking === 0) return "Sin cochera";
-  if (parking === 1) return "1 cochera";
-  if (parking === 2) return "2 cocheras";
-  return "3+ cocheras";
-}
-
-function getBedroomsLabel(bedrooms: number | null): string {
-  if (!bedrooms) return "Sin dato";
-  if (bedrooms === 1) return "1 dorm";
-  if (bedrooms === 2) return "2 dorm";
-  if (bedrooms === 3) return "3 dorm";
-  if (bedrooms === 4) return "4 dorm";
-  return "5+ dorm";
-}
-
-function getBathroomsLabel(bathrooms: number | null): string {
-  if (!bathrooms) return "Sin dato";
-  if (bathrooms === 1) return "1 baño";
-  if (bathrooms === 2) return "2 baños";
-  if (bathrooms === 3) return "3 baños";
-  return "4+ baños";
-}
-
-const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
-const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
-const PROPERTY_TYPE_KEYS = ["departamento", "casa", "ph", "terreno"];
-const BEDROOMS_KEYS = ["1 dorm", "2 dorm", "3 dorm", "4 dorm", "5+ dorm"];
-const BATHROOMS_KEYS = ["1 baño", "2 baños", "3 baños", "4+ baños"];
-const DISPOSITION_KEYS = ["Frente", "Contrafrente", "Interno", "Lateral"];
-const ORIENTATION_KEYS = ["Norte", "Sur", "Este", "Oeste", "Noreste", "Noroeste", "Sudeste", "Sudoeste"];
+import {
+  getParkingLabel, getBedroomsLabel, getBathroomsLabel, formatPrice,
+  ROOMS_KEYS, PARKING_KEYS, PROPERTY_TYPE_KEYS, BEDROOMS_KEYS,
+  BATHROOMS_KEYS, DISPOSITION_KEYS, ORIENTATION_KEYS,
+  PRICE_CAP, SURFACE_CAP, SURFACE_COVERED_CAP, AGE_CAP, EXPENSES_CAP,
+} from "@/lib/filterUtils";
 
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "Benavidez": [-34.42, -58.68],
@@ -179,11 +154,6 @@ function getPropertyColor(pricePerSqm: number, min: number, max: number): string
   }
 }
 
-function formatPrice(v: number): string {
-  if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
-  if (v >= 1000) return `${Math.round(v / 1000)}K`;
-  return v.toString();
-}
 
 const MapFilterRow = ({ title, keys, state, onChange }: {
   title: string;
@@ -299,12 +269,6 @@ const MapView = () => {
   // Polygon draw filter
   const { polygon: drawnPolygon, isDrawing, startDraw, clearDraw, cancelDraw, isInsidePolygon } = useMapDraw(mapInstanceRef);
 
-  // Range filters
-  const PRICE_CAP = 2000000;
-  const SURFACE_CAP = 2000;
-  const SURFACE_COVERED_CAP = 800;
-  const AGE_CAP = 50;
-  const EXPENSES_CAP = 1000000;
 
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);

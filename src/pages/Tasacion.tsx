@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Navigate } from "react-router-dom";
+
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
@@ -146,7 +146,7 @@ const Tasacion = () => {
     setShowResults(true);
   };
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
+  if (!authLoading && !user) return null;
 
   return (
     <Layout>
