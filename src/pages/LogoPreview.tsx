@@ -4,8 +4,10 @@ import { IconU, IconBB, IconUAccent } from "@/components/LogoIcons";
 /* ─── Font configs ─── */
 const FONTS = [
   { key: "space", label: "Space Grotesk (actual)", family: "'Space Grotesk', system-ui, sans-serif", weight: 450 },
-  { key: "orelo", label: "Orelo SemiWide", family: "'Orelo SemiWide Regular', Georgia, serif", weight: 400 },
-  { key: "ogg", label: "Playfair Display (≈ Ogg)", family: "'Playfair Display', Georgia, serif", weight: 500 },
+  { key: "orelo-reg", label: "Orelo SemiWide Regular", family: "'Orelo SemiWide Regular', serif", weight: 400 },
+  { key: "orelo-med", label: "Orelo SemiWide Medium", family: "'Orelo SemiWide Medium', serif", weight: 400 },
+  { key: "orelo-demi", label: "Orelo SemiWide DemiBold", family: "'Orelo SemiWide DemiBold', serif", weight: 400 },
+  { key: "orelo-bold", label: "Orelo SemiWide Bold", family: "'Orelo SemiWide Bold', serif", weight: 400 },
 ] as const;
 
 /* ─── Urbanna wordmark component ─── */
