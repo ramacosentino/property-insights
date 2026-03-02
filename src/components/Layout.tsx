@@ -38,6 +38,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const { isDark, toggle } = useTheme();
   const { count: preselectionCount } = usePreselection();
   const { user, signOut } = useAuth();
+  const { isPremium } = useSubscription();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
