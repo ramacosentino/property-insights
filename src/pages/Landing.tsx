@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import {
   ArrowRight, Check, ChevronDown, Zap, Crown, Star,
-  Search, BarChart2, TrendingUp, Bell,
+  Search, BarChart2, TrendingUp, Bell, Building2,
 } from "lucide-react";
 import UrbbanLogo from "@/components/UrbbanLogo";
 import RotatingWord from "@/components/RotatingWord";
@@ -139,26 +139,49 @@ const stats = [
   { value: "24/7", label: "Datos actualizados" },
 ];
 
+const PRICING = {
+  pro: { monthly: 20000, annual: 200000 },
+  premium: { monthly: 100000, annual: 1000000 },
+} as const;
+
+function formatARS(amount: number): string {
+  return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount);
+}
+
+function getSavingsPercent(planId: "pro" | "premium"): number {
+  const { monthly, annual } = PRICING[planId];
+  return Math.round(((monthly * 12 - annual) / (monthly * 12)) * 100);
+}
+
+type BillingCycle = "monthly" | "annual";
+
 const plans = [
   {
     id: "free",
     name: "Free",
     icon: Star,
-    features: ["Ver propiedades en mapa", "Filtros básicos", "Hasta 5 proyectos guardados"],
+    features: ["Mapa y propiedades", "5 análisis IA / mes", "3 búsquedas / mes", "1 alerta activa"],
     popular: false,
   },
   {
     id: "pro",
     name: "Pro",
     icon: Zap,
-    features: ["Todo de Free", "Análisis ilimitados", "Proyectos ilimitados", "Filtros avanzados", "Exportar datos"],
+    features: ["Todo de Free", "50 análisis IA / mes", "30 búsquedas / mes", "10 alertas activas", "Exportar datos"],
     popular: true,
   },
   {
     id: "premium",
     name: "Premium",
     icon: Crown,
-    features: ["Todo de Pro", "Inteligencia de precios", "Alertas personalizadas", "Tasación automática", "Soporte prioritario"],
+    features: ["Todo de Pro", "Análisis IA ilimitados", "Búsquedas ilimitadas", "Alertas ilimitadas", "Tasación automática", "Inteligencia de precios"],
+    popular: false,
+  },
+  {
+    id: "corporate",
+    name: "Corporativo",
+    icon: Building2,
+    features: ["Todo de Premium", "Usuarios múltiples", "API dedicada", "Soporte prioritario", "Onboarding personalizado"],
     popular: false,
   },
 ];
