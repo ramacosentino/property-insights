@@ -144,11 +144,11 @@ const LogoPreview = () => (
 
         {[
           { key: "1", name: "Steel Blue", hsl: "210 25% 45%", dark: "210 30% 58%", desc: "Azul acero, sobrio y profesional" },
-          { key: "2", name: "Slate Blue", hsl: "215 20% 42%", dark: "215 25% 56%", desc: "Pizarra azulado, muy neutro" },
-          { key: "3", name: "Storm", hsl: "220 18% 40%", dark: "220 22% 55%", desc: "Gris tormenta con tinte azul" },
-          { key: "4", name: "Petrol", hsl: "200 30% 38%", dark: "200 35% 52%", desc: "Petróleo apagado, elegante" },
-          { key: "5", name: "Dusk", hsl: "225 22% 38%", dark: "225 26% 54%", desc: "Azul atardecer, profundo y cálido" },
-          { key: "6", name: "Graphite Blue", hsl: "210 15% 36%", dark: "210 18% 52%", desc: "Grafito con toque azul, muy sutil" },
+          { key: "2", name: "Slate Blue+", hsl: "215 30% 44%", dark: "215 35% 58%", desc: "Pizarra con más saturación" },
+          { key: "3", name: "Slate Vivid", hsl: "215 38% 46%", dark: "215 42% 60%", desc: "Pizarra más vivo, todavía contenido" },
+          { key: "4", name: "Graphite+", hsl: "210 25% 40%", dark: "210 28% 55%", desc: "Grafito con más color" },
+          { key: "5", name: "Graphite Vivid", hsl: "210 34% 42%", dark: "210 38% 56%", desc: "Grafito vivo, azul-gris con presencia" },
+          { key: "6", name: "Mineral Blue", hsl: "212 32% 43%", dark: "212 36% 57%", desc: "Entre pizarra y grafito, equilibrado" },
         ].map(p => (
           <div key={p.key} className="flex items-start gap-6">
             {/* Swatch */}
