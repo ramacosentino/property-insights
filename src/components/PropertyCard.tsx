@@ -39,8 +39,11 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
             )}
             <h3 className="text-sm font-semibold truncate">{property.location}</h3>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            {property.neighborhood}, {property.city}
+          <p className="text-[11px] text-muted-foreground truncate">
+            {[
+              property.propertyType ? property.propertyType.charAt(0).toUpperCase() + property.propertyType.slice(1) : "",
+              [property.street || property.location || "", property.neighborhood].filter(Boolean).join(", ")
+            ].filter(Boolean).join(" · ")}
           </p>
         </div>
         <div className="flex items-center gap-0.5 flex-shrink-0">
