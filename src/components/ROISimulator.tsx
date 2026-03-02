@@ -4,6 +4,7 @@ import { Calculator, TrendingUp, DollarSign, Percent, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { getRenovationCosts } from "@/pages/Settings";
 
 interface ROISimulatorProps {
   property: Property;
@@ -23,14 +24,22 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
   const roi = totalInvestment > 0 ? (netProfit / totalInvestment) * 100 : 0;
   const profitMargin = salePrice > 0 ? (netProfit / salePrice) * 100 : 0;
 
-  // Quick presets for renovation cost
+  // Build presets from user's configured renovation costs (Settings)
   const presets = useMemo(() => {
     const surfM2 = property.surfaceCovered || property.surfaceTotal || 50;
-    return [
-      { label: "Mínima", costPerM2: 200, total: Math.round(surfM2 * 200) },
-      { label: "Parcial", costPerM2: 500, total: Math.round(surfM2 * 500) },
-      { label: "Completa", costPerM2: 900, total: Math.round(surfM2 * 900) },
-    ];
+    const costs = getRenovationCosts();
+    // Pick 3 representative tiers: low cost, mid cost, high cost
+    const nonZero = costs.filter(c => c.costPerM2 > 0).sort((a, b) => a.costPerM2 - b.costPerM2);
+    if (nonZero.length === 0) return [];
+    const low = nonZero[0];
+    const high = nonZero[nonZero.length - 1];
+    const mid = nonZero[Math.floor(nonZero.length / 2)];
+    const unique = Array.from(new Map([
+      ["Mínima", low],
+      ["Parcial", mid],
+      ["Completa", high],
+    ].map(([label, c]) => [`${(c as any).costPerM2}`, { label: label as string, costPerM2: (c as any).costPerM2, total: Math.round(surfM2 * (c as any).costPerM2) }])).values());
+    return unique;
   }, [property.surfaceCovered, property.surfaceTotal]);
 
   return (
@@ -77,7 +86,15 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
               onValueChange={(v) => setRenovCost(v[0])}
               className="w-full"
             />
-            <div className="flex gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {renovCostEstimate != null && renovCostEstimate !== renovCost && (
+                <button
+                  onClick={() => setRenovCost(renovCostEstimate)}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-medium border transition-all bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                >
+                  Estimada (${(renovCostEstimate / 1000).toFixed(0)}K)
+                </button>
+              )}
               {presets.map((p) => (
                 <button
                   key={p.label}
