@@ -4,9 +4,10 @@ import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { getOpportunityLabel } from "@/lib/opportunityLabels";
-import { Columns, X, ExternalLink, Sparkles, Loader2 } from "lucide-react";
+import { Columns, X, ExternalLink, Sparkles, Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getSurfaceType, getMinSurfaceEnabled, getRenovationCosts } from "@/pages/Settings";
 
 interface CompareAnalysis {
   score_multiplicador: number | null;
@@ -43,6 +44,7 @@ const Comparador = () => {
   const [analyses, setAnalyses] = useState<Record<string, CompareAnalysis>>({});
   const [aiAnalysis, setAiAnalysis] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
 
   // Pre-populate with first 2 preselected that have analysis
   useEffect(() => {
@@ -165,14 +167,75 @@ const Comparador = () => {
     return row.getValue(p, getAnalysis(p)) === best;
   };
 
-  // AI comparison
+  // Analyze a single property
+  const analyzeProperty = useCallback(async (propertyId: string): Promise<CompareAnalysis | null> => {
+    if (!user) return null;
+    try {
+      const costs = getRenovationCosts();
+      const renovationCosts: Record<string, number> = {};
+      costs.forEach(c => { renovationCosts[`${c.minScore}`] = c.costPerM2; });
+
+      const { data, error } = await supabase.functions.invoke("analyze-property", {
+        body: { property_id: propertyId, user_id: user.id, surface_type: getSurfaceType(), min_surface_enabled: getMinSurfaceEnabled(), renovation_costs: renovationCosts },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        const a: CompareAnalysis = {
+          score_multiplicador: data.analysis.score_multiplicador,
+          estado_general: data.analysis.estado_general,
+          highlights: data.analysis.highlights,
+          lowlights: data.analysis.lowlights,
+          valor_potencial_total: data.analysis.valor_potencial_total,
+          oportunidad_ajustada: data.analysis.oportunidad_ajustada,
+          oportunidad_neta: data.analysis.oportunidad_neta,
+          comparables_count: data.analysis.comparables_count,
+        };
+        return a;
+      }
+    } catch (err) {
+      console.error("Auto-analysis error for", propertyId, err);
+    }
+    return null;
+  }, [user]);
+
+  // AI comparison — auto-analyzes unanalyzed properties first
   const runAiComparison = useCallback(async () => {
     if (compared.length < 2) return;
     setAiLoading(true);
     setAiAnalysis("");
 
+    // Step 1: auto-analyze any unanalyzed properties
+    const unanalyzed = compared.filter(p => !getAnalysis(p));
+    if (unanalyzed.length > 0) {
+      toast({ title: "🔍 Analizando propiedades...", description: `${unanalyzed.length} propiedad${unanalyzed.length > 1 ? "es" : ""} sin análisis previo.` });
+      const newIds = new Set(unanalyzed.map(p => p.id));
+      setAnalyzingIds(newIds);
+
+      const results = await Promise.all(unanalyzed.map(async (p) => {
+        const result = await analyzeProperty(p.id);
+        setAnalyzingIds(prev => { const next = new Set(prev); next.delete(p.id); return next; });
+        return { id: p.id, analysis: result };
+      }));
+
+      const updatedAnalyses = { ...analyses };
+      let anyFailed = false;
+      results.forEach(r => {
+        if (r.analysis) {
+          updatedAnalyses[r.id] = r.analysis;
+        } else {
+          anyFailed = true;
+        }
+      });
+      setAnalyses(updatedAnalyses);
+
+      if (anyFailed) {
+        toast({ title: "⚠️ Algunas propiedades no pudieron analizarse", description: "Se compararán con los datos disponibles.", variant: "destructive" });
+      }
+    }
+
+    // Step 2: run AI comparison
     const propsPayload = compared.map(p => {
-      const a = getAnalysis(p);
+      const a = getAnalysis(p) || (analyses[p.id] ?? null);
       return {
         title: `${p.propertyType || ""} - ${p.location || p.street}, ${p.neighborhood}`,
         propertyType: p.propertyType,
@@ -254,7 +317,7 @@ const Comparador = () => {
       toast({ title: "Error", description: "No se pudo conectar con el servicio de IA", variant: "destructive" });
     }
     setAiLoading(false);
-  }, [compared, analyses, toast]);
+  }, [compared, analyses, toast, analyzeProperty]);
 
   return (
     <div>
@@ -349,6 +412,11 @@ const Comparador = () => {
                             <div className="min-w-0">
                               <span className="text-sm font-semibold text-foreground line-clamp-2">{titleText}</span>
                               <span className="text-[11px] text-primary font-medium block">{priceText}</span>
+                              {analyzingIds.has(p.id) && (
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                                  <Loader2 className="h-3 w-3 animate-spin" /> Analizando...
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-0.5 shrink-0">
                               <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
@@ -432,15 +500,27 @@ const Comparador = () => {
             {/* AI Comparison */}
             {compared.length >= 2 && (
               <div className="mt-6">
-                {!aiAnalysis && !aiLoading && (
-                  <button
-                    onClick={runAiComparison}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all mx-auto"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Análisis IA: ¿Cuál es mejor inversión?
-                  </button>
-                )}
+                {!aiAnalysis && !aiLoading && (() => {
+                  const unanalyzedCount = compared.filter(p => !getAnalysis(p)).length;
+                  return (
+                    <button
+                      onClick={runAiComparison}
+                      disabled={analyzingIds.size > 0}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all mx-auto disabled:opacity-50"
+                    >
+                      {analyzingIds.size > 0 ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Analizando...</>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          {unanalyzedCount > 0
+                            ? `Analizar (${unanalyzedCount}) y comparar con IA`
+                            : "Análisis IA: ¿Cuál es mejor inversión?"}
+                        </>
+                      )}
+                    </button>
+                  );
+                })()}
                 {(aiLoading || aiAnalysis) && (
                   <div className="glass-card rounded-2xl p-6 mt-4">
                     <div className="flex items-center gap-2 mb-4">
