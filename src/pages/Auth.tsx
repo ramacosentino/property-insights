@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
-import { BarChart3, Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User } from "lucide-react";
+import UrbbanLogo from "@/components/UrbbanLogo";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 
@@ -77,12 +78,7 @@ const Auth = () => {
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            <span className="text-2xl font-bold tracking-tight text-gradient-opportunity">
-              PropAnalytics
-            </span>
-          </div>
+          <UrbbanLogo size="lg" />
           <p className="text-sm text-muted-foreground">
             {isLogin ? "Iniciá sesión para acceder a tus proyectos" : "Creá tu cuenta"}
           </p>
