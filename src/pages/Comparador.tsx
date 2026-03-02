@@ -19,7 +19,7 @@ interface CompareAnalysis {
   comparables_count: number | null;
 }
 
-const MAX_COMPARE = 3;
+const MAX_COMPARE = 4;
 
 type HighlightDir = "min" | "max" | "none";
 
@@ -303,13 +303,17 @@ const Comparador = () => {
                     .map(id => {
                       const p = properties.find(pp => pp.id === id);
                       if (!p) return null;
+                      const typeName = p.propertyType ? p.propertyType.charAt(0).toUpperCase() + p.propertyType.slice(1) : "";
+                      const addr = p.street || p.location || p.neighborhood;
+                      const priceK = p.price >= 1000000 ? `$${(p.price / 1000000).toFixed(1)}M` : `$${(p.price / 1000).toFixed(0)}K`;
+                      const chipLabel = [typeName, addr, priceK].filter(Boolean).join(" · ");
                       return (
                         <button
                           key={id}
                           onClick={() => addProperty(id)}
                           className="px-2.5 py-1 rounded-full text-[10px] font-medium border border-border bg-secondary/50 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
                         >
-                          {p.neighborhood} · ${(p.price / 1000).toFixed(0)}K
+                          {chipLabel}
                         </button>
                       );
                     })}
@@ -336,17 +340,16 @@ const Comparador = () => {
                   <tr className="border-b border-border">
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground w-40">Métrica</th>
                     {compared.map(p => {
-                      const titleParts = [
-                        p.propertyType ? p.propertyType.charAt(0).toUpperCase() + p.propertyType.slice(1) : null,
-                        [p.location || p.street, p.neighborhood].filter(Boolean).join(", "),
-                      ].filter(Boolean);
-                      const titleText = titleParts.join(" - ");
+                      const typeName = p.propertyType ? p.propertyType.charAt(0).toUpperCase() + p.propertyType.slice(1) : "";
+                      const address = p.street || p.location || "";
+                      const titleText = [typeName, [address, p.neighborhood].filter(Boolean).join(", ")].filter(Boolean).join(" - ");
+                      const priceText = `USD ${p.price >= 1000000 ? (p.price / 1000000).toFixed(1) + "M" : (p.price / 1000).toFixed(0) + "K"}`;
                       return (
-                        <th key={p.id} className="px-4 py-3 text-left min-w-[200px]">
+                        <th key={p.id} className="px-4 py-3 text-left min-w-[180px]">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <span className="text-sm font-semibold text-foreground line-clamp-2">{titleText}</span>
-                              <span className="text-[11px] text-primary font-medium block">USD {p.price.toLocaleString()}</span>
+                              <span className="text-[11px] text-primary font-medium block">{priceText}</span>
                             </div>
                             <div className="flex items-center gap-0.5 shrink-0">
                               <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
