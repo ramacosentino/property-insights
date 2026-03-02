@@ -149,6 +149,7 @@ export type Database = {
           rooms: number | null
           score_multiplicador: number | null
           scraped_at: string | null
+          source: string | null
           street: string | null
           surface_covered: number | null
           surface_total: number | null
@@ -194,6 +195,7 @@ export type Database = {
           rooms?: number | null
           score_multiplicador?: number | null
           scraped_at?: string | null
+          source?: string | null
           street?: string | null
           surface_covered?: number | null
           surface_total?: number | null
@@ -239,6 +241,7 @@ export type Database = {
           rooms?: number | null
           score_multiplicador?: number | null
           scraped_at?: string | null
+          source?: string | null
           street?: string | null
           surface_covered?: number | null
           surface_total?: number | null
