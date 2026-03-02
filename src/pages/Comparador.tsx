@@ -417,6 +417,7 @@ const Comparador = () => {
                                   <Loader2 className="h-3 w-3 animate-spin" /> Analizando...
                                 </span>
                               )}
+                            </div>
                             <div className="flex items-center gap-0.5 shrink-0">
                               <a href={p.url} target="_blank" rel="noopener noreferrer" className="p-1 text-muted-foreground hover:text-primary">
                                 <ExternalLink className="h-3 w-3" />
