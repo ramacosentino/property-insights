@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useSubscription } from "@/hooks/useSubscription";
 import Landing from "./pages/Landing";
 import MapView from "./pages/MapView";
 import PropertyList from "./pages/PropertyList";
@@ -38,6 +39,14 @@ function RequireOnboarding({ children }: { children: React.ReactNode }) {
   if (!user) return <Navigate to="/auth" replace />;
   if (completed === false) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
+}
+
+function RequirePremium({ children }: { children: React.ReactNode }) {
+  const { isPremium, isLoading } = useSubscription();
+  if (isLoading) return null;
+  if (!isPremium) return <Navigate to="/planes" replace />;
+  return <>{children}</>;
+}
 }
 
 const App = () => (
