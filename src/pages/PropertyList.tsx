@@ -26,37 +26,12 @@ import { Search, SlidersHorizontal, TrendingDown, Star, X, Trophy, ChevronDown, 
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 
-function getParkingLabel(parking: number | null): string {
-  if (!parking || parking === 0) return "Sin cochera";
-  if (parking === 1) return "1 cochera";
-  if (parking === 2) return "2 cocheras";
-  return "3+ cocheras";
-}
-
-function getBedroomsLabel(bedrooms: number | null): string {
-  if (!bedrooms) return "Sin dato";
-  if (bedrooms === 1) return "1 dorm";
-  if (bedrooms === 2) return "2 dorm";
-  if (bedrooms === 3) return "3 dorm";
-  if (bedrooms === 4) return "4 dorm";
-  return "5+ dorm";
-}
-
-function getBathroomsLabel(bathrooms: number | null): string {
-  if (!bathrooms) return "Sin dato";
-  if (bathrooms === 1) return "1 baño";
-  if (bathrooms === 2) return "2 baños";
-  if (bathrooms === 3) return "3 baños";
-  return "4+ baños";
-}
-
-const ROOMS_KEYS = ["1 amb", "2 amb", "3 amb", "4 amb", "5+ amb"];
-const PARKING_KEYS = ["Sin cochera", "1 cochera", "2 cocheras", "3+ cocheras"];
-const PROPERTY_TYPE_KEYS = ["departamento", "casa", "ph", "terreno"];
-const BEDROOMS_KEYS = ["1 dorm", "2 dorm", "3 dorm", "4 dorm", "5+ dorm"];
-const BATHROOMS_KEYS = ["1 baño", "2 baños", "3 baños", "4+ baños"];
-const DISPOSITION_KEYS = ["Frente", "Contrafrente", "Interno", "Lateral"];
-const ORIENTATION_KEYS = ["Norte", "Sur", "Este", "Oeste", "Noreste", "Noroeste", "Sudeste", "Sudoeste"];
+import {
+  getParkingLabel, getBedroomsLabel, getBathroomsLabel, formatPrice,
+  ROOMS_KEYS, PARKING_KEYS, PROPERTY_TYPE_KEYS, BEDROOMS_KEYS,
+  BATHROOMS_KEYS, DISPOSITION_KEYS, ORIENTATION_KEYS,
+  PRICE_CAP, SURFACE_CAP, SURFACE_COVERED_CAP, AGE_CAP, EXPENSES_CAP,
+} from "@/lib/filterUtils";
 
 function buildOptionsWithCounts(
   keys: string[],

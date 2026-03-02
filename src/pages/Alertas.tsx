@@ -1,16 +1,7 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { useAuth } from "@/hooks/useAuth";
-import { Bell, Plus, Trash2, Loader2 } from "lucide-react";
+import { Bell } from "lucide-react";
 
 const Alertas = () => {
-  const { user, loading: authLoading } = useAuth();
-
-  if (!authLoading && !user) {
-    return <Navigate to="/auth" replace />;
-  }
-
   return (
     <Layout>
       <div className="container px-6 py-8">

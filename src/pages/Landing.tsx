@@ -193,7 +193,7 @@ const Landing = () => {
       {/* ═══ Navbar ═══ */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-landing-card-border/50 backdrop-blur-xl bg-landing-bg/80">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/landing" className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5">
             <UrbbanLogo size="md" className="text-landing-fg" />
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm text-landing-muted">
