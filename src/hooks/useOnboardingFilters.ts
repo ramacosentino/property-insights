@@ -40,8 +40,10 @@ export function useOnboardingFilters() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || !user) {
-      setFilters((f) => ({ ...f, loaded: true }));
+    if (authLoading) return;
+
+    if (!user) {
+      setFilters((f) => ({ ...f, loaded: true, revision }));
       return;
     }
 
@@ -52,7 +54,7 @@ export function useOnboardingFilters() {
       .single()
       .then(({ data }) => {
         if (!data) {
-          setFilters((f) => ({ ...f, loaded: true }));
+          setFilters((f) => ({ ...f, loaded: true, revision }));
           return;
         }
 
