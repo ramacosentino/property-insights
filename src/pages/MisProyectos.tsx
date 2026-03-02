@@ -249,9 +249,9 @@ const MisProyectos = () => {
           </div>
         )}
 
-        {tab === "compare" ? (
+        <div className={tab === "compare" ? "" : "hidden"}>
           <Comparador />
-        ) : null}
+        </div>
         {tab !== "compare" && (
           <>
             {/* Sort */}
