@@ -1,10 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Property } from "@/lib/propertyData";
-import { Calculator, TrendingUp, DollarSign, Percent, Info } from "lucide-react";
+import { Calculator, TrendingUp, DollarSign, Percent, Info, RotateCcw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { getRenovationCosts } from "@/pages/Settings";
 
 interface ROISimulatorProps {
   property: Property;
@@ -12,11 +11,41 @@ interface ROISimulatorProps {
   renovCostEstimate?: number;
 }
 
+// Renovation scope items with estimated USD/m² cost
+const RENOV_ITEMS = [
+  { key: "pintura", label: "Pintura", costPerM2: 15 },
+  { key: "pisos", label: "Pisos", costPerM2: 45 },
+  { key: "banos", label: "Baños", costPerM2: 60 },
+  { key: "cocina", label: "Cocina", costPerM2: 40 },
+  { key: "electrica", label: "Eléctrica", costPerM2: 35 },
+  { key: "plomeria", label: "Plomería", costPerM2: 30 },
+  { key: "techos", label: "Techos", costPerM2: 50 },
+  { key: "aberturas", label: "Aberturas", costPerM2: 40 },
+] as const;
+
 const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROISimulatorProps) => {
   const defaultRenovCost = renovCostEstimate ?? Math.round(property.price * 0.1);
   const [renovCost, setRenovCost] = useState(defaultRenovCost);
   const [additionalCosts, setAdditionalCosts] = useState(0);
   const [customSalePrice, setCustomSalePrice] = useState<number | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+
+  const surfM2 = property.surfaceCovered || property.surfaceTotal || 50;
+
+  const toggleItem = useCallback((key: string) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev);
+      const item = RENOV_ITEMS.find(i => i.key === key)!;
+      if (next.has(key)) {
+        next.delete(key);
+        setRenovCost(c => Math.max(0, c - Math.round(item.costPerM2 * surfM2)));
+      } else {
+        next.add(key);
+        setRenovCost(c => c + Math.round(item.costPerM2 * surfM2));
+      }
+      return next;
+    });
+  }, [surfM2]);
 
   const salePrice = customSalePrice ?? valorPotencialTotal ?? property.price;
   const totalInvestment = property.price + renovCost + additionalCosts;
@@ -24,23 +53,10 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
   const roi = totalInvestment > 0 ? (netProfit / totalInvestment) * 100 : 0;
   const profitMargin = salePrice > 0 ? (netProfit / salePrice) * 100 : 0;
 
-  // Build presets from user's configured renovation costs (Settings)
-  const presets = useMemo(() => {
-    const surfM2 = property.surfaceCovered || property.surfaceTotal || 50;
-    const costs = getRenovationCosts();
-    // Pick 3 representative tiers: low cost, mid cost, high cost
-    const nonZero = costs.filter(c => c.costPerM2 > 0).sort((a, b) => a.costPerM2 - b.costPerM2);
-    if (nonZero.length === 0) return [];
-    const low = nonZero[0];
-    const high = nonZero[nonZero.length - 1];
-    const mid = nonZero[Math.floor(nonZero.length / 2)];
-    const unique = Array.from(new Map([
-      ["Mínima", low],
-      ["Parcial", mid],
-      ["Completa", high],
-    ].map(([label, c]) => [`${(c as any).costPerM2}`, { label: label as string, costPerM2: (c as any).costPerM2, total: Math.round(surfM2 * (c as any).costPerM2) }])).values());
-    return unique;
-  }, [property.surfaceCovered, property.surfaceTotal]);
+  const resetToEstimate = () => {
+    setRenovCost(defaultRenovCost);
+    setSelectedItems(new Set());
+  };
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -51,12 +67,11 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
           <Tooltip>
             <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground/50" /></TooltipTrigger>
             <TooltipContent side="top" className="max-w-[250px] text-xs">
-              Calculá tu retorno estimado ingresando el costo de refacción y gastos adicionales. El precio de venta se toma del valor potencial o podés ajustarlo.
+              Calculá tu retorno estimado. El costo de refacción arranca con la estimación de la IA. Podés ajustarlo con el slider o sumando rubros individuales.
             </TooltipContent>
           </Tooltip>
         </div>
 
-        {/* Investment breakdown */}
         <div className="space-y-3">
           {/* Purchase price (fixed) */}
           <div className="flex items-center justify-between text-sm">
@@ -64,10 +79,22 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
             <span className="font-mono font-semibold">USD {property.price.toLocaleString()}</span>
           </div>
 
-          {/* Renovation cost with slider + presets */}
+          {/* Renovation cost */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm text-muted-foreground">Refacción estimada</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm text-muted-foreground">Refacción</span>
+                {renovCost !== defaultRenovCost && (
+                  <button
+                    onClick={resetToEstimate}
+                    className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-all"
+                    title="Volver al estimado IA"
+                  >
+                    <RotateCcw className="h-2.5 w-2.5" />
+                    Est. ${(defaultRenovCost / 1000).toFixed(0)}K
+                  </button>
+                )}
+              </div>
               <div className="flex items-center gap-1">
                 <span className="text-xs text-muted-foreground">USD</span>
                 <Input
@@ -86,28 +113,29 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
               onValueChange={(v) => setRenovCost(v[0])}
               className="w-full"
             />
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {renovCostEstimate != null && renovCostEstimate !== renovCost && (
-                <button
-                  onClick={() => setRenovCost(renovCostEstimate)}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-medium border transition-all bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                >
-                  Estimada (${(renovCostEstimate / 1000).toFixed(0)}K)
-                </button>
-              )}
-              {presets.map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => setRenovCost(p.total)}
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium border transition-all ${
-                    renovCost === p.total
-                      ? "bg-primary/20 text-primary border-primary/30"
-                      : "bg-secondary/50 text-muted-foreground border-border hover:text-foreground"
-                  }`}
-                >
-                  {p.label} (${(p.total / 1000).toFixed(0)}K)
-                </button>
-              ))}
+
+            {/* Renovation scope checkboxes */}
+            <div className="mt-2">
+              <span className="text-[10px] text-muted-foreground font-medium">Sumar rubros:</span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {RENOV_ITEMS.map((item) => {
+                  const isOn = selectedItems.has(item.key);
+                  const itemCost = Math.round(item.costPerM2 * surfM2);
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => toggleItem(item.key)}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
+                        isOn
+                          ? "bg-primary/15 text-primary border-primary/30"
+                          : "bg-secondary/50 text-muted-foreground border-border hover:text-foreground hover:border-muted-foreground/30"
+                      }`}
+                    >
+                      {item.label} +${(itemCost / 1000).toFixed(0)}K
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
