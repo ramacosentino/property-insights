@@ -19,7 +19,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 12%;
 
-    --primary: 200 85% 42%;
+    --primary: 215 38% 46%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 92%;
@@ -36,29 +36,29 @@
 
     --border: 220 14% 88%;
     --input: 220 14% 88%;
-    --ring: 200 85% 42%;
+    --ring: 215 38% 46%;
 
     --radius: 1rem;
 
     /* Custom analytics tokens */
-    --opportunity: 200 85% 42%;
+    --opportunity: 215 38% 46%;
     --opportunity-foreground: 0 0% 100%;
     --expensive: 155 65% 38%;
     --expensive-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 220 25% 10%;
-    --highlight-row: 200 85% 42% / 0.08;
+    --highlight-row: 215 38% 46% / 0.08;
     --glass: 0 0% 100% / 0.85;
     --glass-border: 220 14% 88%;
 
     --sidebar-background: 220 20% 97%;
     --sidebar-foreground: 220 20% 30%;
-    --sidebar-primary: 200 85% 42%;
+    --sidebar-primary: 215 38% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 94%;
     --sidebar-accent-foreground: 220 20% 30%;
     --sidebar-border: 220 14% 88%;
-    --sidebar-ring: 200 85% 42%;
+    --sidebar-ring: 215 38% 46%;
 
     --font-mono: 'JetBrains Mono', monospace;
     --font-sans: 'Satoshi', system-ui, sans-serif;
@@ -73,7 +73,7 @@
     --landing-muted: 215 12% 48%;
     --landing-card: 220 15% 92%;
     --landing-card-border: 220 14% 85%;
-    --landing-glow: 200 85% 42%;
+    --landing-glow: 215 38% 46%;
   }
 
   .dark {
@@ -86,7 +86,7 @@
     --popover: 220 22% 10%;
     --popover-foreground: 210 20% 90%;
 
-    --primary: 190 90% 50%;
+    --primary: 215 42% 60%;
     --primary-foreground: 220 25% 6%;
 
     --secondary: 220 20% 16%;
@@ -103,26 +103,26 @@
 
     --border: 220 18% 18%;
     --input: 220 18% 18%;
-    --ring: 190 90% 50%;
+    --ring: 215 42% 60%;
 
-    --opportunity: 190 90% 50%;
+    --opportunity: 215 42% 60%;
     --opportunity-foreground: 220 25% 6%;
     --expensive: 155 70% 45%;
     --expensive-foreground: 220 25% 6%;
     --warning: 38 92% 50%;
     --warning-foreground: 220 25% 6%;
-    --highlight-row: 190 90% 50% / 0.08;
+    --highlight-row: 215 42% 60% / 0.08;
     --glass: 220 22% 10% / 0.7;
     --glass-border: 220 18% 22%;
 
     --sidebar-background: 220 25% 8%;
     --sidebar-foreground: 210 20% 85%;
-    --sidebar-primary: 190 90% 50%;
+    --sidebar-primary: 215 42% 60%;
     --sidebar-primary-foreground: 220 25% 6%;
     --sidebar-accent: 220 20% 14%;
     --sidebar-accent-foreground: 210 20% 85%;
     --sidebar-border: 220 18% 18%;
-    --sidebar-ring: 190 90% 50%;
+    --sidebar-ring: 215 42% 60%;
 
     --deal-marker: 210 20% 90%;
     --map-tiles: dark;
@@ -133,7 +133,7 @@
     --landing-muted: 215 15% 55%;
     --landing-card: 220 22% 9%;
     --landing-card-border: 220 18% 16%;
-    --landing-glow: 200 85% 42%;
+    --landing-glow: 215 38% 46%;
   }
 }
 
@@ -194,12 +194,12 @@
     box-shadow: 0 0 20px -5px hsl(var(--opportunity) / 0.3);
   }
   .text-gradient-opportunity {
-    background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(200 75% 55%));
+    background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(215 32% 55%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   .dark .text-gradient-opportunity {
-    background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(190 80% 70%));
+    background: linear-gradient(135deg, hsl(var(--opportunity)), hsl(215 38% 65%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -209,12 +209,12 @@
     -webkit-text-fill-color: transparent;
   }
   .landing-gradient-text {
-    background: linear-gradient(135deg, hsl(200 85% 55%), hsl(190 90% 65%), hsl(155 70% 50%));
+    background: linear-gradient(135deg, hsl(215 38% 50%), hsl(215 35% 58%), hsl(155 70% 50%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   .landing-card-glow {
-    box-shadow: 0 0 40px -15px hsl(200 85% 50% / 0.15);
+    box-shadow: 0 0 40px -15px hsl(215 38% 50% / 0.15);
   }
   .landing-section {
     background: hsl(var(--landing-bg));
