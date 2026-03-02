@@ -20,6 +20,7 @@ import InteligenciaPrecios from "./pages/InteligenciaPrecios";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Planes from "./pages/Planes";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import LogoPreview from "./pages/LogoPreview";
 
@@ -56,6 +57,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<RootRedirect />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/mapa" element={<RequireOnboarding><MapView /></RequireOnboarding>} />
           <Route path="/propiedades" element={<RequireOnboarding><PropertyList /></RequireOnboarding>} />

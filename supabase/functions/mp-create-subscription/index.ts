@@ -10,6 +10,7 @@ const MP_API = "https://api.mercadopago.com";
 
 interface PlanConfig {
   id: string;
+  basePlan: string;
   reason: string;
   amount: number;
   frequency: number;
@@ -17,18 +18,36 @@ interface PlanConfig {
 }
 
 const PLANS: Record<string, PlanConfig> = {
-  pro: {
-    id: "pro",
-    reason: "PropAnalytics Pro – Mensual",
-    amount: 9990,
+  pro_monthly: {
+    id: "pro_monthly",
+    basePlan: "pro",
+    reason: "Urbanna Pro – Mensual",
+    amount: 20000,
     frequency: 1,
     frequencyType: "months",
   },
-  premium: {
-    id: "premium",
-    reason: "PropAnalytics Premium – Mensual",
-    amount: 19990,
+  pro_annual: {
+    id: "pro_annual",
+    basePlan: "pro",
+    reason: "Urbanna Pro – Anual",
+    amount: 200000,
+    frequency: 12,
+    frequencyType: "months",
+  },
+  premium_monthly: {
+    id: "premium_monthly",
+    basePlan: "premium",
+    reason: "Urbanna Premium – Mensual",
+    amount: 100000,
     frequency: 1,
+    frequencyType: "months",
+  },
+  premium_annual: {
+    id: "premium_annual",
+    basePlan: "premium",
+    reason: "Urbanna Premium – Anual",
+    amount: 1000000,
+    frequency: 12,
     frequencyType: "months",
   },
 };
@@ -71,7 +90,7 @@ Deno.serve(async (req) => {
     const plan = PLANS[planId];
     if (!plan) throw new Error(`Invalid plan: ${planId}`);
 
-    // Create preapproval (subscription) directly without a plan
+    // Create preapproval (subscription) directly
     const mpRes = await fetch(`${MP_API}/preapproval`, {
       method: "POST",
       headers: {
@@ -109,7 +128,7 @@ Deno.serve(async (req) => {
     await serviceClient.from("subscriptions").upsert(
       {
         user_id: userId,
-        plan: planId,
+        plan: plan.basePlan,
         status: "pending",
         mp_preapproval_id: mpData.id,
         mp_payer_email: userEmail,
