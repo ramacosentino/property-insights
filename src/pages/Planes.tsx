@@ -1,4 +1,5 @@
 import Layout from "@/components/Layout";
+import PlanComparisonTable from "@/components/PlanComparisonTable";
 import { useSubscription, PLAN_LIMITS, PlanId } from "@/hooks/useSubscription";
 import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { useAuth } from "@/hooks/useAuth";
@@ -312,6 +313,11 @@ const Planes = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Comparison table */}
+        <div className="rounded-xl border bg-card overflow-hidden">
+          <PlanComparisonTable variant="app" />
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
