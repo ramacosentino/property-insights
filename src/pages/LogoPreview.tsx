@@ -2,6 +2,14 @@ import UrbbanLogo, { UrbannaIcon } from "@/components/UrbbanLogo";
 
 const FONT = "'Orelo SemiCondensed DemiBold', serif";
 
+const FONT_CANDIDATES = [
+  { name: "Orelo SemiCond. (actual)", family: "'Orelo SemiCondensed DemiBold', serif" },
+  { name: "Florentine", family: "'Florentine', serif" },
+  { name: "LT Serif", family: "'LT Serif', serif" },
+  { name: "GrifinitoL", family: "'GrifinitoL', serif" },
+  { name: "Editorial New", family: "'Editorial New', serif" },
+];
+
 /* ─── Icon Variants ─── */
 
 /** A: U con dot de acento (actual) */
