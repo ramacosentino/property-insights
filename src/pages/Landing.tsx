@@ -654,7 +654,7 @@ const Landing = () => {
             <a href="#pricing" className="hover:text-landing-fg transition-colors">Pricing</a>
           </div>
           <p className="text-xs text-landing-muted/50">
-            © {new Date().getFullYear()} PropAnalytics. Todos los derechos reservados.
+            © {new Date().getFullYear()} Urbanna. Todos los derechos reservados.
           </p>
         </div>
       </footer>
