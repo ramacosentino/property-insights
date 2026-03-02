@@ -34,7 +34,7 @@ export const UrbannaIcon = ({ size = 32, className = "" }: { size?: number; clas
   return (
     <span
       className={`inline-flex items-center justify-center relative ${className}`}
-      style={{ width: size, height: size, fontFamily: FONT, fontSize: Math.round(size * 0.7), lineHeight: 1 }}
+      style={{ width: size, height: size, fontFamily: FONT, fontSize: Math.round(size * 0.88), lineHeight: 1 }}
       aria-label="U"
     >
       U
