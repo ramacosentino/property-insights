@@ -412,6 +412,42 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_tracking: {
+        Row: {
+          analyses_count: number
+          comparisons_count: number
+          created_at: string
+          exports_count: number
+          id: string
+          searches_count: number
+          updated_at: string
+          user_id: string
+          year_month: string
+        }
+        Insert: {
+          analyses_count?: number
+          comparisons_count?: number
+          created_at?: string
+          exports_count?: number
+          id?: string
+          searches_count?: number
+          updated_at?: string
+          user_id: string
+          year_month: string
+        }
+        Update: {
+          analyses_count?: number
+          comparisons_count?: number
+          created_at?: string
+          exports_count?: number
+          id?: string
+          searches_count?: number
+          updated_at?: string
+          user_id?: string
+          year_month?: string
+        }
+        Relationships: []
+      }
       user_onboarding: {
         Row: {
           budget_currency: string | null

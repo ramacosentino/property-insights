@@ -1,58 +1,70 @@
 import Layout from "@/components/Layout";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription, PLAN_LIMITS, PlanId } from "@/hooks/useSubscription";
+import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Check, Crown, Zap, Loader2, Star } from "lucide-react";
+import { Check, Crown, Zap, Loader2, Star, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 const plans = [
   {
-    id: "free",
+    id: "free" as PlanId,
     name: "Free",
     icon: Star,
     features: [
-      "Ver propiedades en mapa",
-      "Filtros básicos",
-      "Hasta 5 proyectos guardados",
+      "Mapa y propiedades",
+      "5 análisis IA / mes",
+      "3 búsquedas / mes",
+      "1 alerta activa",
     ],
     cta: "Plan actual",
     popular: false,
   },
   {
-    id: "pro",
+    id: "pro" as PlanId,
     name: "Pro",
     icon: Zap,
     features: [
       "Todo de Free",
-      "Análisis de oportunidad ilimitados",
-      "Proyectos ilimitados",
-      "Filtros avanzados",
+      "50 análisis IA / mes",
+      "30 búsquedas / mes",
+      "10 alertas activas",
       "Exportar datos",
     ],
     cta: "Suscribirse",
     popular: true,
   },
   {
-    id: "premium",
+    id: "premium" as PlanId,
     name: "Premium",
     icon: Crown,
     features: [
       "Todo de Pro",
-      "Inteligencia de precios",
-      "Alertas personalizadas",
+      "Análisis IA ilimitados",
+      "Búsquedas ilimitadas",
+      "Alertas ilimitadas",
       "Tasación automática",
-      "Soporte prioritario",
+      "Inteligencia de precios",
     ],
     cta: "Suscribirse",
     popular: false,
   },
 ];
 
+const USAGE_LABELS: Record<string, string> = {
+  analyses: "Análisis IA",
+  comparisons: "Comparativos",
+  searches: "Búsquedas",
+  exports: "Exportaciones",
+};
+
 const Planes = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { subscription, isLoading, createSubscription, isActive } = useSubscription();
+  const { subscription, isLoading, createSubscription, plan: currentPlan } = useSubscription();
+  const { getUsed, getLimit } = useUsageLimits();
   const { toast } = useToast();
   const [subscribing, setSubscribing] = useState<string | null>(null);
 
@@ -65,21 +77,18 @@ const Planes = () => {
 
     setSubscribing(planId);
     try {
-      const { init_point } = await createSubscription(planId);
-      // Redirect to MercadoPago checkout
-      window.location.href = init_point;
+      const result = await createSubscription(planId);
+      window.location.href = result.init_point;
     } catch (err: any) {
       toast({
         title: "Error",
         description: err.message || "No se pudo crear la suscripción",
         variant: "destructive",
       });
-    } finally {
       setSubscribing(null);
     }
   };
 
-  const currentPlan = subscription?.plan || "free";
   const currentStatus = subscription?.status;
 
   return (
@@ -104,10 +113,54 @@ const Planes = () => {
           )}
         </div>
 
+        {/* Usage summary for current plan */}
+        {user && (
+          <div className="rounded-xl border bg-card p-5 space-y-4">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              Uso este mes
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {(["analyses", "comparisons", "searches", "exports"] as const).map((cat) => {
+                const used = getUsed(cat);
+                const limit = getLimit(cat);
+                const isUnlimited = limit === Infinity;
+                const isBooleanLimit = typeof PLAN_LIMITS[currentPlan][cat] === "boolean";
+
+                if (isBooleanLimit) {
+                  const allowed = PLAN_LIMITS[currentPlan][cat as "exports"];
+                  return (
+                    <div key={cat} className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{USAGE_LABELS[cat]}</p>
+                      <p className={`text-sm font-medium ${allowed ? "text-primary" : "text-muted-foreground"}`}>
+                        {allowed ? "Habilitado" : "No disponible"}
+                      </p>
+                    </div>
+                  );
+                }
+
+                const pct = isUnlimited ? 0 : Math.min(100, (used / limit) * 100);
+                return (
+                  <div key={cat} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">{USAGE_LABELS[cat]}</p>
+                      <p className="text-xs font-medium">
+                        {used} / {isUnlimited ? "∞" : limit}
+                      </p>
+                    </div>
+                    <Progress value={pct} className="h-1.5" />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => {
-            const isCurrent = currentPlan === plan.id && isActive;
-            const isCurrentPending = currentPlan === plan.id && currentStatus === "pending";
+            const isCurrent = currentPlan === plan.id;
+            const isCurrentPending = subscription?.plan === plan.id && currentStatus === "pending";
+            const isDowngrade = plans.findIndex(p => p.id === plan.id) < plans.findIndex(p => p.id === currentPlan);
 
             return (
               <div
@@ -128,10 +181,7 @@ const Planes = () => {
                   <div className={`p-2 rounded-lg ${plan.popular ? "bg-primary/15" : "bg-secondary"}`}>
                     <plan.icon className={`h-5 w-5 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{plan.name}</h3>
-                    
-                  </div>
+                  <h3 className="font-bold text-lg">{plan.name}</h3>
                 </div>
 
                 <ul className="flex-1 space-y-2.5 mb-6">
@@ -150,6 +200,7 @@ const Planes = () => {
                     subscribing === plan.id ||
                     isCurrent ||
                     isCurrentPending ||
+                    isDowngrade ||
                     plan.id === "free"
                   }
                   className={`w-full py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
@@ -159,7 +210,7 @@ const Planes = () => {
                       ? "bg-yellow-500/10 text-yellow-600 cursor-default"
                       : plan.popular
                       ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : plan.id === "free"
+                      : plan.id === "free" || isDowngrade
                       ? "bg-secondary text-muted-foreground cursor-default"
                       : "bg-secondary text-foreground hover:bg-secondary/80"
                   } disabled:opacity-60`}
@@ -169,6 +220,8 @@ const Planes = () => {
                     ? "Plan actual"
                     : isCurrentPending
                     ? "Pendiente"
+                    : isDowngrade
+                    ? "Plan inferior"
                     : plan.id === "free"
                     ? "Plan gratuito"
                     : plan.cta}
