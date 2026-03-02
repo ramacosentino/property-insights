@@ -3,11 +3,11 @@ import { IconU, IconBB, IconUAccent } from "@/components/LogoIcons";
 
 /* ─── Font configs ─── */
 const FONTS = [
-  { key: "space", label: "Space Grotesk (actual)", family: "'Space Grotesk', system-ui, sans-serif", weight: 450 },
   { key: "orelo-reg", label: "Orelo SemiWide Regular", family: "'Orelo SemiWide Regular', serif", weight: 400 },
   { key: "orelo-med", label: "Orelo SemiWide Medium", family: "'Orelo SemiWide Medium', serif", weight: 400 },
   { key: "orelo-demi", label: "Orelo SemiWide DemiBold", family: "'Orelo SemiWide DemiBold', serif", weight: 400 },
-  { key: "orelo-bold", label: "Orelo SemiWide Bold", family: "'Orelo SemiWide Bold', serif", weight: 400 },
+  { key: "orelo-sc-demi", label: "Orelo SemiCondensed DemiBold", family: "'Orelo SemiCondensed DemiBold', serif", weight: 400 },
+  { key: "orelo-ext", label: "Orelo Extended Trial", family: "'Orelo Extended Trial', serif", weight: 400 },
 ] as const;
 
 /* ─── Urbanna wordmark component ─── */
