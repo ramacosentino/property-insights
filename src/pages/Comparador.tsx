@@ -495,15 +495,27 @@ const Comparador = () => {
             {/* AI Comparison */}
             {compared.length >= 2 && (
               <div className="mt-6">
-                {!aiAnalysis && !aiLoading && (
-                  <button
-                    onClick={runAiComparison}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all mx-auto"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Análisis IA: ¿Cuál es mejor inversión?
-                  </button>
-                )}
+                {!aiAnalysis && !aiLoading && (() => {
+                  const unanalyzedCount = compared.filter(p => !getAnalysis(p)).length;
+                  return (
+                    <button
+                      onClick={runAiComparison}
+                      disabled={analyzingIds.size > 0}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all mx-auto disabled:opacity-50"
+                    >
+                      {analyzingIds.size > 0 ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Analizando...</>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          {unanalyzedCount > 0
+                            ? `Analizar (${unanalyzedCount}) y comparar con IA`
+                            : "Análisis IA: ¿Cuál es mejor inversión?"}
+                        </>
+                      )}
+                    </button>
+                  );
+                })()}
                 {(aiLoading || aiAnalysis) && (
                   <div className="glass-card rounded-2xl p-6 mt-4">
                     <div className="flex items-center gap-2 mb-4">
