@@ -198,10 +198,11 @@ const Landing = () => {
 
   const handleSubscribe = async (planId: string) => {
     if (!user) { navigate("/auth"); return; }
-    if (planId === "free") return;
+    if (planId === "free" || planId === "corporate") return;
+    const mpPlanId = `${planId}_${billing}`;
     setSubscribing(planId);
     try {
-      const { init_point } = await createSubscription(planId);
+      const { init_point } = await createSubscription(mpPlanId);
       window.location.href = init_point;
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "No se pudo crear la suscripción", variant: "destructive" });
