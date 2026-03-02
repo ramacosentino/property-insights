@@ -4,8 +4,8 @@ import { IconU, IconBB, IconUAccent } from "@/components/LogoIcons";
 /* ─── Font configs ─── */
 const FONTS = [
   { key: "space", label: "Space Grotesk (actual)", family: "'Space Grotesk', system-ui, sans-serif", weight: 450 },
+  { key: "orelo", label: "Orelo SemiWide", family: "'Orelo SemiWide Regular', Georgia, serif", weight: 400 },
   { key: "ogg", label: "Playfair Display (≈ Ogg)", family: "'Playfair Display', Georgia, serif", weight: 500 },
-  { key: "orelo", label: "Nunito (≈ Orelo)", family: "'Nunito', system-ui, sans-serif", weight: 600 },
 ] as const;
 
 /* ─── Urbanna wordmark component ─── */
