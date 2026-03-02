@@ -193,7 +193,7 @@ const Landing = () => {
   const { subscription, createSubscription, isActive } = useSubscription();
   const { toast } = useToast();
   const [subscribing, setSubscribing] = useState<string | null>(null);
-  const { isDark, toggle } = useTheme();
+  const [billing, setBilling] = useState<BillingCycle>("monthly");
 
   const handleSubscribe = async (planId: string) => {
     if (!user) { navigate("/auth"); return; }
