@@ -8,6 +8,23 @@ import { Check, Crown, Zap, Loader2, Star, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
+type BillingCycle = "monthly" | "annual";
+
+const PRICING = {
+  pro: { monthly: 20000, annual: 200000 },
+  premium: { monthly: 100000, annual: 1000000 },
+} as const;
+
+function formatARS(amount: number): string {
+  return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount);
+}
+
+function getSavingsPercent(planId: "pro" | "premium"): number {
+  const { monthly, annual } = PRICING[planId];
+  const yearlyIfMonthly = monthly * 12;
+  return Math.round(((yearlyIfMonthly - annual) / yearlyIfMonthly) * 100);
+}
+
 const plans = [
   {
     id: "free" as PlanId,
@@ -67,6 +84,7 @@ const Planes = () => {
   const { getUsed, getLimit } = useUsageLimits();
   const { toast } = useToast();
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const [billing, setBilling] = useState<BillingCycle>("monthly");
 
   const handleSubscribe = async (planId: string) => {
     if (!user) {
@@ -75,9 +93,11 @@ const Planes = () => {
     }
     if (planId === "free") return;
 
+    const mpPlanId = `${planId}_${billing}`;
+
     setSubscribing(planId);
     try {
-      const result = await createSubscription(planId);
+      const result = await createSubscription(mpPlanId);
       window.location.href = result.init_point;
     } catch (err: any) {
       toast({
@@ -111,6 +131,33 @@ const Planes = () => {
               Pago pendiente de confirmación
             </div>
           )}
+        </div>
+
+        {/* Billing toggle */}
+        <div className="flex items-center justify-center gap-1 p-1 rounded-full bg-secondary w-fit mx-auto">
+          <button
+            onClick={() => setBilling("monthly")}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+              billing === "monthly"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Mensual
+          </button>
+          <button
+            onClick={() => setBilling("annual")}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+              billing === "annual"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Anual
+            <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+              -{getSavingsPercent("pro")}%
+            </span>
+          </button>
         </div>
 
         {/* Usage summary for current plan */}
@@ -161,6 +208,11 @@ const Planes = () => {
             const isCurrent = currentPlan === plan.id;
             const isCurrentPending = subscription?.plan === plan.id && currentStatus === "pending";
             const isDowngrade = plans.findIndex(p => p.id === plan.id) < plans.findIndex(p => p.id === currentPlan);
+            const hasPricing = plan.id === "pro" || plan.id === "premium";
+            const price = hasPricing ? PRICING[plan.id as "pro" | "premium"][billing] : 0;
+            const monthlyEquiv = hasPricing && billing === "annual"
+              ? Math.round(PRICING[plan.id as "pro" | "premium"].annual / 12)
+              : price;
 
             return (
               <div
@@ -177,11 +229,37 @@ const Planes = () => {
                   </div>
                 )}
 
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-2">
                   <div className={`p-2 rounded-lg ${plan.popular ? "bg-primary/15" : "bg-secondary"}`}>
                     <plan.icon className={`h-5 w-5 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
                   </div>
                   <h3 className="font-bold text-lg">{plan.name}</h3>
+                </div>
+
+                {/* Pricing */}
+                <div className="mb-4 min-h-[3rem]">
+                  {hasPricing ? (
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-foreground">
+                          {formatARS(billing === "annual" ? monthlyEquiv : price)}
+                        </span>
+                        <span className="text-sm text-muted-foreground">/ mes</span>
+                      </div>
+                      {billing === "annual" && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatARS(price)} facturados anualmente
+                          <span className="ml-1.5 text-primary font-medium">
+                            Ahorrás {getSavingsPercent(plan.id as "pro" | "premium")}%
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-foreground">Gratis</span>
+                    </div>
+                  )}
                 </div>
 
                 <ul className="flex-1 space-y-2.5 mb-6">
