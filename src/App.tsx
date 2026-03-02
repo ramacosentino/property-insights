@@ -64,8 +64,8 @@ const App = () => (
           <Route path="/alertas" element={<RequireOnboarding><Alertas /></RequireOnboarding>} />
           <Route path="/ranking" element={<Navigate to="/propiedades" replace />} />
           
-          <Route path="/tasacion" element={<RequireOnboarding><Tasacion /></RequireOnboarding>} />
-          <Route path="/inteligencia-precios" element={<RequireOnboarding><InteligenciaPrecios /></RequireOnboarding>} />
+          <Route path="/tasacion" element={<RequireOnboarding><RequirePremium><Tasacion /></RequirePremium></RequireOnboarding>} />
+          <Route path="/inteligencia-precios" element={<RequireOnboarding><RequirePremium><InteligenciaPrecios /></RequirePremium></RequireOnboarding>} />
           <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
           <Route path="/planes" element={<RequireOnboarding><Planes /></RequireOnboarding>} />
           <Route path="/logo-preview" element={<LogoPreview />} />
