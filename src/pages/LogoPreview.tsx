@@ -7,7 +7,7 @@ const FONTS = [
   { key: "orelo-med", label: "Orelo SemiWide Medium", family: "'Orelo SemiWide Medium', serif", weight: 400 },
   { key: "orelo-demi", label: "Orelo SemiWide DemiBold", family: "'Orelo SemiWide DemiBold', serif", weight: 400 },
   { key: "orelo-sc-demi", label: "Orelo SemiCondensed DemiBold", family: "'Orelo SemiCondensed DemiBold', serif", weight: 400 },
-  { key: "orelo-ext", label: "Orelo Extended Trial", family: "'Orelo Extended Trial', serif", weight: 400 },
+  { key: "orelo-exp", label: "Orelo Expanded Trial", family: "'Orelo Expanded Trial', serif", weight: 400 },
 ] as const;
 
 /* ─── Urbanna wordmark component ─── */
