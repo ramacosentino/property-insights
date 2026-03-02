@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
           currency_id: "ARS",
         },
         payer_email: userEmail,
-        back_url: backUrl || "https://ramatest.lovable.app/planes",
+        back_url: backUrl || "https://urbanna.co/planes",
         external_reference: userId,
         status: "pending",
       }),
