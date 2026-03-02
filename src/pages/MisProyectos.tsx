@@ -72,9 +72,6 @@ const MisProyectos = () => {
       });
   }, [user, properties]);
 
-  if (!authLoading && !user) {
-    return <Navigate to="/auth" replace />;
-  }
 
   const preselected = properties.filter((p) => selectedIds.has(p.id));
   const activeProjects = preselected.filter((p) => !discardedIds.has(p.id));

@@ -146,7 +146,7 @@ const Tasacion = () => {
     setShowResults(true);
   };
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
+  if (!authLoading && !user) return null;
 
   return (
     <Layout>

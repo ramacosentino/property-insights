@@ -55,11 +55,6 @@ const PropertyList = () => {
   const [showIgnored, setShowIgnored] = useState(false);
   const [statsOpen, setStatsOpen] = useState(true);
 
-  const PRICE_CAP = 2000000;
-  const SURFACE_CAP = 2000;
-  const SURFACE_COVERED_CAP = 800;
-  const AGE_CAP = 50;
-  const EXPENSES_CAP = 1000000;
 
   // Compute data ranges for sliders
   const dataRanges = useMemo(() => {

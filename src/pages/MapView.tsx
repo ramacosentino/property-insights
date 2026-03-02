@@ -269,12 +269,6 @@ const MapView = () => {
   // Polygon draw filter
   const { polygon: drawnPolygon, isDrawing, startDraw, clearDraw, cancelDraw, isInsidePolygon } = useMapDraw(mapInstanceRef);
 
-  // Range filters
-  const PRICE_CAP = 2000000;
-  const SURFACE_CAP = 2000;
-  const SURFACE_COVERED_CAP = 800;
-  const AGE_CAP = 50;
-  const EXPENSES_CAP = 1000000;
 
   const dataRanges = useMemo(() => {
     const prices = properties.map((p) => p.price).filter(Boolean);
