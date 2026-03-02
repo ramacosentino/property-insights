@@ -4,9 +4,10 @@ import { useProperties } from "@/hooks/useProperties";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { getOpportunityLabel } from "@/lib/opportunityLabels";
-import { Columns, X, ExternalLink, Sparkles, Loader2 } from "lucide-react";
+import { Columns, X, ExternalLink, Sparkles, Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getSurfaceType, getMinSurfaceEnabled, getRenovationCosts } from "@/pages/Settings";
 
 interface CompareAnalysis {
   score_multiplicador: number | null;
@@ -43,6 +44,7 @@ const Comparador = () => {
   const [analyses, setAnalyses] = useState<Record<string, CompareAnalysis>>({});
   const [aiAnalysis, setAiAnalysis] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
 
   // Pre-populate with first 2 preselected that have analysis
   useEffect(() => {
