@@ -169,7 +169,7 @@ const plans = [
     name: "Pro",
     icon: Zap,
     features: ["Todo de Free", "50 análisis IA / mes", "30 búsquedas / mes", "10 alertas activas", "Exportar datos"],
-    badge: "Popular para compradores",
+    badge: "Ideal para buscar tu próxima propiedad",
     highlighted: true,
   },
   {
@@ -177,7 +177,7 @@ const plans = [
     name: "Premium",
     icon: Crown,
     features: ["Todo de Pro", "Análisis IA ilimitados", "Búsquedas ilimitadas", "Alertas ilimitadas", "Tasación automática", "Inteligencia de precios"],
-    badge: "Popular para inversores",
+    badge: "Ideal si buscás una inversión",
     highlighted: true,
   },
   {
