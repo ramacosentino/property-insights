@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import {
   ArrowRight, Check, ChevronDown, Zap, Crown, Star,
-  Search, BarChart2, TrendingUp, Bell,
+  Search, BarChart2, TrendingUp, Bell, Building2,
 } from "lucide-react";
 import UrbbanLogo from "@/components/UrbbanLogo";
 import RotatingWord from "@/components/RotatingWord";
@@ -139,26 +139,49 @@ const stats = [
   { value: "24/7", label: "Datos actualizados" },
 ];
 
+const PRICING = {
+  pro: { monthly: 20000, annual: 200000 },
+  premium: { monthly: 100000, annual: 1000000 },
+} as const;
+
+function formatARS(amount: number): string {
+  return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount);
+}
+
+function getSavingsPercent(planId: "pro" | "premium"): number {
+  const { monthly, annual } = PRICING[planId];
+  return Math.round(((monthly * 12 - annual) / (monthly * 12)) * 100);
+}
+
+type BillingCycle = "monthly" | "annual";
+
 const plans = [
   {
     id: "free",
     name: "Free",
     icon: Star,
-    features: ["Ver propiedades en mapa", "Filtros básicos", "Hasta 5 proyectos guardados"],
+    features: ["Mapa y propiedades", "5 análisis IA / mes", "3 búsquedas / mes", "1 alerta activa"],
     popular: false,
   },
   {
     id: "pro",
     name: "Pro",
     icon: Zap,
-    features: ["Todo de Free", "Análisis ilimitados", "Proyectos ilimitados", "Filtros avanzados", "Exportar datos"],
+    features: ["Todo de Free", "50 análisis IA / mes", "30 búsquedas / mes", "10 alertas activas", "Exportar datos"],
     popular: true,
   },
   {
     id: "premium",
     name: "Premium",
     icon: Crown,
-    features: ["Todo de Pro", "Inteligencia de precios", "Alertas personalizadas", "Tasación automática", "Soporte prioritario"],
+    features: ["Todo de Pro", "Análisis IA ilimitados", "Búsquedas ilimitadas", "Alertas ilimitadas", "Tasación automática", "Inteligencia de precios"],
+    popular: false,
+  },
+  {
+    id: "corporate",
+    name: "Corporativo",
+    icon: Building2,
+    features: ["Todo de Premium", "Usuarios múltiples", "API dedicada", "Soporte prioritario", "Onboarding personalizado"],
     popular: false,
   },
 ];
@@ -170,14 +193,16 @@ const Landing = () => {
   const { subscription, createSubscription, isActive } = useSubscription();
   const { toast } = useToast();
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const [billing, setBilling] = useState<BillingCycle>("monthly");
   const { isDark, toggle } = useTheme();
 
   const handleSubscribe = async (planId: string) => {
     if (!user) { navigate("/auth"); return; }
-    if (planId === "free") return;
+    if (planId === "free" || planId === "corporate") return;
+    const mpPlanId = `${planId}_${billing}`;
     setSubscribing(planId);
     try {
-      const { init_point } = await createSubscription(planId);
+      const { init_point } = await createSubscription(mpPlanId);
       window.location.href = init_point;
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "No se pudo crear la suscripción", variant: "destructive" });
@@ -522,13 +547,13 @@ const Landing = () => {
       {/* ═══ Pricing ═══ */}
       <section id="pricing" className="py-16 md:py-20 px-6">
         <motion.div
-          className="max-w-5xl mx-auto"
+          className="max-w-6xl mx-auto"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="text-center mb-16">
+          <motion.div variants={fadeUp} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-6">
               Precios
             </div>
@@ -539,9 +564,43 @@ const Landing = () => {
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Billing toggle */}
+          <motion.div variants={fadeUp} className="flex items-center justify-center gap-1 p-1 rounded-full bg-landing-card border border-landing-card-border w-fit mx-auto mb-12">
+            <button
+              onClick={() => setBilling("monthly")}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                billing === "monthly"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-landing-muted hover:text-landing-fg"
+              }`}
+            >
+              Mensual
+            </button>
+            <button
+              onClick={() => setBilling("annual")}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
+                billing === "annual"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-landing-muted hover:text-landing-fg"
+              }`}
+            >
+              Anual
+              <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+                -{getSavingsPercent("pro")}%
+              </span>
+            </button>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {plans.map((plan, i) => {
               const isCurrent = currentPlan === plan.id && isActive;
+              const hasPricing = plan.id === "pro" || plan.id === "premium";
+              const isCorporate = plan.id === "corporate";
+              const price = hasPricing ? PRICING[plan.id as "pro" | "premium"][billing] : 0;
+              const monthlyEquiv = hasPricing && billing === "annual"
+                ? Math.round(PRICING[plan.id as "pro" | "premium"].annual / 12)
+                : price;
+
               return (
                 <motion.div
                   key={plan.id}
@@ -551,13 +610,12 @@ const Landing = () => {
                   whileInView="visible"
                   viewport={{ once: true }}
                   whileHover={{ y: -6, transition: { duration: 0.3 } }}
-                  className={`relative flex flex-col rounded-3xl border p-8 transition-all duration-500 overflow-hidden group ${
+                  className={`relative flex flex-col rounded-3xl border p-7 transition-all duration-500 overflow-hidden group ${
                     plan.popular
                       ? "border-primary/50 bg-card shadow-xl shadow-primary/10"
                       : "border-landing-card-border bg-card/60 hover:shadow-lg hover:shadow-primary/5"
                   }`}
                 >
-                  {/* Top accent for popular */}
                   {plan.popular && (
                     <>
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
@@ -566,18 +624,47 @@ const Landing = () => {
                       </div>
                     </>
                   )}
-                  {/* Hover glow */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/5 to-transparent" />
 
                   <div className="relative flex-1 flex flex-col">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-4">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${plan.popular ? "bg-primary/15" : "bg-muted"}`}>
-                        <plan.icon className={`h-4.5 w-4.5 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
+                        <plan.icon className={`h-4 w-4 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
                       </div>
-                      <h3 className="font-bold text-xl text-landing-fg">{plan.name}</h3>
+                      <h3 className="font-bold text-lg text-landing-fg">{plan.name}</h3>
                     </div>
-                    <div className="mb-6" />
-                    <ul className="flex-1 space-y-3 mb-8">
+
+                    {/* Price */}
+                    <div className="mb-5 min-h-[3.5rem]">
+                      {hasPricing ? (
+                        <div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-foreground">
+                              {formatARS(billing === "annual" ? monthlyEquiv : price)}
+                            </span>
+                            <span className="text-sm text-landing-muted">/ mes</span>
+                          </div>
+                          {billing === "annual" && (
+                            <p className="text-xs text-landing-muted mt-1">
+                              {formatARS(price)} facturados anualmente
+                              <span className="ml-1 text-primary font-medium">
+                                Ahorrás {getSavingsPercent(plan.id as "pro" | "premium")}%
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      ) : isCorporate ? (
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold text-foreground">Custom</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold text-foreground">Gratis</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <ul className="flex-1 space-y-2.5 mb-7">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-sm text-landing-muted">
                           <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
@@ -588,20 +675,22 @@ const Landing = () => {
                       ))}
                     </ul>
                     <button
-                      onClick={() => handleSubscribe(plan.id)}
+                      onClick={() => isCorporate ? undefined : handleSubscribe(plan.id)}
                       disabled={subscribing === plan.id || isCurrent || plan.id === "free"}
                       className={`w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                         isCurrent
                           ? "bg-primary/10 text-primary cursor-default"
                           : plan.popular
                           ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
+                          : isCorporate
+                          ? "bg-muted border border-border text-foreground hover:bg-muted/80"
                           : plan.id === "free"
                           ? "bg-muted border border-border text-muted-foreground cursor-default"
                           : "bg-muted border border-border text-foreground hover:bg-muted/80"
                       } disabled:opacity-60`}
                     >
                       {subscribing === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {isCurrent ? "Plan actual" : plan.id === "free" ? "Gratis para siempre" : "Suscribirse"}
+                      {isCurrent ? "Plan actual" : isCorporate ? "Contactar Ventas" : plan.id === "free" ? "Gratis para siempre" : "Suscribirse"}
                     </button>
                   </div>
                 </motion.div>
