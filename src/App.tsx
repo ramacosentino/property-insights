@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useSubscription } from "@/hooks/useSubscription";
 import Landing from "./pages/Landing";
 import MapView from "./pages/MapView";
 import PropertyList from "./pages/PropertyList";
@@ -40,6 +41,12 @@ function RequireOnboarding({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RequirePremium({ children }: { children: React.ReactNode }) {
+  const { isPremium, isLoading } = useSubscription();
+  if (isLoading) return null;
+  if (!isPremium) return <Navigate to="/planes" replace />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -57,8 +64,8 @@ const App = () => (
           <Route path="/alertas" element={<RequireOnboarding><Alertas /></RequireOnboarding>} />
           <Route path="/ranking" element={<Navigate to="/propiedades" replace />} />
           
-          <Route path="/tasacion" element={<RequireOnboarding><Tasacion /></RequireOnboarding>} />
-          <Route path="/inteligencia-precios" element={<RequireOnboarding><InteligenciaPrecios /></RequireOnboarding>} />
+          <Route path="/tasacion" element={<RequireOnboarding><RequirePremium><Tasacion /></RequirePremium></RequireOnboarding>} />
+          <Route path="/inteligencia-precios" element={<RequireOnboarding><RequirePremium><InteligenciaPrecios /></RequirePremium></RequireOnboarding>} />
           <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
           <Route path="/planes" element={<RequireOnboarding><Planes /></RequireOnboarding>} />
           <Route path="/logo-preview" element={<LogoPreview />} />

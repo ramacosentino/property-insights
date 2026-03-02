@@ -1,26 +1,29 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
+import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock } from "lucide-react";
 import UrbbanLogo, { UrbannaIcon } from "./UrbbanLogo";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LayoutProps {
   children: React.ReactNode;
   headerContent?: React.ReactNode;
 }
 
+const PREMIUM_PATHS = ["/tasacion", "/inteligencia-precios"];
+
 const navItems = [
   { path: "/mapa", label: "Mapa", icon: Map },
   { path: "/propiedades", label: "Propiedades", icon: List },
-  
   { path: "/mis-proyectos", label: "Mis Proyectos", icon: Star, badgeKey: "preselection" as const },
   { path: "/busqueda", label: "Búsqueda", icon: Search },
-  { path: "/tasacion", label: "Tasación", icon: Calculator },
-  { path: "/inteligencia-precios", label: "Inteligencia de Precios", icon: TrendingUp },
+  { path: "/tasacion", label: "Tasación", icon: Calculator, premium: true },
+  { path: "/inteligencia-precios", label: "Inteligencia de Precios", icon: TrendingUp, premium: true },
   { path: "/alertas", label: "Alertas", icon: Bell },
 ];
 
@@ -35,6 +38,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const { isDark, toggle } = useTheme();
   const { count: preselectionCount } = usePreselection();
   const { user, signOut } = useAuth();
+  const { isPremium } = useSubscription();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -57,31 +61,50 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const renderNavItem = (item: typeof navItems[0], isCollapsed = false) => {
     const isActive = location.pathname === item.path;
     const badge = getBadge((item as any).badgeKey);
+    const isLocked = (item as any).premium && !isPremium;
 
-    return (
+    const content = (
       <Link
         key={item.path}
-        to={item.path}
+        to={isLocked ? "/planes" : item.path}
         onClick={closeSidebar}
         className={`relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-          isActive
+          isActive && !isLocked
             ? "bg-primary/15 text-primary"
+            : isLocked
+            ? "text-sidebar-foreground/40"
             : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
         } ${isCollapsed ? "justify-center" : ""}`}
         title={isCollapsed ? item.label : undefined}
       >
         <item.icon className="h-4 w-4 flex-shrink-0" />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
-        {!isCollapsed && badge != null && (
+        {!isCollapsed && isLocked && (
+          <Lock className="ml-auto h-3 w-3 text-muted-foreground/50" />
+        )}
+        {!isCollapsed && !isLocked && badge != null && (
           <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary leading-none">
             {badge}
           </span>
         )}
-        {isCollapsed && badge != null && (
+        {isCollapsed && badge != null && !isLocked && (
           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
         )}
       </Link>
     );
+
+    if (isLocked && !isCollapsed) {
+      return (
+        <Tooltip key={item.path}>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipContent side="right">
+            <p className="text-xs">Requiere plan Premium</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return content;
   };
 
   const sidebarContent = (isCollapsed: boolean) => (
