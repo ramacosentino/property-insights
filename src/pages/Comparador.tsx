@@ -84,11 +84,10 @@ const Comparador = () => {
     return properties
       .filter(p =>
         !compareIds.includes(p.id) &&
-        (analyses[p.id] || p.score_multiplicador != null) &&
-        (p.location.toLowerCase().includes(s) || p.neighborhood.toLowerCase().includes(s) || p.city.toLowerCase().includes(s))
+        (p.location?.toLowerCase().includes(s) || p.neighborhood?.toLowerCase().includes(s) || p.city?.toLowerCase().includes(s) || p.street?.toLowerCase().includes(s))
       )
       .slice(0, 8);
-  }, [searchTerm, properties, compareIds, analyses]);
+  }, [searchTerm, properties, compareIds]);
 
   const getAnalysis = (p: Property): CompareAnalysis | null => {
     if (analyses[p.id]) return analyses[p.id];
@@ -295,10 +294,10 @@ const Comparador = () => {
 
             {selectedIds.size > 0 && (
               <div className="mt-3">
-                <span className="text-[11px] text-muted-foreground font-medium">Tus proyectos analizados:</span>
+                <span className="text-[11px] text-muted-foreground font-medium">Tus proyectos guardados:</span>
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {[...selectedIds]
-                    .filter(id => !compareIds.includes(id) && (analyses[id] || properties.find(p => p.id === id)?.score_multiplicador != null))
+                    .filter(id => !compareIds.includes(id))
                     .slice(0, 10)
                     .map(id => {
                       const p = properties.find(pp => pp.id === id);
