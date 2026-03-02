@@ -436,7 +436,7 @@ const Landing = () => {
             <span className="text-primary">centralizado y comparado</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-14">
-            Urbban reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
+            Urbanna reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
           </motion.p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
             {solutionPillars.map((pillar, i) => (
