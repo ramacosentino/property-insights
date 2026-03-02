@@ -2,6 +2,14 @@ import UrbbanLogo, { UrbannaIcon } from "@/components/UrbbanLogo";
 
 const FONT = "'Orelo SemiCondensed DemiBold', serif";
 
+const FONT_CANDIDATES = [
+  { name: "Orelo SemiCond. (actual)", family: "'Orelo SemiCondensed DemiBold', serif" },
+  { name: "Florentine", family: "'Florentine', serif" },
+  { name: "LT Serif", family: "'LT Serif', serif" },
+  { name: "GrifinitoL", family: "'GrifinitoL', serif" },
+  { name: "Editorial New", family: "'Editorial New', serif" },
+];
+
 /* ─── Icon Variants ─── */
 
 /** A: U con dot de acento (actual) */
@@ -110,35 +118,59 @@ const LogoPreview = () => (
     </p>
 
     <div className="max-w-5xl mx-auto space-y-20">
-      {/* Wordmark */}
+      {/* Font comparison */}
       <section className="space-y-6">
         <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest border-b border-border pb-2">
-          Wordmark
+          Comparación de tipografías
         </h2>
-        <div className="flex items-end gap-8 flex-wrap">
-          {(["sm", "md", "lg"] as const).map(s => (
-            <div key={s} className="flex flex-col items-start gap-1">
-              <div className="px-6 py-4 rounded-xl border border-border bg-card">
-                <UrbbanLogo size={s} />
+        <div className="grid gap-6">
+          {FONT_CANDIDATES.map(f => (
+            <div key={f.name} className="flex items-center gap-6">
+              <span className="text-xs text-muted-foreground font-mono w-44 shrink-0">{f.name}</span>
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Light bg */}
+                <div className="px-6 py-4 rounded-xl border border-border bg-card">
+                  <span
+                    className="inline-flex items-baseline"
+                    style={{ fontFamily: f.family, fontSize: 38, letterSpacing: "-0.02em", lineHeight: 1 }}
+                  >
+                    <span>Urban</span>
+                    <span className="text-primary">n</span>
+                    <span>a.</span>
+                  </span>
+                </div>
+                {/* Dark bg */}
+                <div className="px-6 py-4 rounded-xl bg-foreground">
+                  <span
+                    className="inline-flex items-baseline text-background"
+                    style={{ fontFamily: f.family, fontSize: 38, letterSpacing: "-0.02em", lineHeight: 1 }}
+                  >
+                    <span>Urban</span>
+                    <span className="text-primary">n</span>
+                    <span>a.</span>
+                  </span>
+                </div>
+                {/* Small */}
+                <div className="px-4 py-2 rounded-lg border border-border bg-card">
+                  <span
+                    className="inline-flex items-baseline"
+                    style={{ fontFamily: f.family, fontSize: 22, letterSpacing: "-0.02em", lineHeight: 1 }}
+                  >
+                    <span>Urban</span>
+                    <span className="text-primary">n</span>
+                    <span>a.</span>
+                  </span>
+                </div>
               </div>
-              <span className="text-[9px] text-muted-foreground font-mono">{s}</span>
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-6 flex-wrap">
-          <div className="px-8 py-5 rounded-xl border border-border bg-card">
-            <UrbbanLogo size="lg" />
-          </div>
-          <div className="px-8 py-5 rounded-xl bg-foreground">
-            <UrbbanLogo size="lg" className="text-background" />
-          </div>
-        </div>
       </section>
 
-      {/* Color palette exploration */}
-      <section className="space-y-8">
+      {/* Wordmark */}
+      <section className="space-y-6">
         <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest border-b border-border pb-2">
-          Exploración de color primario
+          Wordmark (actual)
         </h2>
         <p className="text-xs text-muted-foreground">Azul desaturado / opaco / grisáceo. Hacé click en una paleta para verla aplicada al logo.</p>
 
