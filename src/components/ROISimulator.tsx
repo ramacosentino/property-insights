@@ -86,7 +86,15 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
               onValueChange={(v) => setRenovCost(v[0])}
               className="w-full"
             />
-            <div className="flex gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {renovCostEstimate != null && renovCostEstimate !== renovCost && (
+                <button
+                  onClick={() => setRenovCost(renovCostEstimate)}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-medium border transition-all bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                >
+                  Estimada (${(renovCostEstimate / 1000).toFixed(0)}K)
+                </button>
+              )}
               {presets.map((p) => (
                 <button
                   key={p.label}
