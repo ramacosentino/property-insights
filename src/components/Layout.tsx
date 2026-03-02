@@ -61,31 +61,50 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const renderNavItem = (item: typeof navItems[0], isCollapsed = false) => {
     const isActive = location.pathname === item.path;
     const badge = getBadge((item as any).badgeKey);
+    const isLocked = (item as any).premium && !isPremium;
 
-    return (
+    const content = (
       <Link
         key={item.path}
-        to={item.path}
+        to={isLocked ? "/planes" : item.path}
         onClick={closeSidebar}
         className={`relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-          isActive
+          isActive && !isLocked
             ? "bg-primary/15 text-primary"
+            : isLocked
+            ? "text-sidebar-foreground/40"
             : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
         } ${isCollapsed ? "justify-center" : ""}`}
         title={isCollapsed ? item.label : undefined}
       >
         <item.icon className="h-4 w-4 flex-shrink-0" />
         {!isCollapsed && <span className="truncate">{item.label}</span>}
-        {!isCollapsed && badge != null && (
+        {!isCollapsed && isLocked && (
+          <Lock className="ml-auto h-3 w-3 text-muted-foreground/50" />
+        )}
+        {!isCollapsed && !isLocked && badge != null && (
           <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary leading-none">
             {badge}
           </span>
         )}
-        {isCollapsed && badge != null && (
+        {isCollapsed && badge != null && !isLocked && (
           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
         )}
       </Link>
     );
+
+    if (isLocked && !isCollapsed) {
+      return (
+        <Tooltip key={item.path}>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipContent side="right">
+            <p className="text-xs">Requiere plan Premium</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return content;
   };
 
   const sidebarContent = (isCollapsed: boolean) => (
