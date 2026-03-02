@@ -45,8 +45,6 @@ function RequirePremium({ children }: { children: React.ReactNode }) {
   const { isPremium, isLoading } = useSubscription();
   if (isLoading) return null;
   if (!isPremium) return <Navigate to="/planes" replace />;
-  return <>{children}</>;
-}
 }
 
 const App = () => (
