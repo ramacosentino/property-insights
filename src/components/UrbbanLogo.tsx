@@ -6,7 +6,7 @@ interface UrbbanLogoProps {
   showIcon?: boolean;
 }
 
-const sizeMap = { sm: 18, md: 22, lg: 32 };
+const sizeMap = { sm: 22, md: 28, lg: 38 };
 
 const UrbbanLogo = ({ className = "", size = "md", showIcon = false }: UrbbanLogoProps) => {
   const px = sizeMap[size];

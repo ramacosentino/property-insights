@@ -19,7 +19,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 12%;
 
-    --primary: 215 38% 46%;
+    --primary: 215 45% 48%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 92%;
@@ -36,29 +36,29 @@
 
     --border: 220 14% 88%;
     --input: 220 14% 88%;
-    --ring: 215 38% 46%;
+    --ring: 215 45% 48%;
 
     --radius: 1rem;
 
     /* Custom analytics tokens */
-    --opportunity: 215 38% 46%;
+    --opportunity: 215 45% 48%;
     --opportunity-foreground: 0 0% 100%;
     --expensive: 155 65% 38%;
     --expensive-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 220 25% 10%;
-    --highlight-row: 215 38% 46% / 0.08;
+    --highlight-row: 215 45% 48% / 0.08;
     --glass: 0 0% 100% / 0.85;
     --glass-border: 220 14% 88%;
 
     --sidebar-background: 220 20% 97%;
     --sidebar-foreground: 220 20% 30%;
-    --sidebar-primary: 215 38% 46%;
+    --sidebar-primary: 215 45% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 94%;
     --sidebar-accent-foreground: 220 20% 30%;
     --sidebar-border: 220 14% 88%;
-    --sidebar-ring: 215 38% 46%;
+    --sidebar-ring: 215 45% 48%;
 
     --font-mono: 'JetBrains Mono', monospace;
     --font-sans: 'Satoshi', system-ui, sans-serif;
@@ -73,7 +73,7 @@
     --landing-muted: 215 12% 48%;
     --landing-card: 220 15% 92%;
     --landing-card-border: 220 14% 85%;
-    --landing-glow: 215 38% 46%;
+    --landing-glow: 215 45% 48%;
   }
 
   .dark {
@@ -133,7 +133,7 @@
     --landing-muted: 215 15% 55%;
     --landing-card: 220 22% 9%;
     --landing-card-border: 220 18% 16%;
-    --landing-glow: 215 38% 46%;
+    --landing-glow: 215 45% 48%;
   }
 }
 
