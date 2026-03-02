@@ -135,47 +135,68 @@ const LogoPreview = () => (
         </div>
       </section>
 
-      {/* Icon variants */}
+      {/* Color palette exploration */}
       <section className="space-y-8">
         <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest border-b border-border pb-2">
-          Alternativas de ícono simplificado
+          Exploración de color primario
         </h2>
+        <p className="text-xs text-muted-foreground">Azul desaturado / opaco / grisáceo. Hacé click en una paleta para verla aplicada al logo.</p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {VARIANTS.map(v => (
-            <div key={v.key} className="space-y-3">
-              <div className="flex flex-col items-center gap-2">
-                {/* Light */}
-                <div className="p-4 rounded-xl border border-border bg-card flex items-center justify-center" style={{ minWidth: 80, minHeight: 80 }}>
-                  <v.Component size={48} />
-                </div>
-                {/* Dark */}
-                <div className="p-4 rounded-xl bg-foreground flex items-center justify-center" style={{ minWidth: 80, minHeight: 80 }}>
-                  <v.Component size={48} className="text-background" />
-                </div>
+        {[
+          { key: "1", name: "Steel Blue", hsl: "210 25% 45%", dark: "210 30% 58%", desc: "Azul acero, sobrio y profesional" },
+          { key: "2", name: "Slate Blue", hsl: "215 20% 42%", dark: "215 25% 56%", desc: "Pizarra azulado, muy neutro" },
+          { key: "3", name: "Storm", hsl: "220 18% 40%", dark: "220 22% 55%", desc: "Gris tormenta con tinte azul" },
+          { key: "4", name: "Petrol", hsl: "200 30% 38%", dark: "200 35% 52%", desc: "Petróleo apagado, elegante" },
+          { key: "5", name: "Dusk", hsl: "225 22% 38%", dark: "225 26% 54%", desc: "Azul atardecer, profundo y cálido" },
+          { key: "6", name: "Graphite Blue", hsl: "210 15% 36%", dark: "210 18% 52%", desc: "Grafito con toque azul, muy sutil" },
+        ].map(p => (
+          <div key={p.key} className="flex items-start gap-6">
+            {/* Swatch */}
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <div className="w-16 h-16 rounded-xl shadow-sm" style={{ backgroundColor: `hsl(${p.hsl})` }} />
+              <div className="w-16 h-10 rounded-lg" style={{ backgroundColor: `hsl(${p.dark})` }} />
+              <span className="text-[9px] text-muted-foreground font-mono mt-1">{p.hsl}</span>
+            </div>
+            {/* Logo preview with this color */}
+            <div className="space-y-2 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">{p.key}. {p.name}</span>
+                <span className="text-[10px] text-muted-foreground">{p.desc}</span>
               </div>
-              <div className="text-center">
-                <span className="text-xs font-semibold">{v.key}. {v.label}</span>
-                <p className="text-[10px] text-muted-foreground">{v.desc}</p>
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Light bg */}
+                <div className="px-5 py-3 rounded-xl border border-border bg-card">
+                  <span
+                    className="inline-flex items-baseline"
+                    style={{ fontFamily: FONT, fontSize: 32, letterSpacing: "-0.02em", lineHeight: 1 }}
+                  >
+                    <span>Urban</span>
+                    <span style={{ color: `hsl(${p.hsl})` }}>n</span>
+                    <span>a.</span>
+                  </span>
+                </div>
+                {/* Dark bg */}
+                <div className="px-5 py-3 rounded-xl bg-foreground">
+                  <span
+                    className="inline-flex items-baseline text-background"
+                    style={{ fontFamily: FONT, fontSize: 32, letterSpacing: "-0.02em", lineHeight: 1 }}
+                  >
+                    <span>Urban</span>
+                    <span style={{ color: `hsl(${p.dark})` }}>n</span>
+                    <span>a.</span>
+                  </span>
+                </div>
+                {/* Button sample */}
+                <button
+                  className="px-4 py-2 rounded-lg text-white text-sm font-medium"
+                  style={{ backgroundColor: `hsl(${p.hsl})` }}
+                >
+                  Botón primario
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Size comparison of all */}
-        <div className="space-y-4 pt-4">
-          <h3 className="text-xs font-mono text-muted-foreground">Comparativa a 24px (tamaño sidebar)</h3>
-          <div className="flex items-center gap-6 flex-wrap">
-            {VARIANTS.map(v => (
-              <div key={v.key} className="flex flex-col items-center gap-1">
-                <div className="p-2 rounded-lg border border-border bg-card flex items-center justify-center" style={{ minWidth: 40, minHeight: 40 }}>
-                  <v.Component size={24} />
-                </div>
-                <span className="text-[9px] text-muted-foreground font-mono">{v.key}</span>
-              </div>
-            ))}
           </div>
-        </div>
+        ))}
       </section>
     </div>
   </div>
