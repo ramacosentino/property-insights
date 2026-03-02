@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import OnboardingZoneSelector from "@/components/OnboardingZoneSelector";
+import { PLAN_LIMITS, PlanId } from "@/hooks/useSubscription";
 import {
   Home,
   TrendingUp,
@@ -17,6 +18,10 @@ import {
   DollarSign,
   Layers,
   Target,
+  Star,
+  Zap,
+  Crown,
+  Check,
 } from "lucide-react";
 
 const USER_TYPES = [
@@ -64,7 +69,30 @@ const INVESTMENT_GOALS = [
   { value: "desarrollo", label: "Desarrollo inmobiliario" },
 ];
 
-const TOTAL_STEPS = 4; // step 5 (investment_goal) is conditional
+const ONBOARDING_PLANS = [
+  {
+    id: "free" as PlanId,
+    name: "Free",
+    icon: Star,
+    description: "Para explorar la plataforma",
+    highlights: ["5 análisis IA / mes", "3 búsquedas / mes", "1 alerta activa"],
+  },
+  {
+    id: "pro" as PlanId,
+    name: "Pro",
+    icon: Zap,
+    description: "Para inversores activos",
+    highlights: ["50 análisis IA / mes", "30 búsquedas / mes", "Exportar datos"],
+    popular: true,
+  },
+  {
+    id: "premium" as PlanId,
+    name: "Premium",
+    icon: Crown,
+    description: "Acceso total sin límites",
+    highlights: ["Análisis ilimitados", "Tasación automática", "Inteligencia de precios"],
+  },
+];
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -72,6 +100,7 @@ const Onboarding = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>("free");
 
   const [data, setData] = useState<OnboardingData>({
     user_type: "",
@@ -83,34 +112,37 @@ const Onboarding = () => {
     investment_goal: null,
   });
 
-  
-
   const isInvestor = data.user_type === "inversor_recurrente" || data.user_type === "inmobiliaria";
-  const totalSteps = isInvestor ? TOTAL_STEPS + 1 : TOTAL_STEPS;
+  // Steps: 0=user_type, 1=zones, 2=budget, 3=property_types, 4?=investment_goal, last=plan
+  const baseSteps = isInvestor ? 5 : 4;
+  const totalSteps = baseSteps + 1; // +1 for plan selection
+  const planStep = baseSteps;
   const progress = ((step + 1) / totalSteps) * 100;
 
   const canNext = () => {
     switch (step) {
       case 0: return !!data.user_type;
       case 1: return data.zones.length > 0;
-      case 2: return true; // budget is optional
+      case 2: return true;
       case 3: return data.property_types.length > 0;
-      case 4: return !!data.investment_goal;
-      default: return false;
+      case 4: return isInvestor ? !!data.investment_goal : true; // plan step if !isInvestor
+      default: return true;
     }
   };
 
-  const isLastStep = () => {
-    if (isInvestor) return step === 4;
-    return step === 3;
-  };
+  const isLastStep = () => step === planStep;
 
   const handleNext = async () => {
     if (isLastStep()) {
       setSubmitting(true);
       try {
         await saveOnboarding(data);
-        navigate("/mapa", { replace: true });
+        if (selectedPlan !== "free") {
+          // Redirect to planes page to complete payment
+          navigate("/planes", { replace: true });
+        } else {
+          navigate("/mapa", { replace: true });
+        }
       } catch (err: any) {
         toast({ title: "Error", description: err.message, variant: "destructive" });
       } finally {
@@ -125,7 +157,6 @@ const Onboarding = () => {
 
   const toggleArray = (arr: string[], value: string) =>
     arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
-
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
@@ -191,8 +222,6 @@ const Onboarding = () => {
               <h1 className="text-xl font-bold text-foreground">Presupuesto</h1>
               <p className="text-sm text-muted-foreground">¿Cuál es tu rango de presupuesto? (opcional)</p>
             </div>
-
-            {/* Currency toggle */}
             <div className="flex gap-2 justify-center">
               {["USD", "ARS"].map((c) => (
                 <button
@@ -208,7 +237,6 @@ const Onboarding = () => {
                 </button>
               ))}
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Mínimo</label>
@@ -294,6 +322,53 @@ const Onboarding = () => {
           </div>
         )}
 
+        {/* Plan Selection Step */}
+        {step === planStep && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className="text-center space-y-1">
+              <h1 className="text-xl font-bold text-foreground">Elegí tu plan</h1>
+              <p className="text-sm text-muted-foreground">Podés cambiar en cualquier momento</p>
+            </div>
+            <div className="grid gap-3">
+              {ONBOARDING_PLANS.map((plan) => {
+                const selected = selectedPlan === plan.id;
+                return (
+                  <button
+                    key={plan.id}
+                    onClick={() => setSelectedPlan(plan.id)}
+                    className={`relative flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
+                      selected
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                        : "border-border bg-card hover:border-primary/40"
+                    }`}
+                  >
+                    {plan.popular && (
+                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                        Popular
+                      </span>
+                    )}
+                    <div className={`p-2 rounded-lg flex-shrink-0 ${selected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      <plan.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-foreground">{plan.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
+                      <ul className="mt-2 space-y-1">
+                        {plan.highlights.map((h) => (
+                          <li key={h} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                            {h}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <div className="flex items-center justify-between pt-2">
           <Button variant="ghost" size="sm" onClick={handleBack} disabled={step === 0}>
@@ -302,7 +377,11 @@ const Onboarding = () => {
           </Button>
           <Button size="sm" onClick={handleNext} disabled={!canNext() || submitting}>
             {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-            {isLastStep() ? "Empezar" : "Siguiente"}
+            {isLastStep()
+              ? selectedPlan === "free"
+                ? "Empezar gratis"
+                : "Continuar al pago"
+              : "Siguiente"}
             {!isLastStep() && <ChevronRight className="h-4 w-4 ml-1" />}
           </Button>
         </div>
