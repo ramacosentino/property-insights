@@ -117,6 +117,7 @@ export type Database = {
         Row: {
           address: string | null
           age_years: number | null
+          alt_urls: string[] | null
           bathrooms: number | null
           bedrooms: number | null
           city: string | null
@@ -163,6 +164,7 @@ export type Database = {
         Insert: {
           address?: string | null
           age_years?: number | null
+          alt_urls?: string[] | null
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string | null
@@ -209,6 +211,7 @@ export type Database = {
         Update: {
           address?: string | null
           age_years?: number | null
+          alt_urls?: string[] | null
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string | null
