@@ -222,6 +222,7 @@ async function fetchAllProperties(): Promise<DBPropertyRow[]> {
     const { data, error } = await supabase
       .from("properties")
       .select("*")
+      .eq("status", "active")
       .range(from, from + pageSize - 1);
 
     if (error) {
