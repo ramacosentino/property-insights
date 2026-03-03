@@ -194,11 +194,11 @@ Deno.serve(async (req) => {
         const url = trimOrNull(getCol(cols, "url"));
 
         // --- Cross-portal duplicate detection ---
-        // Match by: address + property_type + similar price (±10%) + similar surface (±15%)
+        // Match by: address + property_type + precio ±5% + superficie exacta
         if (address && propertyType) {
-          const surface = surfaceTotal || surfaceCovered;
-          const priceLow = price * 0.9;
-          const priceHigh = price * 1.1;
+          const surface = surfaceCovered || surfaceTotal;
+          const priceLow = price * 0.95;
+          const priceHigh = price * 1.05;
 
           let query = supabase
             .from("properties")
@@ -210,12 +210,10 @@ Deno.serve(async (req) => {
             .lte("price", priceHigh);
 
           if (surface && surface > 0) {
-            const sLow = surface * 0.85;
-            const sHigh = surface * 1.15;
             if (surfaceCovered) {
-              query = query.gte("surface_covered", sLow).lte("surface_covered", sHigh);
+              query = query.eq("surface_covered", surfaceCovered);
             } else if (surfaceTotal) {
-              query = query.gte("surface_total", sLow).lte("surface_total", sHigh);
+              query = query.eq("surface_total", surfaceTotal);
             }
           }
 
