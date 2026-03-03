@@ -81,7 +81,7 @@ const HEADER_MAP: Record<string, string> = {
   parking: "parking", bedrooms: "bedrooms", age_years: "age_years",
   price_per_m2_total: "price_per_m2_total", price_per_m2_covered: "price_per_m2_covered",
   toilettes: "toilettes", disposition: "disposition", orientation: "orientation",
-  luminosity: "luminosity",
+  luminosity: "luminosity", source: "source",
 };
 
 Deno.serve(async (req) => {
@@ -185,6 +185,9 @@ Deno.serve(async (req) => {
         const price = parseNum(getCol(cols, "price"));
         if (!price || price <= 0) { skipped++; continue; }
 
+        // Use address as street fallback (MeLi provides address but not street)
+        const street = trimOrNull(getCol(cols, "street")) || trimOrNull(getCol(cols, "address"));
+
         rows.push({
           external_id: externalId,
           price,
@@ -196,7 +199,7 @@ Deno.serve(async (req) => {
           property_type: trimOrNull(getCol(cols, "property_type")),
           title: trimOrNull(getCol(cols, "title")),
           address: trimOrNull(getCol(cols, "address")),
-          street: trimOrNull(getCol(cols, "street")),
+          street,
           expenses: parseNum(getCol(cols, "expenses")),
           description: trimOrNull(getCol(cols, "description")),
           surface_total: parseNum(getCol(cols, "surface_total")),
@@ -212,6 +215,7 @@ Deno.serve(async (req) => {
           luminosity: trimOrNull(getCol(cols, "luminosity")),
           price_per_m2_total: parseNum(getCol(cols, "price_per_m2_total")),
           price_per_m2_covered: parseNum(getCol(cols, "price_per_m2_covered")),
+          source: trimOrNull(getCol(cols, "source")),
           scraped_at: getCol(cols, "scraped_at")?.trim()
             ? new Date(getCol(cols, "scraped_at")!.trim()).toISOString()
             : new Date().toISOString(),
