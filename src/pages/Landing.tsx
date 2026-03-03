@@ -298,8 +298,8 @@ const Landing = () => {
           animate="visible"
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-8">
-            <UrbbanLogo size="sm" className="text-primary" showIcon />
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-8">
+            <UrbbanLogo size="md" className="text-primary" showIcon />
             Analítica inmobiliaria basada en datos
           </motion.div>
 
