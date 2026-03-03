@@ -172,6 +172,7 @@ Deno.serve(async (req) => {
     const dataRows = allRows.slice(1);
     let inserted = 0;
     let skipped = 0;
+    let merged = 0;
     const errors: string[] = [];
 
     const batchSize = 100;
@@ -185,25 +186,79 @@ Deno.serve(async (req) => {
         const price = parseNum(getCol(cols, "price"));
         if (!price || price <= 0) { skipped++; continue; }
 
-        // Use address as street fallback (MeLi provides address but not street)
-        const street = trimOrNull(getCol(cols, "street")) || trimOrNull(getCol(cols, "address"));
+        const address = trimOrNull(getCol(cols, "address"));
+        const street = trimOrNull(getCol(cols, "street")) || address;
+        const surfaceCovered = parseNum(getCol(cols, "surface_covered"));
+        const surfaceTotal = parseNum(getCol(cols, "surface_total"));
+        const propertyType = trimOrNull(getCol(cols, "property_type"));
+        const url = trimOrNull(getCol(cols, "url"));
+
+        // --- Cross-portal duplicate detection ---
+        // Match by: address + property_type + similar price (±10%) + similar surface (±15%)
+        if (address && propertyType) {
+          const surface = surfaceTotal || surfaceCovered;
+          const priceLow = price * 0.9;
+          const priceHigh = price * 1.1;
+
+          let query = supabase
+            .from("properties")
+            .select("id, url, alt_urls, external_id")
+            .neq("external_id", externalId)
+            .eq("property_type", propertyType)
+            .ilike("address", address)
+            .gte("price", priceLow)
+            .lte("price", priceHigh);
+
+          if (surface && surface > 0) {
+            const sLow = surface * 0.85;
+            const sHigh = surface * 1.15;
+            if (surfaceCovered) {
+              query = query.gte("surface_covered", sLow).lte("surface_covered", sHigh);
+            } else if (surfaceTotal) {
+              query = query.gte("surface_total", sLow).lte("surface_total", sHigh);
+            }
+          }
+
+          const { data: duplicates } = await query.limit(1);
+
+          if (duplicates && duplicates.length > 0 && url) {
+            const dup = duplicates[0];
+            // Merge: add this URL to alt_urls of existing property
+            const existingAltUrls: string[] = (dup.alt_urls as string[]) || [];
+            const existingUrl = dup.url as string || "";
+            // Don't add if already present
+            if (url !== existingUrl && !existingAltUrls.includes(url)) {
+              const newAltUrls = [...existingAltUrls, url];
+              await supabase
+                .from("properties")
+                .update({ alt_urls: newAltUrls })
+                .eq("id", dup.id);
+              console.log(`Merged duplicate: ${externalId} → existing ${dup.external_id} (added alt_url)`);
+              merged++;
+            } else {
+              console.log(`Duplicate already merged: ${externalId} → ${dup.external_id}`);
+              skipped++;
+            }
+            continue; // skip inserting this row
+          }
+        }
 
         rows.push({
           external_id: externalId,
           price,
           currency: trimOrNull(getCol(cols, "currency")) || "USD",
-          url: trimOrNull(getCol(cols, "url")),
+          url,
           location: trimOrNull(getCol(cols, "location")),
           neighborhood: trimOrNull(getCol(cols, "neighborhood")) || "Sin barrio",
           city: trimOrNull(getCol(cols, "city")) || "Sin ciudad",
-          property_type: trimOrNull(getCol(cols, "property_type")),
+          property_type: propertyType,
           title: trimOrNull(getCol(cols, "title")),
-          address: trimOrNull(getCol(cols, "address")),
+          address,
           street,
           expenses: parseNum(getCol(cols, "expenses")),
           description: trimOrNull(getCol(cols, "description")),
-          surface_total: parseNum(getCol(cols, "surface_total")),
-          surface_covered: parseNum(getCol(cols, "surface_covered")),
+          surface_total: surfaceTotal,
+          surface_covered: surfaceCovered,
           rooms: parseNum(getCol(cols, "rooms")),
           bedrooms: parseNum(getCol(cols, "bedrooms")),
           bathrooms: parseNum(getCol(cols, "bathrooms")),
