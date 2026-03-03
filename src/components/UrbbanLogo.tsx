@@ -18,12 +18,13 @@ const UrbbanLogo = ({ className = "", size = "md", showIcon = false }: UrbbanLog
   return (
     <span
       className={`inline-flex items-baseline ${className}`}
-      style={{ fontFamily: FONT, fontSize: px, letterSpacing: "-0.02em", lineHeight: 1 }}
+      style={{ fontFamily: FONT, fontSize: px, lineHeight: 1 }}
       aria-label="Urbanna"
     >
-      <span>Urban</span>
-      <span className="text-primary">n</span>
-      <span>a.</span>
+      <span style={{ letterSpacing: "0.03em" }}>Urban</span>
+      <span className="text-primary" style={{ letterSpacing: "0.03em" }}>n</span>
+      <span style={{ letterSpacing: "0.03em" }}>a</span>
+      <span style={{ letterSpacing: 0 }}>.</span>
     </span>
   );
 };
