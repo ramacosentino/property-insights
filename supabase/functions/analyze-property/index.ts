@@ -97,8 +97,75 @@ async function scrapeProperty(url: string, firecrawlKey: string) {
   return { success: false, error: "All scrape attempts failed" };
 }
 
+/** Detect which fields are missing from a property */
+function detectMissingFields(prop: any): string[] {
+  const checks: [string, string][] = [
+    ["surface_total", "Superficie total (m²)"],
+    ["bedrooms", "Dormitorios"],
+    ["parking", "Cocheras"],
+    ["age_years", "Antigüedad (años)"],
+    ["expenses", "Expensas (ARS)"],
+    ["description", "Descripción"],
+    ["disposition", "Disposición (Frente/Contrafrente/Interno/Lateral)"],
+    ["orientation", "Orientación (Norte/Sur/Este/Oeste/etc.)"],
+    ["luminosity", "Luminosidad (Muy luminoso/Luminoso/Normal/Poco luminoso)"],
+    ["toilettes", "Toilettes"],
+    ["surface_covered", "Superficie cubierta (m²)"],
+  ];
+  const missing: string[] = [];
+  for (const [field, label] of checks) {
+    const val = prop[field];
+    if (val === null || val === undefined || val === "" || val === 0) {
+      missing.push(label);
+    }
+  }
+  return missing;
+}
+
+/** Map AI-extracted field labels back to DB column names */
+function mapExtractedFields(extracted: Record<string, any>): Record<string, any> {
+  const mapping: Record<string, { col: string; type: "num" | "text" }> = {
+    "Superficie total (m²)": { col: "surface_total", type: "num" },
+    "Superficie cubierta (m²)": { col: "surface_covered", type: "num" },
+    "Dormitorios": { col: "bedrooms", type: "num" },
+    "Cocheras": { col: "parking", type: "num" },
+    "Antigüedad (años)": { col: "age_years", type: "num" },
+    "Expensas (ARS)": { col: "expenses", type: "num" },
+    "Descripción": { col: "description", type: "text" },
+    "Disposición (Frente/Contrafrente/Interno/Lateral)": { col: "disposition", type: "text" },
+    "Orientación (Norte/Sur/Este/Oeste/etc.)": { col: "orientation", type: "text" },
+    "Luminosidad (Muy luminoso/Luminoso/Normal/Poco luminoso)": { col: "luminosity", type: "text" },
+    "Toilettes": { col: "toilettes", type: "num" },
+  };
+  const result: Record<string, any> = {};
+  for (const [label, value] of Object.entries(extracted)) {
+    const m = mapping[label];
+    if (!m || value === null || value === undefined || value === "") continue;
+    if (m.type === "num") {
+      const n = Number(value);
+      if (!isNaN(n) && n >= 0) result[m.col] = n;
+    } else {
+      result[m.col] = String(value).trim();
+    }
+  }
+  return result;
+}
+
 /** Call AI to analyze property */
-async function analyzeWithAI(prop: any, markdown: string, screenshot: string | null, lovableKey: string) {
+async function analyzeWithAI(prop: any, markdown: string, screenshot: string | null, lovableKey: string, missingFields: string[]) {
+  const missingSection = missingFields.length > 0
+    ? `\n\nCAMPOS FALTANTES A EXTRAER:
+Los siguientes campos NO están en nuestra base de datos para esta propiedad. 
+EXTRAELOS del contenido scrapeado si podés encontrarlos:
+${missingFields.map(f => `- ${f}`).join("\n")}
+
+En tu respuesta JSON, agregá un campo "extracted_fields" con los valores que pudiste extraer.
+Ejemplo: "extracted_fields": { "Superficie total (m²)": 120, "Dormitorios": 3, "Cocheras": 1 }
+Si no encontrás un campo, NO lo incluyas en extracted_fields (no pongas null ni 0).
+Para "Descripción", escribí un resumen breve de la publicación si no hay descripción en la DB (máximo 500 caracteres).
+Para "Antigüedad (años)", si dice "a estrenar" poné 0, si dice "años de antigüedad" poné el número.`
+    : "";
+
   const prompt = `Eres un tasador inmobiliario experto en Argentina con 20 años de experiencia.
 
 INFORMACIÓN DE LA PROPIEDAD (de nuestra base de datos):
@@ -110,11 +177,13 @@ INFORMACIÓN DE LA PROPIEDAD (de nuestra base de datos):
 - Baños: ${prop.bathrooms || "N/A"}
 - Ubicación: ${prop.neighborhood || "N/A"}, ${prop.city || "N/A"}
 - Descripción DB: ${(prop.description || "N/A").substring(0, 500)}
+- Fuente: ${prop.source || "N/A"}
 
 CONTENIDO SCRAPEADO DE LA PUBLICACIÓN:
 ${markdown.substring(0, 4000)}
 
 ANALIZA LA INFORMACIÓN Y LA IMAGEN (screenshot de la publicación):
+${missingSection}
 
 CRITERIOS DE SCORING (MULTIPLICADOR DE VALOR):
 Base = 1.0 (propiedad promedio: estado aceptable, luz normal, sin lujos ni problemas)
@@ -180,7 +249,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
     "highlights": ["Punto positivo 1", "Punto positivo 2", "..."],
     "lowlights": ["Punto negativo 1", "Punto negativo 2", "..."],
     "score_multiplicador": 0.85,
-    "informe_breve": "Resumen de 2-3 oraciones sobre la propiedad, su estado y valor relativo."
+    "informe_breve": "Resumen de 2-3 oraciones sobre la propiedad, su estado y valor relativo."${missingFields.length > 0 ? ',\n    "extracted_fields": { "campo": "valor extraído" }' : ""}
 }`;
 
   const messages: any[] = [
@@ -238,6 +307,7 @@ RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
       lowlights: Array.isArray(analysis.lowlights) ? analysis.lowlights : [],
       informe_breve: typeof analysis.informe_breve === "string" ? analysis.informe_breve : "",
       estado_general: enforceEstado(score),
+      extracted_fields: analysis.extracted_fields || null,
     };
   } catch {
     return { success: false, status: 500, error: "AI returned malformed JSON" };
