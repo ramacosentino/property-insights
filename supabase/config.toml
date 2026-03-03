@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.check-property-urls]
 verify_jwt = false
+
+[functions.cleanup-properties]
+verify_jwt = false
