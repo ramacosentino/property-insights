@@ -112,14 +112,14 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const sidebarContent = (isCollapsed: boolean) => (
     <div className={`flex flex-col h-screen bg-sidebar-background border-r border-sidebar-border transition-[width] duration-300 ease-in-out ${isCollapsed ? "w-14" : "w-56"}`}>
       {/* Logo + collapse toggle */}
-      <div className={`flex items-center h-14 px-3 border-b border-sidebar-border ${isCollapsed ? "justify-center px-2" : "justify-between"}`}>
+      <div className={`flex items-center h-14 border-b border-sidebar-border ${isCollapsed ? "justify-center px-1" : "justify-between px-3"}`}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
             <UrbbanLogo size="sm" className="text-sidebar-foreground" />
           </div>
         )}
         {isCollapsed && (
-          <UrbannaIcon size={30} className="text-sidebar-foreground" />
+          <UrbannaIcon size={28} className="flex-shrink-0" />
         )}
         {!isMobile && (
           <button
@@ -160,11 +160,11 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
         {/* User */}
         {user ? (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isCollapsed ? "justify-center" : ""}`}>
+          <div className={`flex items-center gap-2 rounded-lg ${isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2"}`}>
             {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
+              <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover flex-shrink-0 aspect-square" />
             ) : (
-              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 aspect-square">
                 <User className="h-4 w-4 text-primary" />
               </div>
             )}
