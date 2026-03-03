@@ -443,6 +443,11 @@ Deno.serve(async (req) => {
         if (result) {
           const normalized = extractNormalizedGeo(result.address_components);
 
+          // Fallback: if Google couldn't resolve locality, use CSV city field
+          if (!normalized.norm_locality && item.province) {
+            normalized.norm_locality = item.province;
+          }
+
           await supabase.from("geocoded_addresses").upsert({
             address: item.address,
             neighborhood: item.neighborhood,
