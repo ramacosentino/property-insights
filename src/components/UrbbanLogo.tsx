@@ -28,13 +28,14 @@ const UrbbanLogo = ({ className = "", size = "md", showIcon = false }: UrbbanLog
   );
 };
 
-/** Small icon: U with accent dot, using logo font */
+/** Small icon: U with accent dot on dark rounded square, using logo font */
 export const UrbannaIcon = ({ size = 32, className = "" }: { size?: number; className?: string }) => {
   const dotSize = Math.max(3, Math.round(size * 0.12));
+  const radius = Math.round(size * 0.22);
   return (
     <span
-      className={`inline-flex items-center justify-center relative ${className}`}
-      style={{ width: size, height: size, fontFamily: FONT, fontSize: Math.round(size * 0.88), lineHeight: 1 }}
+      className={`inline-flex items-center justify-center relative bg-foreground text-background ${className}`}
+      style={{ width: size, height: size, borderRadius: radius, fontFamily: FONT, fontSize: Math.round(size * 0.78), lineHeight: 1 }}
       aria-label="U"
     >
       U
@@ -45,7 +46,7 @@ export const UrbannaIcon = ({ size = 32, className = "" }: { size?: number; clas
           height: dotSize,
           borderRadius: "50%",
           position: "absolute",
-          bottom: Math.round(size * 0.08),
+          bottom: Math.round(size * 0.1),
           right: Math.round(size * 0.18),
         }}
       />
