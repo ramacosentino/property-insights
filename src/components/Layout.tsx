@@ -119,7 +119,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           </div>
         )}
         {isCollapsed && (
-          <UrbannaIcon size={24} className="text-sidebar-foreground" />
+          <UrbannaIcon size={30} className="text-sidebar-foreground" />
         )}
         {!isMobile && (
           <button
@@ -162,10 +162,10 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
         {user ? (
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isCollapsed ? "justify-center" : ""}`}>
             {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover flex-shrink-0" />
+              <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
             ) : (
-              <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <User className="h-3.5 w-3.5 text-primary" />
+              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <User className="h-4 w-4 text-primary" />
               </div>
             )}
             {!isCollapsed && (
