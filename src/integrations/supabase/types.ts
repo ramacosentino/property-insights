@@ -82,6 +82,7 @@ export type Database = {
       }
       monthly_neighborhood_stats: {
         Row: {
+          avg_days_on_market: number | null
           avg_price_m2_covered: number | null
           avg_price_m2_total: number | null
           avg_price_total: number | null
@@ -89,16 +90,28 @@ export type Database = {
           created_at: string
           id: string
           max_price_m2_total: number | null
+          median_expenses: number | null
           median_price_m2_covered: number | null
           median_price_m2_total: number | null
           median_price_total: number | null
+          median_surface_covered: number | null
+          median_surface_total: number | null
           min_price_m2_total: number | null
           neighborhood: string
+          new_listings_count: number | null
+          percentile_25_m2_covered: number | null
+          percentile_25_m2_total: number | null
+          percentile_75_m2_covered: number | null
+          percentile_75_m2_total: number | null
           property_count: number
           property_type: string | null
+          removed_count: number | null
+          stddev_m2_covered: number | null
+          stddev_m2_total: number | null
           year_month: string
         }
         Insert: {
+          avg_days_on_market?: number | null
           avg_price_m2_covered?: number | null
           avg_price_m2_total?: number | null
           avg_price_total?: number | null
@@ -106,16 +119,28 @@ export type Database = {
           created_at?: string
           id?: string
           max_price_m2_total?: number | null
+          median_expenses?: number | null
           median_price_m2_covered?: number | null
           median_price_m2_total?: number | null
           median_price_total?: number | null
+          median_surface_covered?: number | null
+          median_surface_total?: number | null
           min_price_m2_total?: number | null
           neighborhood: string
+          new_listings_count?: number | null
+          percentile_25_m2_covered?: number | null
+          percentile_25_m2_total?: number | null
+          percentile_75_m2_covered?: number | null
+          percentile_75_m2_total?: number | null
           property_count?: number
           property_type?: string | null
+          removed_count?: number | null
+          stddev_m2_covered?: number | null
+          stddev_m2_total?: number | null
           year_month: string
         }
         Update: {
+          avg_days_on_market?: number | null
           avg_price_m2_covered?: number | null
           avg_price_m2_total?: number | null
           avg_price_total?: number | null
@@ -123,13 +148,24 @@ export type Database = {
           created_at?: string
           id?: string
           max_price_m2_total?: number | null
+          median_expenses?: number | null
           median_price_m2_covered?: number | null
           median_price_m2_total?: number | null
           median_price_total?: number | null
+          median_surface_covered?: number | null
+          median_surface_total?: number | null
           min_price_m2_total?: number | null
           neighborhood?: string
+          new_listings_count?: number | null
+          percentile_25_m2_covered?: number | null
+          percentile_25_m2_total?: number | null
+          percentile_75_m2_covered?: number | null
+          percentile_75_m2_total?: number | null
           property_count?: number
           property_type?: string | null
+          removed_count?: number | null
+          stddev_m2_covered?: number | null
+          stddev_m2_total?: number | null
           year_month?: string
         }
         Relationships: []
@@ -202,6 +238,7 @@ export type Database = {
           price_per_m2_covered: number | null
           price_per_m2_total: number | null
           property_type: string | null
+          removed_at: string | null
           rooms: number | null
           score_multiplicador: number | null
           scraped_at: string | null
@@ -251,6 +288,7 @@ export type Database = {
           price_per_m2_covered?: number | null
           price_per_m2_total?: number | null
           property_type?: string | null
+          removed_at?: string | null
           rooms?: number | null
           score_multiplicador?: number | null
           scraped_at?: string | null
@@ -300,6 +338,7 @@ export type Database = {
           price_per_m2_covered?: number | null
           price_per_m2_total?: number | null
           property_type?: string | null
+          removed_at?: string | null
           rooms?: number | null
           score_multiplicador?: number | null
           scraped_at?: string | null
