@@ -80,6 +80,60 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_neighborhood_stats: {
+        Row: {
+          avg_price_m2_covered: number | null
+          avg_price_m2_total: number | null
+          avg_price_total: number | null
+          city: string | null
+          created_at: string
+          id: string
+          max_price_m2_total: number | null
+          median_price_m2_covered: number | null
+          median_price_m2_total: number | null
+          median_price_total: number | null
+          min_price_m2_total: number | null
+          neighborhood: string
+          property_count: number
+          property_type: string | null
+          year_month: string
+        }
+        Insert: {
+          avg_price_m2_covered?: number | null
+          avg_price_m2_total?: number | null
+          avg_price_total?: number | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          max_price_m2_total?: number | null
+          median_price_m2_covered?: number | null
+          median_price_m2_total?: number | null
+          median_price_total?: number | null
+          min_price_m2_total?: number | null
+          neighborhood: string
+          property_count?: number
+          property_type?: string | null
+          year_month: string
+        }
+        Update: {
+          avg_price_m2_covered?: number | null
+          avg_price_m2_total?: number | null
+          avg_price_total?: number | null
+          city?: string | null
+          created_at?: string
+          id?: string
+          max_price_m2_total?: number | null
+          median_price_m2_covered?: number | null
+          median_price_m2_total?: number | null
+          median_price_total?: number | null
+          min_price_m2_total?: number | null
+          neighborhood?: string
+          property_count?: number
+          property_type?: string | null
+          year_month?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -132,6 +186,7 @@ export type Database = {
           highlights: string[] | null
           id: string
           informe_breve: string | null
+          last_checked_at: string | null
           location: string | null
           lowlights: string[] | null
           luminosity: string | null
@@ -151,6 +206,7 @@ export type Database = {
           score_multiplicador: number | null
           scraped_at: string | null
           source: string | null
+          status: string
           street: string | null
           surface_covered: number | null
           surface_total: number | null
@@ -179,6 +235,7 @@ export type Database = {
           highlights?: string[] | null
           id?: string
           informe_breve?: string | null
+          last_checked_at?: string | null
           location?: string | null
           lowlights?: string[] | null
           luminosity?: string | null
@@ -198,6 +255,7 @@ export type Database = {
           score_multiplicador?: number | null
           scraped_at?: string | null
           source?: string | null
+          status?: string
           street?: string | null
           surface_covered?: number | null
           surface_total?: number | null
@@ -226,6 +284,7 @@ export type Database = {
           highlights?: string[] | null
           id?: string
           informe_breve?: string | null
+          last_checked_at?: string | null
           location?: string | null
           lowlights?: string[] | null
           luminosity?: string | null
@@ -245,6 +304,7 @@ export type Database = {
           score_multiplicador?: number | null
           scraped_at?: string | null
           source?: string | null
+          status?: string
           street?: string | null
           surface_covered?: number | null
           surface_total?: number | null
