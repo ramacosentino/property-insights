@@ -326,12 +326,6 @@ const Planes = () => {
           Podés cancelar tu suscripción en cualquier momento desde tu cuenta de MercadoPago.
         </p>
 
-        {/* Test mode banner */}
-        <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-600 text-xs font-medium border border-yellow-500/20">
-            🧪 Modo Test – Los pagos no son reales
-          </span>
-        </div>
       </div>
     </Layout>
   );
