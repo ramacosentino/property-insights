@@ -508,6 +508,12 @@ Deno.serve(async (req) => {
       // Run full scrape + AI analysis
       console.log(`No existing analysis for property ${property_id}, running full analysis...`);
 
+      // Detect missing fields before scraping
+      const missingFields = detectMissingFields(prop);
+      if (missingFields.length > 0) {
+        console.log(`Missing fields to extract: ${missingFields.join(", ")}`);
+      }
+
       // Scrape
       const scrapeResult = await scrapeProperty(prop.url, firecrawlKey);
       if (!scrapeResult.success) {
@@ -521,8 +527,8 @@ Deno.serve(async (req) => {
       const screenshot = scrapeResult.data?.data?.screenshot || scrapeResult.data?.screenshot || null;
       console.log(`Scraped: ${markdown.length} chars markdown, screenshot: ${!!screenshot}`);
 
-      // AI analysis
-      const aiResult = await analyzeWithAI(prop, markdown, screenshot, lovableKey);
+      // AI analysis (with missing fields extraction)
+      const aiResult = await analyzeWithAI(prop, markdown, screenshot, lovableKey, missingFields);
       if (!aiResult.success) {
         if (aiResult.status === 429) {
           return new Response(
@@ -547,6 +553,25 @@ Deno.serve(async (req) => {
       lowlights = aiResult.lowlights!;
       informe = aiResult.informe_breve!;
       estado = aiResult.estado_general!;
+
+      // Save extracted fields back to properties table
+      if (aiResult.extracted_fields && typeof aiResult.extracted_fields === "object") {
+        const dbFields = mapExtractedFields(aiResult.extracted_fields);
+        if (Object.keys(dbFields).length > 0) {
+          console.log(`Saving ${Object.keys(dbFields).length} extracted fields:`, JSON.stringify(dbFields));
+          const { error: extractError } = await supabase
+            .from("properties")
+            .update(dbFields)
+            .eq("id", property_id);
+          if (extractError) {
+            console.error("Error saving extracted fields:", extractError);
+          } else {
+            console.log(`Extracted fields saved for property ${property_id}`);
+            // Update local prop reference for comparables calculation
+            Object.assign(prop, dbFields);
+          }
+        }
+      }
     }
 
     // 3. Calculate comparables (always recalculate — prices may change)
