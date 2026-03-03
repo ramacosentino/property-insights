@@ -21,12 +21,9 @@ const UrbbanLogo = ({ className = "", size = "md", showIcon = false }: UrbbanLog
       style={{ fontFamily: FONT, fontSize: px, letterSpacing: "-0.02em", lineHeight: 1 }}
       aria-label="Urbanna"
     >
-      <span style={{ display: "inline-block", transform: "scaleX(1.06)", transformOrigin: "left" }}>
-        <span>Urban</span>
-        <span className="text-primary">n</span>
-        <span>a</span>
-      </span>
-      <span>.</span>
+      <span>Urban</span>
+      <span className="text-primary">n</span>
+      <span>a.</span>
     </span>
   );
 };
