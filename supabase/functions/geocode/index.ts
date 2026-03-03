@@ -192,9 +192,19 @@ async function geocodeWithGoogle(
 
   if (data.status === "OK" && data.results && data.results.length > 0) {
     const result = data.results[0];
+    const lat = result.geometry.location.lat;
+    const lng = result.geometry.location.lng;
+
+    // Detect bogus "Argentina centroid" result (~-38.41, ~-63.61)
+    // This means Google resolved to country level only — treat as not found
+    if (isBogusArgentinaCentroid(lat, lng)) {
+      console.warn(`Bogus Argentina centroid detected for: "${query}" → (${lat}, ${lng})`);
+      return null;
+    }
+
     return {
-      lat: result.geometry.location.lat,
-      lng: result.geometry.location.lng,
+      lat,
+      lng,
       address_components: result.address_components || [],
       formatted_address: result.formatted_address || "",
     };
@@ -211,6 +221,14 @@ async function geocodeWithGoogle(
 
   console.warn(`Google Geocoding status: ${data.status} for: ${query}`);
   return null;
+}
+
+/**
+ * Detect if coordinates are the Argentina centroid (Google's fallback when it
+ * can only resolve to country level). This indicates a failed geocode.
+ */
+function isBogusArgentinaCentroid(lat: number, lng: number): boolean {
+  return lat > -39 && lat < -38 && lng > -64 && lng < -63;
 }
 
 // Argentina bounding box for biasing
