@@ -142,6 +142,7 @@ Deno.serve(async (req) => {
 
       if (!result.live) {
         updateData.status = "removed";
+        updateData.removed_at = new Date().toISOString();
         removed++;
         console.log(`REMOVED: ${prop.external_id} (${prop.source}) — ${result.reason}`);
       } else {
