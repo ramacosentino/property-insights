@@ -291,7 +291,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Upload complete: ${inserted} processed, ${skipped} skipped, ${errors.length} batch errors`);
+    console.log(`Upload complete: ${inserted} processed, ${merged} merged, ${skipped} skipped, ${errors.length} batch errors`);
 
     // Store CSV file in storage bucket
     let fileUrl: string | null = null;
@@ -318,14 +318,13 @@ Deno.serve(async (req) => {
       status: errors.length > 0 ? (inserted > 0 ? "partial" : "error") : "success",
       total_rows: dataRows.length,
       processed: inserted,
-      skipped,
+      skipped: skipped + merged,
       errors: errors.length > 0 ? errors : null,
       filename: filename || null,
       file_url: fileUrl,
     };
 
     if (log_id) {
-      // Update existing log (chunk mode - accumulate)
       const { data: existing } = await supabase
         .from("upload_logs")
         .select("processed, skipped, total_rows, errors")
@@ -337,12 +336,11 @@ Deno.serve(async (req) => {
         const updatePayload: Record<string, unknown> = {
           finished_at: logData.finished_at,
           processed: (existing.processed || 0) + inserted,
-          skipped: (existing.skipped || 0) + skipped,
+          skipped: (existing.skipped || 0) + skipped + merged,
           total_rows: (existing.total_rows || 0) + dataRows.length,
           status: errors.length > 0 ? "partial" : logData.status,
           errors: [...prevErrors, ...errors].length > 0 ? [...prevErrors, ...errors] : null,
         };
-        // Only set file_url on first chunk (avoid overwriting)
         if (fileUrl) updatePayload.file_url = fileUrl;
         await supabase
           .from("upload_logs")
@@ -350,7 +348,6 @@ Deno.serve(async (req) => {
           .eq("id", log_id);
       }
     } else {
-      // Single upload - create log entry
       await supabase.from("upload_logs").insert(logData);
     }
 
@@ -358,6 +355,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         processed: inserted,
+        merged,
         skipped,
         errors: errors.length > 0 ? errors : undefined,
         total_lines: dataRows.length,
