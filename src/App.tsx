@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import Landing from "./pages/Landing";
 import MapView from "./pages/MapView";
 import PropertyList from "./pages/PropertyList";
@@ -44,8 +45,11 @@ function RequireOnboarding({ children }: { children: React.ReactNode }) {
 
 function RequirePremium({ children }: { children: React.ReactNode }) {
   const { isPremium, isLoading } = useSubscription();
-  if (isLoading) return null;
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin();
+  if (isLoading || adminLoading) return null;
+  if (isAdmin) return <>{children}</>;
   if (!isPremium) return <Navigate to="/planes" replace />;
+  return <>{children}</>;
 }
 
 const App = () => (
