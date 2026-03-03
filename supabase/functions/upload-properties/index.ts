@@ -81,7 +81,7 @@ const HEADER_MAP: Record<string, string> = {
   parking: "parking", bedrooms: "bedrooms", age_years: "age_years",
   price_per_m2_total: "price_per_m2_total", price_per_m2_covered: "price_per_m2_covered",
   toilettes: "toilettes", disposition: "disposition", orientation: "orientation",
-  luminosity: "luminosity",
+  luminosity: "luminosity", source: "source",
 };
 
 Deno.serve(async (req) => {
