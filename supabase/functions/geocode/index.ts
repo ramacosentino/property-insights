@@ -43,6 +43,9 @@ function extractNormalizedGeo(components: any[]): {
   let norm_neighborhood: string | null = null;
   let norm_locality: string | null = null;
   let norm_province: string | null = null;
+  let adminLevel1: string | null = null;
+  let adminLevel2: string | null = null;
+  let rawLocality: string | null = null;
 
   for (const c of components) {
     const types: string[] = c.types || [];
@@ -50,11 +53,35 @@ function extractNormalizedGeo(components: any[]): {
       norm_neighborhood = norm_neighborhood || c.long_name;
     }
     if (types.includes("locality")) {
-      norm_locality = c.long_name;
+      rawLocality = c.long_name;
     }
     if (types.includes("administrative_area_level_1")) {
-      norm_province = c.long_name;
+      adminLevel1 = c.long_name;
     }
+    if (types.includes("administrative_area_level_2")) {
+      adminLevel2 = c.long_name;
+    }
+  }
+
+  // Province: normalize CABA variants
+  const isCaba = adminLevel1 === "Ciudad Autónoma de Buenos Aires" ||
+    adminLevel1 === "Cdad. Autónoma de Buenos Aires" ||
+    adminLevel1 === "CABA";
+
+  norm_province = adminLevel1;
+
+  if (isCaba) {
+    // For CABA: locality is always "Buenos Aires", Google often returns postal code as locality
+    norm_locality = "Buenos Aires";
+    norm_province = "Ciudad Autónoma de Buenos Aires";
+  } else if (rawLocality && !/^[A-Z]\d{3,}/.test(rawLocality)) {
+    // Normal locality (not a postal code pattern)
+    norm_locality = rawLocality;
+  } else if (adminLevel2) {
+    // Fallback to partido/department if locality looks like postal code
+    norm_locality = adminLevel2;
+  } else {
+    norm_locality = rawLocality;
   }
 
   return { norm_neighborhood, norm_locality, norm_province };
