@@ -1,4 +1,4 @@
-const FONT = "'Orelo SemiCondensed Bold', serif";
+const FONT = "'Orelo SemiCondensed DemiBold', serif";
 
 interface UrbbanLogoProps {
   className?: string;
