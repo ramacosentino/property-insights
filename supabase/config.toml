@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.compare-properties]
 verify_jwt = false
+
+[functions.monthly-snapshot]
+verify_jwt = false
+
+[functions.check-property-urls]
+verify_jwt = false
