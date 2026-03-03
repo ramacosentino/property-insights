@@ -112,19 +112,16 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const sidebarContent = (isCollapsed: boolean) => (
     <div className={`flex flex-col h-screen bg-sidebar-background border-r border-sidebar-border transition-[width] duration-300 ease-in-out ${isCollapsed ? "w-14" : "w-56"}`}>
       {/* Logo + collapse toggle */}
-      <div className={`flex items-center h-14 border-b border-sidebar-border ${isCollapsed ? "justify-center px-1" : "justify-between px-3"}`}>
-        {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <UrbbanLogo size="sm" className="text-sidebar-foreground" />
-          </div>
-        )}
-        {isCollapsed && (
+      <div className={`flex items-center h-14 border-b border-sidebar-border ${isCollapsed ? "justify-between px-2" : "justify-between px-3"}`}>
+        {!isCollapsed ? (
+          <UrbbanLogo size="sm" className="text-sidebar-foreground" />
+        ) : (
           <UrbannaIcon size={28} className="flex-shrink-0" />
         )}
         {!isMobile && (
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="p-1.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all"
+            className="p-1.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all flex-shrink-0"
             title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
           >
             {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
