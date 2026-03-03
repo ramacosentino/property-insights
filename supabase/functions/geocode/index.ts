@@ -456,7 +456,18 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const result = await geocodeWithGoogle(query, googleApiKey, AR_BOUNDS);
+        let result = await geocodeWithGoogle(query, googleApiKey, AR_BOUNDS);
+
+        // Auto-retry: if first attempt failed and we have neighborhood/city context,
+        // try with just "neighborhood, city, Buenos Aires, Argentina"
+        // This handles gated communities where the street address is meaningless
+        if (!result && !fallbackMode && !neighborhoodFallbackMode && (item.neighborhood || item.province)) {
+          const retryParts = [item.neighborhood, item.province].filter(Boolean);
+          const retryQuery = `${retryParts.join(", ")}, Buenos Aires, Argentina`;
+          console.log(`Auto-retry with context for "${item.address}": "${retryQuery}"`);
+          await sleep(DELAY_MS);
+          result = await geocodeWithGoogle(retryQuery, googleApiKey, AR_BOUNDS);
+        }
 
         if (result) {
           const normalized = extractNormalizedGeo(result.address_components);
@@ -464,6 +475,10 @@ Deno.serve(async (req) => {
           // Fallback: if Google couldn't resolve locality, use CSV city field
           if (!normalized.norm_locality && item.province) {
             normalized.norm_locality = item.province;
+          }
+          // Fallback: if no province resolved, default to Buenos Aires for the region
+          if (!normalized.norm_province && item.province) {
+            normalized.norm_province = "Provincia de Buenos Aires";
           }
 
           await supabase.from("geocoded_addresses").upsert({
