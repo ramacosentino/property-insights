@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useIsAdmin } from "./useIsAdmin";
 
 export type PlanId = "free" | "pro" | "premium";
 
@@ -47,6 +48,7 @@ export const PLAN_LIMITS = {
 
 export const useSubscription = () => {
   const { user } = useAuth();
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin();
 
   const { data: subscription, isLoading, refetch, error } = useQuery({
     queryKey: ["subscription", user?.id],
@@ -65,7 +67,10 @@ export const useSubscription = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const plan: PlanId = (subscription?.status === "active" ? subscription.plan : "free") as PlanId;
+  // Admins are treated as premium regardless of subscription
+  const plan: PlanId = isAdmin
+    ? "premium"
+    : ((subscription?.status === "active" ? subscription.plan : "free") as PlanId);
   const limits = PLAN_LIMITS[plan];
 
   const createSubscription = async (planId: string) => {
@@ -88,13 +93,13 @@ export const useSubscription = () => {
 
   return {
     subscription,
-    isLoading,
+    isLoading: isLoading || adminLoading,
     error,
     refetch,
     createSubscription,
     plan,
     limits,
-    isActive: subscription?.status === "active",
+    isActive: isAdmin || subscription?.status === "active",
     isPro: plan === "pro",
     isPremium: plan === "premium",
   };
