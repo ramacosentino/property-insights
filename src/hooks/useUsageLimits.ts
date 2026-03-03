@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useSubscription, PLAN_LIMITS, PlanId } from "./useSubscription";
+import { useIsAdmin } from "./useIsAdmin";
 
 type UsageCategory = "analyses" | "comparisons" | "searches" | "exports";
 
@@ -13,6 +14,7 @@ function getCurrentYearMonth(): string {
 export function useUsageLimits() {
   const { user } = useAuth();
   const { plan, limits } = useSubscription();
+  const { isAdmin } = useIsAdmin();
   const queryClient = useQueryClient();
   const yearMonth = getCurrentYearMonth();
 
@@ -55,6 +57,7 @@ export function useUsageLimits() {
   };
 
   const canUse = (category: UsageCategory): boolean => {
+    if (isAdmin) return true;
     return getRemaining(category) > 0;
   };
 
@@ -98,6 +101,7 @@ export function useUsageLimits() {
     getRemaining,
     canUse,
     incrementUsage: incrementUsage.mutateAsync,
-    hasFeature: (feature: "exports" | "tasacion" | "inteligenciaPrecios") => limits[feature],
+    hasFeature: (feature: "exports" | "tasacion" | "inteligenciaPrecios") => isAdmin || limits[feature],
+    isAdmin,
   };
 }

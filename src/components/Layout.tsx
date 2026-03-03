@@ -6,6 +6,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { usePreselection } from "@/hooks/usePreselection";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -39,6 +40,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const { count: preselectionCount } = usePreselection();
   const { user, signOut } = useAuth();
   const { isPremium } = useSubscription();
+  const { isAdmin } = useIsAdmin();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -61,7 +63,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const renderNavItem = (item: typeof navItems[0], isCollapsed = false) => {
     const isActive = location.pathname === item.path;
     const badge = getBadge((item as any).badgeKey);
-    const isLocked = (item as any).premium && !isPremium;
+    const isLocked = (item as any).premium && !isPremium && !isAdmin;
 
     const content = (
       <Link
