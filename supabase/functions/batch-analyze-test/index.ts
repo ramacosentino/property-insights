@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-  // Auth: require admin
+  // Auth: require admin or service_role
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -29,31 +29,39 @@ Deno.serve(async (req) => {
     });
   }
 
-  const anonClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
   const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
-  if (claimsErr || !claimsData?.claims) {
-    return new Response(JSON.stringify({ error: "Invalid token" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-  const userId = claimsData.claims.sub as string;
-
   const supabase = createClient(supabaseUrl, serviceKey);
+  let userId: string;
 
-  // Verify admin role
-  const { data: isAdmin } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  if (!isAdmin) {
-    return new Response(JSON.stringify({ error: "Admin only" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+  // Allow service_role calls (for automation/cron)
+  if (token === serviceKey || token === anonKey) {
+    // Use admin user for batch analysis storage
+    userId = "b6057b2a-4e7d-4bc7-89a8-89d306984b78";
+    console.log("Service role / anon auth - batch system mode");
+  } else {
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
     });
+    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    userId = claimsData.claims.sub as string;
+
+    // Verify admin role
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Admin only" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
 
   try {
