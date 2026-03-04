@@ -16,19 +16,31 @@ export interface CachedGeoData {
 }
 
 // Fetch cached geocoded coordinates + normalized geo from DB
-export async function fetchCachedCoordinates(): Promise<Map<string, CachedGeoData>> {
+// Supports optional bounding box to limit data transfer
+export async function fetchCachedCoordinates(bounds?: {
+  south: number; north: number; west: number; east: number;
+}): Promise<Map<string, CachedGeoData>> {
   const map = new Map<string, CachedGeoData>();
   const pageSize = 1000;
   let from = 0;
   let hasMore = true;
 
   while (hasMore) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("geocoded_addresses")
       .select("address, lat, lng, norm_neighborhood, norm_locality, norm_province")
       .not("lat", "is", null)
-      .neq("lat", 0)
-      .range(from, from + pageSize - 1);
+      .neq("lat", 0);
+
+    if (bounds) {
+      query = query
+        .gte("lat", bounds.south)
+        .lte("lat", bounds.north)
+        .gte("lng", bounds.west)
+        .lte("lng", bounds.east);
+    }
+
+    const { data, error } = await query.range(from, from + pageSize - 1);
 
     if (error) {
       console.error("Error fetching cached coordinates:", error);
