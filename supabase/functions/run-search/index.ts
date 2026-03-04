@@ -118,24 +118,30 @@ Deno.serve(async (req) => {
 
     console.log(`Filtered: ${allMatched.length} properties matched`);
 
-    // 2. Compute median per neighborhood+type, then opportunity score
+    // 2. Compute medians via Postgres RPC (much faster than in-memory)
     const groupKey = (p: any) => `${p.norm_neighborhood || p.neighborhood}|||${p.property_type || ""}`;
-    const groupValues = new Map<string, number[]>();
-    for (const p of allMatched) {
-      const key = groupKey(p);
-      if (!groupValues.has(key)) groupValues.set(key, []);
-      groupValues.get(key)!.push(Number(p.price_per_m2_total));
+
+    const { data: medianRows, error: medianErr } = await supabase.rpc("neighborhood_medians", {
+      p_neighborhoods: filters.neighborhoods?.length > 0 ? filters.neighborhoods : null,
+      p_property_types: filters.property_types?.length > 0 ? filters.property_types : null,
+      p_price_min: filters.price_min ?? null,
+      p_price_max: filters.price_max ?? null,
+      p_surface_min: filters.surface_min ?? null,
+      p_rooms_min: filters.rooms_min ?? null,
+      p_rooms_max: filters.rooms_max ?? null,
+      p_parking_min: filters.parking_min ?? null,
+      p_cities: filters.cities?.length > 0 ? filters.cities : null,
+      p_excluded_neighborhoods: filters.excluded_neighborhoods?.length > 0 ? filters.excluded_neighborhoods : null,
+    });
+
+    if (medianErr) {
+      console.error("Median RPC error:", medianErr);
     }
 
-    const medianFn = (arr: number[]) => {
-      const sorted = [...arr].sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-    };
-
     const groupMedians = new Map<string, number>();
-    for (const [key, values] of groupValues) {
-      groupMedians.set(key, medianFn(values));
+    for (const row of medianRows || []) {
+      const key = `${row.group_neighborhood}|||${row.group_property_type}`;
+      groupMedians.set(key, Number(row.median_price_m2));
     }
 
     // Score each property: % below median (higher = better opportunity)
