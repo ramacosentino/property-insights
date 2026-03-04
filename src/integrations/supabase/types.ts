@@ -690,6 +690,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      neighborhood_medians: {
+        Args: {
+          p_cities?: string[]
+          p_excluded_neighborhoods?: string[]
+          p_neighborhoods?: string[]
+          p_parking_min?: number
+          p_price_max?: number
+          p_price_min?: number
+          p_property_types?: string[]
+          p_rooms_max?: number
+          p_rooms_min?: number
+          p_surface_min?: number
+        }
+        Returns: {
+          group_neighborhood: string
+          group_property_type: string
+          median_price_m2: number
+          property_count: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
