@@ -21,9 +21,8 @@ interface SearchFilters {
   property_types: string[];
   neighborhoods: string[];
   cities: string[];
-  price_min: number | null;
-  price_max: number | null;
   surface_min: number | null;
+  surface_covered_min: number | null;
   rooms_min: number | null;
   rooms_max: number | null;
   parking_min: number | null;
@@ -47,9 +46,8 @@ const EMPTY_FILTERS: SearchFilters = {
   property_types: [],
   neighborhoods: [],
   cities: [],
-  price_min: null,
-  price_max: null,
   surface_min: null,
+  surface_covered_min: null,
   rooms_min: null,
   rooms_max: null,
   parking_min: null,
@@ -119,40 +117,28 @@ const FilterStep = ({
           />
         </div>
 
-        {/* Price Range */}
+        {/* Surfaces */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Precio mínimo (USD)</label>
+            <label className="text-sm font-medium text-foreground">Sup. total mín. (m²)</label>
             <input
               type="number"
-              placeholder="Ej: 50000"
-              value={filters.price_min ?? ""}
-              onChange={(e) => setFilters({ ...filters, price_min: e.target.value ? Number(e.target.value) : null })}
+              placeholder="Ej: 40"
+              value={filters.surface_min ?? ""}
+              onChange={(e) => setFilters({ ...filters, surface_min: e.target.value ? Number(e.target.value) : null })}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Precio máximo (USD)</label>
+            <label className="text-sm font-medium text-foreground">Sup. cubierta mín. (m²)</label>
             <input
               type="number"
-              placeholder="Ej: 200000"
-              value={filters.price_max ?? ""}
-              onChange={(e) => setFilters({ ...filters, price_max: e.target.value ? Number(e.target.value) : null })}
+              placeholder="Ej: 30"
+              value={filters.surface_covered_min ?? ""}
+              onChange={(e) => setFilters({ ...filters, surface_covered_min: e.target.value ? Number(e.target.value) : null })}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-        </div>
-
-        {/* Surface */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Superficie mínima (m²)</label>
-          <input
-            type="number"
-            placeholder="Ej: 40"
-            value={filters.surface_min ?? ""}
-            onChange={(e) => setFilters({ ...filters, surface_min: e.target.value ? Number(e.target.value) : null })}
-            className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-          />
         </div>
 
         {/* Rooms range */}
@@ -196,7 +182,7 @@ const FilterStep = ({
 
         {/* Budget total */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Presupuesto total máx. (precio + refacción est.)</label>
+          <label className="text-sm font-medium text-foreground">Presupuesto máximo (USD)</label>
           <input
             type="number"
             placeholder="Ej: 250000"
@@ -205,7 +191,7 @@ const FilterStep = ({
             className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <p className="text-[10px] text-muted-foreground">
-            Incluye una estimación del costo de refacción basada en tus costos configurados.
+            Incluye precio + estimación de refacción. Se agrega un 10% de tolerancia para no descartar propiedades al límite.
           </p>
         </div>
       </div>
@@ -394,10 +380,11 @@ const Busqueda = () => {
       setFilters((f) => ({ ...f, property_types: types }));
     }
     if (onboardingFilters.priceRange) {
+      // Use the onboarding budget_max as the default budget ceiling
+      const budgetMax = onboardingFilters.priceRange[1] || null;
       setFilters((f) => ({
         ...f,
-        price_min: onboardingFilters.priceRange![0] || null,
-        price_max: onboardingFilters.priceRange![1] || null,
+        budget_max: budgetMax,
       }));
     }
     setOnboardingApplied(true);
