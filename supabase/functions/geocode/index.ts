@@ -458,15 +458,23 @@ Deno.serve(async (req) => {
       try {
         let result = await geocodeWithGoogle(query, googleApiKey, AR_BOUNDS);
 
-        // Auto-retry: if first attempt failed and we have neighborhood/city context,
-        // try with just "neighborhood, city, Buenos Aires, Argentina"
-        // This handles gated communities where the street address is meaningless
+        // Auto-retry #1: keep street address but add neighborhood/city context
+        // Fixes ambiguous names like "Peru 1700" (street vs country)
+        if (!result && !fallbackMode && !neighborhoodFallbackMode && (item.neighborhood || item.province)) {
+          const contextParts = [cleanAddr, item.neighborhood, item.province, "Argentina"].filter(Boolean);
+          const retryQuery1 = contextParts.join(", ");
+          console.log(`Auto-retry with full context for "${item.address}": "${retryQuery1}"`);
+          await sleep(DELAY_MS);
+          result = await geocodeWithGoogle(retryQuery1, googleApiKey, AR_BOUNDS);
+        }
+
+        // Auto-retry #2: if still failed, try just neighborhood + city (gated communities etc.)
         if (!result && !fallbackMode && !neighborhoodFallbackMode && (item.neighborhood || item.province)) {
           const retryParts = [item.neighborhood, item.province].filter(Boolean);
-          const retryQuery = `${retryParts.join(", ")}, Buenos Aires, Argentina`;
-          console.log(`Auto-retry with context for "${item.address}": "${retryQuery}"`);
+          const retryQuery2 = `${retryParts.join(", ")}, Buenos Aires, Argentina`;
+          console.log(`Auto-retry neighborhood-only for "${item.address}": "${retryQuery2}"`);
           await sleep(DELAY_MS);
-          result = await geocodeWithGoogle(retryQuery, googleApiKey, AR_BOUNDS);
+          result = await geocodeWithGoogle(retryQuery2, googleApiKey, AR_BOUNDS);
         }
 
         if (result) {
