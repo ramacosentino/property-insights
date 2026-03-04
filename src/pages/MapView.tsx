@@ -761,6 +761,7 @@ const MapView = () => {
     } else if (viewMode === "all") {
       // Clustered view: show all filtered properties
       mappedProperties.forEach((p) => {
+        const coords = getCoord(p);
         const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
         const isDeal = p.opportunityScore >= dealThreshold;
         const dealColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
@@ -780,6 +781,7 @@ const MapView = () => {
           iconAnchor: [isDeal ? 5 : 3.5, isDeal ? 5 : 3.5],
         });
 
+        const marker = L.marker(coords, { icon }) as any;
         marker._ppm2 = activeM2(p) ?? 0;
         marker._colorMin = minPrice;
         marker._colorMax = maxPrice;
