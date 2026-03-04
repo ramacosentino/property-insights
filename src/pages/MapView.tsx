@@ -818,6 +818,7 @@ const MapView = () => {
     } else {
       // Opportunities view: diffuse heatmap + deal dots
       mappedProperties.forEach((p) => {
+        const coords = getCoord(p);
         const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
 
         const radiusFactor = 0.55;
