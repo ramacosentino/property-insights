@@ -63,8 +63,8 @@ export function SurfacePreferenceProvider({ children }: { children: ReactNode })
     [surfaceType]
   );
 
-  const m2Label = surfaceType === "covered" ? "USD/m² cub" : "USD/m² tot";
-  const m2ShortLabel = surfaceType === "covered" ? "USD/m²c" : "USD/m²";
+  const m2Label = surfaceType === "covered" ? "USD/m² cubierto" : "USD/m² total";
+  const m2ShortLabel = surfaceType === "covered" ? "USD/m² cubierto" : "USD/m² total";
 
   return (
     <SurfacePreferenceContext.Provider value={{ surfaceType, toggle, getM2, m2Label, m2ShortLabel }}>
