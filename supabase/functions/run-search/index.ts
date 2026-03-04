@@ -90,6 +90,9 @@ Deno.serve(async (req) => {
     if (filters.surface_min != null) {
       query = query.gte("surface_total", filters.surface_min);
     }
+    if (filters.surface_covered_min != null) {
+      query = query.gte("surface_covered", filters.surface_covered_min);
+    }
     if (filters.rooms_min != null) {
       query = query.gte("rooms", filters.rooms_min);
     }
@@ -155,21 +158,19 @@ Deno.serve(async (req) => {
     // Sort by opportunity (highest pctBelow first)
     scored.sort((a, b) => b.pctBelow - a.pctBelow);
 
-    // Filter by budget_total if provided (price + estimated renovation)
+    // Filter by budget_max if provided (price + estimated renovation) with 10% tolerance
     let candidates = scored;
     if (filters.budget_max != null) {
-      // Simple renovation estimate based on default costs
+      const budgetWithTolerance = filters.budget_max * 1.10;
+
       const estimateRenovCost = (price_per_m2: number, median: number, surface: number) => {
-        // Rough score estimate from price position
         const ratio = median > 0 ? price_per_m2 / median : 1;
-        // Lower ratio = probably worse condition = higher renovation
         let costPerM2 = 0;
         if (ratio >= 1.0) costPerM2 = 0;
         else if (ratio >= 0.85) costPerM2 = 200;
         else if (ratio >= 0.7) costPerM2 = 350;
         else costPerM2 = 500;
         
-        // Use custom costs if provided
         if (renovation_costs && Object.keys(renovation_costs).length > 0) {
           const score = ratio;
           const thresholds = Object.entries(renovation_costs)
@@ -191,7 +192,7 @@ Deno.serve(async (req) => {
         const surface = Number(p.surface_total) || 0;
         const med = groupMedians.get(groupKey(p)) || 0;
         const renovCost = estimateRenovCost(Number(p.price_per_m2_total), med, surface);
-        return (price + renovCost) <= filters.budget_max;
+        return (price + renovCost) <= budgetWithTolerance;
       });
     }
 
