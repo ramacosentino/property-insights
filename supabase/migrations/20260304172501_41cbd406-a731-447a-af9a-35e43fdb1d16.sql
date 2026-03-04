@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN surface_preference text NOT NULL DEFAULT 'total';
