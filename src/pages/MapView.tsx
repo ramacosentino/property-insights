@@ -480,9 +480,26 @@ const MapView = () => {
     [filteredProperties, selectedProvince, statsGroupBy, viewMode, dealThreshold]
   );
 
-  // Load cached coordinates on mount
+  // Load cached coordinates on mount (initial full load)
   useEffect(() => {
     fetchCachedCoordinates().then(setGeocodedCoords);
+  }, []);
+
+  // Reload coordinates when map moves (bounding box filter)
+  const loadCoordsForBounds = useCallback(async () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const b = map.getBounds();
+    // Add 20% padding to avoid popping
+    const latPad = (b.getNorth() - b.getSouth()) * 0.2;
+    const lngPad = (b.getEast() - b.getWest()) * 0.2;
+    const updated = await fetchCachedCoordinates({
+      south: b.getSouth() - latPad,
+      north: b.getNorth() + latPad,
+      west: b.getWest() - lngPad,
+      east: b.getEast() + lngPad,
+    });
+    setGeocodedCoords(updated);
   }, []);
 
   // Measure filter panel height dynamically
@@ -857,14 +874,27 @@ const MapView = () => {
     }
   }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark]);
 
-  // Auto-refresh geocoded coords every 30s
+  // Reload coords on map move (debounced) + periodic refresh
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const updated = await fetchCachedCoordinates();
-      setGeocodedCoords(updated);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    let timeout: ReturnType<typeof setTimeout>;
+    const onMoveEnd = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(loadCoordsForBounds, 500);
+    };
+    map.on("moveend", onMoveEnd);
+
+    // Also periodic refresh every 60s
+    const interval = setInterval(loadCoordsForBounds, 60000);
+
+    return () => {
+      map.off("moveend", onMoveEnd);
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [loadCoordsForBounds]);
 
   // Province stats
   const provinceStats = useMemo(() => {
