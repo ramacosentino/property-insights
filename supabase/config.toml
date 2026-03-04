@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.cleanup-properties]
 verify_jwt = false
+
+[functions.batch-analyze-test]
+verify_jwt = false
+
+[functions.run-search]
+verify_jwt = false
