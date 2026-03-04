@@ -5,6 +5,7 @@ import { TrendingDown, ExternalLink, Star, XCircle, RotateCcw, EyeOff } from "lu
 import { usePreselection } from "@/hooks/usePreselection";
 import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 import { getOpportunityLabel, getOpportunityBadgeClasses } from "@/lib/opportunityLabels";
+import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 
 interface PropertyCardProps {
   property: Property;
@@ -17,8 +18,10 @@ interface PropertyCardProps {
 const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDiscarded }: PropertyCardProps) => {
   const { isSelected, toggle } = usePreselection();
   const { isIgnored, ignore, restore } = useIgnoredOpportunities();
+  const { getM2, m2ShortLabel } = useSurfacePreference();
   const isHighlighted = property.isTopOpportunity || property.isNeighborhoodDeal;
   const isPinned = isSelected(property.id);
+  const activeM2 = getM2(property.pricePerM2Total, property.pricePerM2Covered);
 
   return (
     <div
@@ -121,9 +124,9 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
           </p>
         </div>
         <div>
-          <p className="text-[10px] text-muted-foreground mb-0.5">USD/m²</p>
+          <p className="text-[10px] text-muted-foreground mb-0.5">{m2ShortLabel}</p>
           <p className={`text-sm font-mono font-bold ${isHighlighted ? "text-primary" : ""}`}>
-            {property.pricePerM2Total ? `$${property.pricePerM2Total.toLocaleString()}` : "—"}
+            {activeM2 ? `$${activeM2.toLocaleString()}` : "—"}
           </p>
         </div>
       </div>
