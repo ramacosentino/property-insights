@@ -730,7 +730,7 @@ const MapView = () => {
             ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
             <strong>${escapeHtml(p.neighborhood)}</strong><br/>
             <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
-            <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+            <strong>${m2ShortLabel}:</strong> $${(activeM2(p) ?? 0).toLocaleString()}<br/>
             <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
             ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
             ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
@@ -761,8 +761,7 @@ const MapView = () => {
     } else if (viewMode === "all") {
       // Clustered view: show all filtered properties
       mappedProperties.forEach((p) => {
-        const coords = getCoord(p);
-        const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+        const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
         const isDeal = p.opportunityScore >= dealThreshold;
         const dealColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
         const dealBorder = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.15)";
@@ -781,8 +780,7 @@ const MapView = () => {
           iconAnchor: [isDeal ? 5 : 3.5, isDeal ? 5 : 3.5],
         });
 
-        const marker = L.marker(coords, { icon }) as any;
-        marker._ppm2 = p.pricePerM2Total ?? 0;
+        marker._ppm2 = activeM2(p) ?? 0;
         marker._colorMin = minPrice;
         marker._colorMax = maxPrice;
         marker.bindPopup(
@@ -798,7 +796,7 @@ const MapView = () => {
             ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
             <strong>${escapeHtml(p.neighborhood)}</strong><br/>
             <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
-            <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+            <strong>${m2ShortLabel}:</strong> $${(activeM2(p) ?? 0).toLocaleString()}<br/>
             <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
             ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
             ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
@@ -818,8 +816,7 @@ const MapView = () => {
     } else {
       // Opportunities view: diffuse heatmap + deal dots
       mappedProperties.forEach((p) => {
-        const coords = getCoord(p);
-        const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+        const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
 
         const radiusFactor = 0.55;
         const marker = L.circle(coords, {
@@ -860,7 +857,7 @@ const MapView = () => {
               ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
               <strong>${escapeHtml(p.neighborhood)}</strong><br/>
               <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
-              <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+              <strong>${m2ShortLabel}:</strong> $${(activeM2(p) ?? 0).toLocaleString()}<br/>
               <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
               ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
               ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
