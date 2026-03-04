@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
 
   // Allow service_role calls (for automation/cron)
   if (token === serviceKey || token === anonKey) {
-    userId = "batch-system";
+    // Use admin user for batch analysis storage
+    userId = "b6057b2a-4e7d-4bc7-89a8-89d306984b78";
     console.log("Service role / anon auth - batch system mode");
   } else {
     const anonClient = createClient(supabaseUrl, anonKey, {
