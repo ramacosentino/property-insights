@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 import FlagLocationButton from "@/components/FlagLocationButton";
 import { usePreselection, togglePreselection, isPreselected, isDiscardedProject } from "@/hooks/usePreselection";
 import { useIgnoredOpportunities, isIgnoredOpportunity, toggleIgnoreOpportunity } from "@/hooks/useIgnoredOpportunities";
@@ -213,6 +214,11 @@ const MapView = () => {
   const properties = data?.properties ?? [];
   const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
   const { ignoredIds, ignore: ignoreOpp, restore: restoreOpp, isIgnored: isIgnoredHook } = useIgnoredOpportunities();
+  const { getM2, m2ShortLabel, surfaceType } = useSurfacePreference();
+
+  /** Get active m² for a property based on surface preference */
+  const activeM2 = useCallback((p: { pricePerM2Total: number | null; pricePerM2Covered: number | null }) => 
+    getM2(p.pricePerM2Total, p.pricePerM2Covered), [getM2]);
 
   // Expose toggle and flag for raw HTML popups
   useEffect(() => {
@@ -359,8 +365,9 @@ const MapView = () => {
   const totalProperties = properties.length;
 
   const allPrices = useMemo(() => {
-    const prices = properties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0).map((p) => p.pricePerM2Total!);
+    const prices = properties.filter((p) => activeM2(p) && activeM2(p)! > 0).map((p) => activeM2(p)!);
     return prices.sort((a, b) => a - b);
+  }, [properties, activeM2]);
   }, [properties]);
   // Use percentiles (p5/p95) to avoid outliers compressing the color scale
   const minPrice = useMemo(() => {
