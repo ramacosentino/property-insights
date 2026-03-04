@@ -878,7 +878,7 @@ const MapView = () => {
           .addTo(deals);
       });
     }
-  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark]);
+  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
 
   // Reload coords on map move (debounced) + periodic refresh
   useEffect(() => {
@@ -1075,7 +1075,7 @@ const MapView = () => {
   // Shared components for reuse between desktop and mobile
   const legendContent = (
     <div>
-      <p className="text-xs font-medium text-foreground mb-2">USD/m² por propiedad</p>
+      <p className="text-xs font-medium text-foreground mb-2">{m2ShortLabel} por propiedad</p>
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
         <div
@@ -1114,7 +1114,7 @@ const MapView = () => {
   const statsListContent = (
     <>
       <div className="flex items-center justify-between mb-3 shrink-0">
-        <p className="text-xs font-medium text-foreground">Mediana USD/m²</p>
+        <p className="text-xs font-medium text-foreground">Mediana {m2ShortLabel}</p>
         <div className="flex items-center rounded-full border border-border overflow-hidden">
           <button
             onClick={() => setStatsGroupBy("city")}
@@ -1271,8 +1271,8 @@ const MapView = () => {
             })() : null}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
               <div>
-                <span className="text-muted-foreground">USD/m²</span>
-                <span className="block font-mono font-semibold text-foreground">${(p.pricePerM2Total ?? 0).toLocaleString()}</span>
+                <span className="text-muted-foreground">{m2ShortLabel}</span>
+                <span className="block font-mono font-semibold text-foreground">${(activeM2(p) ?? 0).toLocaleString()}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Precio</span>
