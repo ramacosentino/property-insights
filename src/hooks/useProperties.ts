@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
 import { computeSegmentedFactorPremiums, getPropertyFactorAdjustment } from "@/lib/priceFactors";
+import { useSurfacePreference, SurfaceType } from "@/contexts/SurfacePreferenceContext";
 
 interface DBPropertyRow {
   id: string;
@@ -64,7 +65,18 @@ function computeIQRBounds(values: number[], multiplier = 4): { lower: number; up
   return { lower: q1 - multiplier * iqr, upper: q3 + multiplier * iqr };
 }
 
-function computeStats(rows: DBPropertyRow[]): {
+/** Get the relevant USD/m² for a property based on surface preference */
+function getM2Value(
+  p: { pricePerM2Total: number | null; pricePerM2Covered: number | null },
+  surfaceType: SurfaceType
+): number | null {
+  if (surfaceType === "covered") {
+    return p.pricePerM2Covered ?? p.pricePerM2Total;
+  }
+  return p.pricePerM2Total;
+}
+
+function computeStats(rows: DBPropertyRow[], surfaceType: SurfaceType): {
   properties: Property[];
   neighborhoodStats: Map<string, NeighborhoodStats>;
 } {
@@ -121,10 +133,11 @@ function computeStats(rows: DBPropertyRow[]): {
 
   const groupValues = new Map<string, number[]>();
   for (const p of rawProperties) {
-    if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
+    const m2 = getM2Value(p, surfaceType);
+    if (!m2 || m2 <= 0) continue;
     const key = groupKey(p);
     if (!groupValues.has(key)) groupValues.set(key, []);
-    groupValues.get(key)!.push(p.pricePerM2Total);
+    groupValues.get(key)!.push(m2);
   }
 
   const groupBounds = new Map<string, { lower: number; upper: number }>();
@@ -133,10 +146,11 @@ function computeStats(rows: DBPropertyRow[]): {
   }
 
   const isOutlier = (p: typeof rawProperties[0]): boolean => {
-    if (!p.pricePerM2Total || p.pricePerM2Total <= 0) return false;
+    const m2 = getM2Value(p, surfaceType);
+    if (!m2 || m2 <= 0) return false;
     const bounds = groupBounds.get(groupKey(p));
     if (!bounds) return false;
-    return p.pricePerM2Total < bounds.lower || p.pricePerM2Total > bounds.upper;
+    return m2 < bounds.lower || m2 > bounds.upper;
   };
 
   const outlierIds = new Set(rawProperties.filter(isOutlier).map((p) => p.id));
@@ -144,10 +158,11 @@ function computeStats(rows: DBPropertyRow[]): {
   // --- Neighborhood stats (excluding outliers) ---
   const neighborhoodMap = new Map<string, number[]>();
   for (const p of rawProperties) {
-    if (!p.pricePerM2Total || p.pricePerM2Total <= 0) continue;
+    const m2 = getM2Value(p, surfaceType);
+    if (!m2 || m2 <= 0) continue;
     if (outlierIds.has(p.id)) continue;
     if (!neighborhoodMap.has(p.neighborhood)) neighborhoodMap.set(p.neighborhood, []);
-    neighborhoodMap.get(p.neighborhood)!.push(p.pricePerM2Total);
+    neighborhoodMap.get(p.neighborhood)!.push(m2);
   }
 
   const neighborhoodStats = new Map<string, NeighborhoodStats>();
@@ -178,13 +193,19 @@ function computeStats(rows: DBPropertyRow[]): {
   const factorPremiums = computeSegmentedFactorPremiums(nonOutlierProps);
 
   // --- Top 10% by price (excluding outliers) ---
-  const withPrice = rawProperties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0 && !outlierIds.has(p.id));
-  const sortedByPrice = [...withPrice].sort((a, b) => (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0));
+  const withPrice = rawProperties.filter((p) => {
+    const m2 = getM2Value(p, surfaceType);
+    return m2 && m2 > 0 && !outlierIds.has(p.id);
+  });
+  const sortedByPrice = [...withPrice].sort((a, b) => 
+    (getM2Value(a, surfaceType) ?? 0) - (getM2Value(b, surfaceType) ?? 0)
+  );
   const top10Percent = Math.ceil(sortedByPrice.length * 0.1);
   const topIds = new Set(sortedByPrice.slice(0, top10Percent).map((p) => p.id));
 
   const properties: Property[] = rawProperties.map((p) => {
-    const hasPriceData = p.pricePerM2Total != null && p.pricePerM2Total > 0;
+    const m2 = getM2Value(p, surfaceType);
+    const hasPriceData = m2 != null && m2 > 0;
     const isOlr = outlierIds.has(p.id);
     const canScore = hasPriceData && !isOlr;
 
@@ -194,10 +215,9 @@ function computeStats(rows: DBPropertyRow[]): {
       const typeMedian = groupMedians.get(key);
       const baseMedian = typeMedian ?? neighborhoodStats.get(p.neighborhood)?.medianPricePerSqm ?? 0;
       if (baseMedian > 0) {
-        // Adjust expected price based on property-specific factors
         const factorAdj = getPropertyFactorAdjustment(p as unknown as Property, factorPremiums);
         const expectedPrice = baseMedian * (1 + factorAdj);
-        opportunityScore = ((expectedPrice - p.pricePerM2Total!) / expectedPrice) * 100;
+        opportunityScore = ((expectedPrice - m2!) / expectedPrice) * 100;
       }
     }
 
@@ -239,11 +259,13 @@ async function fetchAllProperties(): Promise<DBPropertyRow[]> {
 }
 
 export function useProperties() {
+  const { surfaceType } = useSurfacePreference();
+  
   return useQuery({
-    queryKey: ["properties"],
+    queryKey: ["properties", surfaceType],
     queryFn: async () => {
       const rows = await fetchAllProperties();
-      return computeStats(rows);
+      return computeStats(rows, surfaceType);
     },
     staleTime: 5 * 60 * 1000,
   });

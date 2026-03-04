@@ -177,6 +177,7 @@ export type Database = {
           display_name: string | null
           id: string
           onboarding_completed: boolean
+          surface_preference: string
           updated_at: string
           user_id: string
           user_type: string | null
@@ -187,6 +188,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           onboarding_completed?: boolean
+          surface_preference?: string
           updated_at?: string
           user_id: string
           user_type?: string | null
@@ -197,6 +199,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           onboarding_completed?: boolean
+          surface_preference?: string
           updated_at?: string
           user_id?: string
           user_type?: string | null

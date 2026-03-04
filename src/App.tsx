@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { SurfacePreferenceProvider } from "@/contexts/SurfacePreferenceContext";
 import Landing from "./pages/Landing";
 import MapView from "./pages/MapView";
 import PropertyList from "./pages/PropertyList";
@@ -55,29 +56,31 @@ function RequirePremium({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/mapa" element={<RequireOnboarding><MapView /></RequireOnboarding>} />
-          <Route path="/propiedades" element={<RequireOnboarding><PropertyList /></RequireOnboarding>} />
-          <Route path="/mis-proyectos" element={<RequireOnboarding><MisProyectos /></RequireOnboarding>} />
-          <Route path="/busqueda" element={<RequireOnboarding><Busqueda /></RequireOnboarding>} />
-          <Route path="/alertas" element={<RequireOnboarding><Alertas /></RequireOnboarding>} />
-          <Route path="/ranking" element={<Navigate to="/propiedades" replace />} />
-          
-          <Route path="/tasacion" element={<RequireOnboarding><RequirePremium><Tasacion /></RequirePremium></RequireOnboarding>} />
-          <Route path="/inteligencia-precios" element={<RequireOnboarding><RequirePremium><InteligenciaPrecios /></RequirePremium></RequireOnboarding>} />
-          <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
-          <Route path="/planes" element={<RequireOnboarding><Planes /></RequireOnboarding>} />
-          <Route path="/logo-preview" element={<LogoPreview />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <SurfacePreferenceProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/mapa" element={<RequireOnboarding><MapView /></RequireOnboarding>} />
+            <Route path="/propiedades" element={<RequireOnboarding><PropertyList /></RequireOnboarding>} />
+            <Route path="/mis-proyectos" element={<RequireOnboarding><MisProyectos /></RequireOnboarding>} />
+            <Route path="/busqueda" element={<RequireOnboarding><Busqueda /></RequireOnboarding>} />
+            <Route path="/alertas" element={<RequireOnboarding><Alertas /></RequireOnboarding>} />
+            <Route path="/ranking" element={<Navigate to="/propiedades" replace />} />
+            
+            <Route path="/tasacion" element={<RequireOnboarding><RequirePremium><Tasacion /></RequirePremium></RequireOnboarding>} />
+            <Route path="/inteligencia-precios" element={<RequireOnboarding><RequirePremium><InteligenciaPrecios /></RequirePremium></RequireOnboarding>} />
+            <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
+            <Route path="/planes" element={<RequireOnboarding><Planes /></RequireOnboarding>} />
+            <Route path="/logo-preview" element={<LogoPreview />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </SurfacePreferenceProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

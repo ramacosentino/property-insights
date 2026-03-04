@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 import FlagLocationButton from "@/components/FlagLocationButton";
 import { usePreselection, togglePreselection, isPreselected, isDiscardedProject } from "@/hooks/usePreselection";
 import { useIgnoredOpportunities, isIgnoredOpportunity, toggleIgnoreOpportunity } from "@/hooks/useIgnoredOpportunities";
@@ -213,6 +214,11 @@ const MapView = () => {
   const properties = data?.properties ?? [];
   const { isSelected: isPreselectedHook, toggle: togglePreselect } = usePreselection();
   const { ignoredIds, ignore: ignoreOpp, restore: restoreOpp, isIgnored: isIgnoredHook } = useIgnoredOpportunities();
+  const { getM2, m2ShortLabel, surfaceType } = useSurfacePreference();
+
+  /** Get active m² for a property based on surface preference */
+  const activeM2 = useCallback((p: { pricePerM2Total: number | null; pricePerM2Covered: number | null }) => 
+    getM2(p.pricePerM2Total, p.pricePerM2Covered), [getM2]);
 
   // Expose toggle and flag for raw HTML popups
   useEffect(() => {
@@ -359,9 +365,9 @@ const MapView = () => {
   const totalProperties = properties.length;
 
   const allPrices = useMemo(() => {
-    const prices = properties.filter((p) => p.pricePerM2Total && p.pricePerM2Total > 0).map((p) => p.pricePerM2Total!);
+    const prices = properties.filter((p) => activeM2(p) && activeM2(p)! > 0).map((p) => activeM2(p)!);
     return prices.sort((a, b) => a - b);
-  }, [properties]);
+  }, [properties, activeM2]);
   // Use percentiles (p5/p95) to avoid outliers compressing the color scale
   const minPrice = useMemo(() => {
     if (allPrices.length === 0) return 0;
@@ -724,7 +730,7 @@ const MapView = () => {
             ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
             <strong>${escapeHtml(p.neighborhood)}</strong><br/>
             <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
-            <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+            <strong>${m2ShortLabel}:</strong> $${(activeM2(p) ?? 0).toLocaleString()}<br/>
             <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
             ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
             ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
@@ -756,7 +762,7 @@ const MapView = () => {
       // Clustered view: show all filtered properties
       mappedProperties.forEach((p) => {
         const coords = getCoord(p);
-        const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+        const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
         const isDeal = p.opportunityScore >= dealThreshold;
         const dealColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
         const dealBorder = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.15)";
@@ -776,7 +782,7 @@ const MapView = () => {
         });
 
         const marker = L.marker(coords, { icon }) as any;
-        marker._ppm2 = p.pricePerM2Total ?? 0;
+        marker._ppm2 = activeM2(p) ?? 0;
         marker._colorMin = minPrice;
         marker._colorMax = maxPrice;
         marker.bindPopup(
@@ -792,7 +798,7 @@ const MapView = () => {
             ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
             <strong>${escapeHtml(p.neighborhood)}</strong><br/>
             <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
-            <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+            <strong>${m2ShortLabel}:</strong> $${(activeM2(p) ?? 0).toLocaleString()}<br/>
             <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
             ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
             ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
@@ -813,7 +819,7 @@ const MapView = () => {
       // Opportunities view: diffuse heatmap + deal dots
       mappedProperties.forEach((p) => {
         const coords = getCoord(p);
-        const color = getPropertyColor(p.pricePerM2Total ?? 0, minPrice, maxPrice);
+        const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
 
         const radiusFactor = 0.55;
         const marker = L.circle(coords, {
@@ -854,7 +860,7 @@ const MapView = () => {
               ${p.propertyType ? `<span style="text-transform:capitalize;font-size:11px;color:#888;">${escapeHtml(p.propertyType)}</span><br/>` : ""}
               <strong>${escapeHtml(p.neighborhood)}</strong><br/>
               <span style="color:#666;">${escapeHtml(p.location)}</span><br/><br/>
-              <strong>USD/m²:</strong> $${(p.pricePerM2Total ?? 0).toLocaleString()}<br/>
+              <strong>${m2ShortLabel}:</strong> $${(activeM2(p) ?? 0).toLocaleString()}<br/>
               <strong>Precio:</strong> $${p.price.toLocaleString()}<br/>
               ${p.surfaceTotal ? `<strong>Sup. total:</strong> ${p.surfaceTotal} m²<br/>` : ""}
               ${p.surfaceCovered ? `<strong>Sup. cubierta:</strong> ${p.surfaceCovered} m²<br/>` : ""}
@@ -872,7 +878,7 @@ const MapView = () => {
           .addTo(deals);
       });
     }
-  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark]);
+  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
 
   // Reload coords on map move (debounced) + periodic refresh
   useEffect(() => {
@@ -1069,7 +1075,7 @@ const MapView = () => {
   // Shared components for reuse between desktop and mobile
   const legendContent = (
     <div>
-      <p className="text-xs font-medium text-foreground mb-2">USD/m² por propiedad</p>
+      <p className="text-xs font-medium text-foreground mb-2">{m2ShortLabel} por propiedad</p>
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-[11px] text-primary font-mono">${minMedian.toLocaleString()}</span>
         <div
@@ -1108,7 +1114,7 @@ const MapView = () => {
   const statsListContent = (
     <>
       <div className="flex items-center justify-between mb-3 shrink-0">
-        <p className="text-xs font-medium text-foreground">Mediana USD/m²</p>
+        <p className="text-xs font-medium text-foreground">Mediana {m2ShortLabel}</p>
         <div className="flex items-center rounded-full border border-border overflow-hidden">
           <button
             onClick={() => setStatsGroupBy("city")}
@@ -1265,8 +1271,8 @@ const MapView = () => {
             })() : null}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
               <div>
-                <span className="text-muted-foreground">USD/m²</span>
-                <span className="block font-mono font-semibold text-foreground">${(p.pricePerM2Total ?? 0).toLocaleString()}</span>
+                <span className="text-muted-foreground">{m2ShortLabel}</span>
+                <span className="block font-mono font-semibold text-foreground">${(activeM2(p) ?? 0).toLocaleString()}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Precio</span>

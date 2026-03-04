@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock } from "lucide-react";
+import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock, Ruler } from "lucide-react";
 import UrbbanLogo, { UrbannaIcon } from "./UrbbanLogo";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
@@ -10,6 +10,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -44,6 +45,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const { surfaceType, toggle: toggleSurface } = useSurfacePreference();
 
   const handleSignOut = async () => {
     await signOut();
@@ -142,6 +144,36 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           </div>
         )}
         {bottomItems.map((item) => renderNavItem(item, isCollapsed))}
+
+        {/* Surface type toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={toggleSurface}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
+              title={surfaceType === "total" ? "Cambiar a m² cubierto" : "Cambiar a m² total"}
+            >
+              <Ruler className="h-4 w-4 flex-shrink-0" />
+              {!isCollapsed && (
+                <span className="flex items-center gap-2">
+                  <span>m²</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold leading-none ${
+                    surfaceType === "total" 
+                      ? "bg-primary/20 text-primary" 
+                      : "bg-accent text-accent-foreground"
+                  }`}>
+                    {surfaceType === "total" ? "TOT" : "CUB"}
+                  </span>
+                </span>
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p className="text-xs">
+              Métrica: {surfaceType === "total" ? "USD/m² total" : "USD/m² cubierto"}
+            </p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Theme toggle */}
         <button

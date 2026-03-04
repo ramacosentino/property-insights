@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
+import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 import Layout from "@/components/Layout";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
 import PropertyCard from "@/components/PropertyCard";
@@ -53,6 +54,7 @@ const PropertyList = () => {
   const [onboardingApplied, setOnboardingApplied] = useState(false);
   const { ignoredIds, ignore, restore, isIgnored } = useIgnoredOpportunities();
   const [showIgnored, setShowIgnored] = useState(false);
+  const { getM2, m2ShortLabel } = useSurfacePreference();
   const [statsOpen, setStatsOpen] = useState(true);
 
 
@@ -271,11 +273,11 @@ const PropertyList = () => {
 
     result.sort((a, b) => {
       switch (sortBy) {
-        case "pricePerSqm": return (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0);
+        case "pricePerSqm": return (getM2(a.pricePerM2Total, a.pricePerM2Covered) ?? 0) - (getM2(b.pricePerM2Total, b.pricePerM2Covered) ?? 0);
         case "price": return a.price - b.price;
         case "opportunity": return b.opportunityScore - a.opportunityScore;
         case "area": return (b.surfaceTotal ?? 0) - (a.surfaceTotal ?? 0);
-        default: return (a.pricePerM2Total ?? 0) - (b.pricePerM2Total ?? 0);
+        default: return (getM2(a.pricePerM2Total, a.pricePerM2Covered) ?? 0) - (getM2(b.pricePerM2Total, b.pricePerM2Covered) ?? 0);
       }
     });
 
@@ -290,7 +292,7 @@ const PropertyList = () => {
       total: filtered.length,
       deals: deals.length,
       avgPricePerSqm: filtered.length
-        ? Math.round(filtered.reduce((a, b) => a + (b.pricePerM2Total ?? 0), 0) / filtered.length)
+        ? Math.round(filtered.reduce((a, b) => a + (getM2(b.pricePerM2Total, b.pricePerM2Covered) ?? 0), 0) / filtered.length)
         : 0,
       bestDiscount,
     };
@@ -346,7 +348,7 @@ const PropertyList = () => {
               <StatCard label="Total propiedades" value={segmentStats.total.toLocaleString()} />
               <StatCard label="Oportunidades" value={segmentStats.deals.toLocaleString()} highlight />
               <StatCard label="Mejor descuento" value={segmentStats.bestDiscount ? `${segmentStats.bestDiscount.toFixed(0)}%` : "—"} highlight />
-              <StatCard label="Prom. USD/m²" value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
+              <StatCard label={`Prom. ${m2ShortLabel}`} value={`$${segmentStats.avgPricePerSqm.toLocaleString()}`} />
             </div>
           )}
         </div>
@@ -388,7 +390,7 @@ const PropertyList = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="opportunity">Oportunidad ↓</SelectItem>
-                  <SelectItem value="pricePerSqm">USD/m² ↑</SelectItem>
+                  <SelectItem value="pricePerSqm">{m2ShortLabel} ↑</SelectItem>
                   <SelectItem value="price">Precio ↑</SelectItem>
                   <SelectItem value="area">Superficie ↓</SelectItem>
                 </SelectContent>
