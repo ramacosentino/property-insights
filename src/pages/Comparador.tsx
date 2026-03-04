@@ -36,6 +36,7 @@ interface RowDef {
 const Comparador = () => {
   const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useProperties();
+  const { getM2, m2ShortLabel } = useSurfacePreference();
   const properties = data?.properties ?? [];
   const { selectedIds } = usePreselection();
   const { toast } = useToast();
@@ -110,7 +111,7 @@ const Comparador = () => {
   // Row definitions with best-direction for highlighting
   const rows: RowDef[] = [
     { label: "Precio", best: "min", getValue: p => p.price, format: p => `USD ${p.price.toLocaleString()}` },
-    { label: "USD/m²", best: "min", getValue: p => p.pricePerM2Total ?? null, format: p => p.pricePerM2Total ? `$${p.pricePerM2Total.toLocaleString()}` : "—" },
+    { label: m2ShortLabel, best: "min", getValue: p => getM2(p.pricePerM2Total, p.pricePerM2Covered) ?? null, format: p => { const v = getM2(p.pricePerM2Total, p.pricePerM2Covered); return v ? `$${v.toLocaleString()}` : "—"; } },
     { label: "Superficie total", best: "max", getValue: p => p.surfaceTotal ?? null, format: p => p.surfaceTotal ? `${p.surfaceTotal} m²` : "—" },
     { label: "Sup. cubierta", best: "max", getValue: p => p.surfaceCovered ?? null, format: p => p.surfaceCovered ? `${p.surfaceCovered} m²` : "—" },
     { label: "Ambientes", best: "max", getValue: p => p.rooms ?? null, format: p => p.rooms ? `${p.rooms}` : "—" },
