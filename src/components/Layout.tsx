@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock, Ruler } from "lucide-react";
+import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock, Ruler, HelpCircle } from "lucide-react";
 import UrbbanLogo, { UrbannaIcon } from "./UrbbanLogo";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
@@ -7,10 +7,13 @@ import { usePreselection } from "@/hooks/usePreselection";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
+import { useTour } from "@/hooks/useTour";
+import GuidedTour from "@/components/GuidedTour";
+import DiscoveryChecklist from "@/components/DiscoveryChecklist";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -46,6 +49,15 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { surfaceType, toggle: toggleSurface } = useSurfacePreference();
+  const tour = useTour();
+
+  // Track route-based checklist completions
+  useEffect(() => {
+    if (!tour || tour.loading) return;
+    const path = location.pathname;
+    if (path === "/mapa") tour.completeChecklistItem("explored_map");
+    if (path === "/inteligencia-precios") tour.completeChecklistItem("viewed_intelligence");
+  }, [location.pathname, tour]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -185,7 +197,16 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           {!isCollapsed && <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>}
         </button>
 
-        {/* Collapse toggle removed — now in header */}
+        {/* Tour help button */}
+        <button
+          onClick={() => tour.restartTour()}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
+          title="Ver tour de ayuda"
+        >
+          <HelpCircle className="h-4 w-4 flex-shrink-0" />
+          {!isCollapsed && <span>Ayuda</span>}
+        </button>
+
 
         {/* User */}
         {user ? (
@@ -279,6 +300,22 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
         <main className="flex-1">{children}</main>
       </div>
+
+      {/* Guided Tour */}
+      {tour.showTour && !tour.loading && (
+        <GuidedTour onComplete={tour.completeTour} onSkip={tour.completeTour} />
+      )}
+
+      {/* Discovery Checklist */}
+      {tour.tourCompleted && !tour.allCompleted && !tour.showTour && (
+        <DiscoveryChecklist
+          checklist={tour.checklist}
+          items={tour.checklistItems}
+          completedCount={tour.completedCount}
+          allCompleted={tour.allCompleted}
+          onRestartTour={tour.restartTour}
+        />
+      )}
     </div>
   );
 };
