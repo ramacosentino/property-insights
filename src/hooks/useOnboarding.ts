@@ -10,6 +10,7 @@ export interface OnboardingData {
   budget_currency: string;
   property_types: string[];
   investment_goal: string | null;
+  condition_filters: string[];
 }
 
 export function useOnboarding() {
@@ -52,6 +53,7 @@ export function useOnboarding() {
           budget_currency: data.budget_currency,
           property_types: data.property_types,
           investment_goal: data.investment_goal,
+          condition_filters: data.condition_filters,
         },
         { onConflict: "user_id" }
       );

@@ -40,6 +40,16 @@ Deno.serve(async (req) => {
   try {
     const { search_id, filters, user_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
 
+    // Condition tier ranges for filtering by score_multiplicador
+    const CONDITION_RANGES: Record<string, { min: number; max: number }> = {
+      excelente: { min: 1.0, max: Infinity },
+      buen_estado: { min: 0.9, max: 0.999 },
+      aceptable: { min: 0.8, max: 0.899 },
+      necesita_mejoras: { min: 0.7, max: 0.799 },
+      refaccion_parcial: { min: 0.55, max: 0.699 },
+      refaccion_completa: { min: 0, max: 0.549 },
+    };
+
     if (!search_id || !user_id) {
       return new Response(
         JSON.stringify({ success: false, error: "search_id and user_id required" }),
@@ -61,7 +71,7 @@ Deno.serve(async (req) => {
     // 1. Build query with filters
     let query = supabase
       .from("properties")
-      .select("id, price, price_per_m2_total, surface_total, surface_covered, neighborhood, norm_neighborhood, norm_locality, norm_province, city, property_type, rooms, parking, url")
+      .select("id, price, price_per_m2_total, surface_total, surface_covered, neighborhood, norm_neighborhood, norm_locality, norm_province, city, property_type, rooms, parking, url, score_multiplicador")
       .gt("price", 0)
       .gt("price_per_m2_total", 0)
       .not("url", "is", null);
@@ -117,6 +127,24 @@ Deno.serve(async (req) => {
       if (data) allMatched.push(...data);
       hasMore = (data?.length || 0) === pageSize;
       from += pageSize;
+    }
+
+    // Apply condition filter (by score_multiplicador)
+    const condFilters = filters.condition_filters as string[] | undefined;
+    if (condFilters && condFilters.length > 0 && condFilters.length < 6) {
+      const allowedRanges = condFilters
+        .map((k: string) => CONDITION_RANGES[k])
+        .filter(Boolean);
+
+      const beforeCount = allMatched.length;
+      const filteredByCondition = allMatched.filter((p: any) => {
+        const score = p.score_multiplicador != null ? Number(p.score_multiplicador) : null;
+        if (score == null) return true; // NULL scores always included
+        return allowedRanges.some((r: any) => score >= r.min && score <= r.max);
+      });
+      allMatched.length = 0;
+      allMatched.push(...filteredByCondition);
+      console.log(`Condition filter: ${beforeCount} → ${allMatched.length}`);
     }
 
     console.log(`Filtered: ${allMatched.length} properties matched`);

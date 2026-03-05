@@ -32,6 +32,7 @@ import {
   ROOMS_KEYS, PARKING_KEYS, PROPERTY_TYPE_KEYS, BEDROOMS_KEYS,
   BATHROOMS_KEYS, DISPOSITION_KEYS, ORIENTATION_KEYS,
   PRICE_CAP, SURFACE_CAP, SURFACE_COVERED_CAP, AGE_CAP, EXPENSES_CAP,
+  CONDITION_TIERS, applyConditionFilter,
 } from "@/lib/filterUtils";
 
 function buildOptionsWithCounts(
@@ -93,6 +94,7 @@ const PropertyList = () => {
   const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
   const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
   const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
+  const [conditionFilter, setConditionFilter] = useState<Set<string>>(new Set<string>());
   const [sortBy, setSortBy] = useState<string>("opportunity");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
   const [rangesInitialized, setRangesInitialized] = useState(false);
@@ -118,6 +120,9 @@ const PropertyList = () => {
     }
     if (onboardingFilters.propertyTypeFilter.included.size > 0) {
       setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
+    }
+    if (onboardingFilters.conditionFilters.size > 0) {
+      setConditionFilter(onboardingFilters.conditionFilters);
     }
     if (onboardingFilters.priceRange) {
       setPriceRange([
@@ -241,6 +246,10 @@ const PropertyList = () => {
     }
     if (orientationFilter.included.size > 0 || orientationFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(p.orientation || "", orientationFilter));
+    }
+    // Condition filter
+    if (conditionFilter.size > 0 && conditionFilter.size < CONDITION_TIERS.length) {
+      result = result.filter((p) => applyConditionFilter(p.score_multiplicador, conditionFilter));
     }
     // Range filters
     if (rangesInitialized) {
@@ -476,6 +485,40 @@ const PropertyList = () => {
             <MultiFilter title="Tipo de propiedad" options={propertyTypeOptions} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
             <MultiFilter title="Disposición" options={dispositionOptions} state={dispositionFilter} onChange={setDispositionFilter} />
             <MultiFilter title="Orientación" options={orientationOptions} state={orientationFilter} onChange={setOrientationFilter} />
+          </div>
+
+          {/* Condition filter */}
+          <div className="space-y-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Estado de la propiedad</span>
+            <div className="flex flex-wrap gap-1.5">
+              {CONDITION_TIERS.map((tier) => {
+                const isSelected = conditionFilter.has(tier.value);
+                const isAllSelected = conditionFilter.size === 0 || conditionFilter.size === CONDITION_TIERS.length;
+                return (
+                  <button
+                    key={tier.value}
+                    onClick={() => {
+                      setConditionFilter((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(tier.value)) {
+                          next.delete(tier.value);
+                        } else {
+                          next.add(tier.value);
+                        }
+                        return next;
+                      });
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                      isSelected && !isAllSelected
+                        ? "bg-primary/20 text-primary border-primary/30"
+                        : "bg-secondary text-muted-foreground border-border hover:text-foreground hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    {tier.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Barrio dropdown */}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ONBOARDING_FILTERS_UPDATED } from "@/hooks/useOnboardingFilters";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target, ShieldCheck, Check } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -272,6 +272,7 @@ const RenovationCostsSection = () => {
   );
 };
 
+import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
 const PROPERTY_TYPES_OPTIONS = ["Departamento", "Casa", "PH", "Local comercial", "Terreno", "Oficina", "Cochera"];
 const INVESTMENT_GOALS = [
   { value: "refaccion_venta", label: "Refacción + Venta" },
@@ -294,6 +295,7 @@ const PreferencesSection = () => {
   const [propertyTypes, setPropertyTypes] = useState<string[]>([]);
   const [investmentGoal, setInvestmentGoal] = useState<string | null>(null);
   const [userType, setUserType] = useState<string>("");
+  const [conditionFilters, setConditionFilters] = useState<string[]>([...ALL_CONDITION_VALUES]);
 
   useEffect(() => {
     if (!user || !open) return;
@@ -312,6 +314,7 @@ const PreferencesSection = () => {
           setPropertyTypes(data.property_types ?? []);
           setInvestmentGoal(data.investment_goal);
           setUserType(data.user_type ?? "");
+          setConditionFilters((data as any).condition_filters?.length > 0 ? (data as any).condition_filters : [...ALL_CONDITION_VALUES]);
         }
         setLoading(false);
       });
@@ -336,6 +339,7 @@ const PreferencesSection = () => {
         budget_currency: budgetCurrency,
         property_types: propertyTypes,
         investment_goal: investmentGoal,
+        condition_filters: conditionFilters,
       }, { onConflict: "user_id" });
     setSaving(false);
     if (error) {
@@ -448,7 +452,45 @@ const PreferencesSection = () => {
                 </div>
               </div>
 
-              {/* Investment Goal (conditional) */}
+              {/* Condition Filters */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-medium">Estado de la propiedad</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {CONDITION_TIERS.map((tier) => {
+                    const selected = conditionFilters.includes(tier.value);
+                    return (
+                      <button
+                        key={tier.value}
+                        onClick={() => setConditionFilters((prev) =>
+                          selected ? prev.filter((v) => v !== tier.value) : [...prev, tier.value]
+                        )}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border transition-all ${
+                          selected
+                            ? "border-primary bg-primary/10 text-primary font-medium"
+                            : "border-border text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
+                          selected ? "border-primary bg-primary" : "border-muted-foreground/30"
+                        }`}>
+                          {selected && <Check className="h-2 w-2 text-primary-foreground" />}
+                        </div>
+                        {tier.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setConditionFilters([...ALL_CONDITION_VALUES])}
+                  className="text-[11px] text-primary hover:underline"
+                >
+                  Seleccionar todas
+                </button>
+              </div>
+
               {isInvestor && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5">

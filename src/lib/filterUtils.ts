@@ -46,3 +46,33 @@ export const SURFACE_CAP = 2000;
 export const SURFACE_COVERED_CAP = 800;
 export const AGE_CAP = 50;
 export const EXPENSES_CAP = 1000000;
+
+// Condition (score) tiers — 6 levels
+export const CONDITION_TIERS = [
+  { value: "excelente", label: "Excelente", minScore: 1.0, maxScore: Infinity },
+  { value: "buen_estado", label: "Buen estado", minScore: 0.9, maxScore: 0.99 },
+  { value: "aceptable", label: "Aceptable", minScore: 0.8, maxScore: 0.89 },
+  { value: "necesita_mejoras", label: "Necesita mejoras", minScore: 0.7, maxScore: 0.79 },
+  { value: "refaccion_parcial", label: "Refacción parcial", minScore: 0.55, maxScore: 0.69 },
+  { value: "refaccion_completa", label: "Refacción completa", minScore: 0, maxScore: 0.54 },
+] as const;
+
+export const CONDITION_KEYS = CONDITION_TIERS.map((t) => t.value);
+export const ALL_CONDITION_VALUES = CONDITION_KEYS;
+
+/** Get the condition tier value for a given score. Returns null if score is null. */
+export function getConditionTier(score: number | null): string | null {
+  if (score == null) return null;
+  for (const tier of CONDITION_TIERS) {
+    if (score >= tier.minScore) return tier.value;
+  }
+  return "refaccion_completa";
+}
+
+/** Check if a property passes the condition filter. NULL scores always pass (inclusive). */
+export function applyConditionFilter(score: number | null, selectedTiers: Set<string>): boolean {
+  if (selectedTiers.size === 0) return true; // no filter active
+  if (score == null) return true; // NULL scores always included
+  const tier = getConditionTier(score);
+  return tier ? selectedTiers.has(tier) : true;
+}

@@ -43,6 +43,7 @@ import {
   ROOMS_KEYS, PARKING_KEYS, PROPERTY_TYPE_KEYS, BEDROOMS_KEYS,
   BATHROOMS_KEYS, DISPOSITION_KEYS, ORIENTATION_KEYS,
   PRICE_CAP, SURFACE_CAP, SURFACE_COVERED_CAP, AGE_CAP, EXPENSES_CAP,
+  CONDITION_TIERS, applyConditionFilter,
 } from "@/lib/filterUtils";
 
 const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
@@ -264,7 +265,7 @@ const MapView = () => {
   const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
   const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
   const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
-  // View mode: "opportunities" or "all"
+  const [conditionFilter, setConditionFilter] = useState<Set<string>>(new Set<string>());
   const [viewMode, setViewMode] = useState<"opportunities" | "all" | "projects">("opportunities");
   // Import date filter
   const [importDateFilter, setImportDateFilter] = useState<string>("all");
@@ -331,6 +332,9 @@ const MapView = () => {
     if (onboardingFilters.propertyTypeFilter.included.size > 0) {
       setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
     }
+    if (onboardingFilters.conditionFilters.size > 0) {
+      setConditionFilter(onboardingFilters.conditionFilters);
+    }
     if (onboardingFilters.priceRange) {
       setPriceRange([
         Math.max(onboardingFilters.priceRange[0], dataRanges.priceMin),
@@ -349,7 +353,8 @@ const MapView = () => {
     + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0)
     + (rangesInitialized && (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) ? 1 : 0)
     + (importDateFilter !== "all" ? 1 : 0)
-    + (poiFilter.active ? 1 : 0);
+    + (poiFilter.active ? 1 : 0)
+    + (conditionFilter.size > 0 && conditionFilter.size < CONDITION_TIERS.length ? 1 : 0);
 
   const clearAllFilters = () => {
     setRoomsFilter(createFilterState());
@@ -362,6 +367,7 @@ const MapView = () => {
     setOrientationFilter(createFilterState());
     setImportDateFilter("all");
     setPoiFilter({ active: false, type: null, radius: 800, pois: [] });
+    setConditionFilter(new Set<string>());
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
@@ -421,6 +427,10 @@ const MapView = () => {
       result = result.filter((p) => applyFilter(p.disposition || "", dispositionFilter));
     if (orientationFilter.included.size > 0 || orientationFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(p.orientation || "", orientationFilter));
+    // Condition filter
+    if (conditionFilter.size > 0 && conditionFilter.size < CONDITION_TIERS.length) {
+      result = result.filter((p) => applyConditionFilter(p.score_multiplicador, conditionFilter));
+    }
     // Import date filter
     if (importDateFilter !== "all") {
       const now = Date.now();
@@ -463,7 +473,7 @@ const MapView = () => {
       });
     }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords, poiFilter]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, conditionFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords, poiFilter]);
 
   const mappedProperties = filteredProperties;
 
@@ -1429,6 +1439,36 @@ const MapView = () => {
         compact
       />
       <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+      {/* Condition filter */}
+      <div className="space-y-1">
+        <span className="text-[11px] font-medium text-muted-foreground">Estado</span>
+        <div className="flex flex-wrap gap-1">
+          {CONDITION_TIERS.map((tier) => {
+            const isSelected = conditionFilter.has(tier.value);
+            const isAllSelected = conditionFilter.size === 0 || conditionFilter.size === CONDITION_TIERS.length;
+            return (
+              <button
+                key={tier.value}
+                onClick={() => {
+                  setConditionFilter((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(tier.value)) next.delete(tier.value);
+                    else next.add(tier.value);
+                    return next;
+                  });
+                }}
+                className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all border ${
+                  isSelected && !isAllSelected
+                    ? "bg-primary/20 text-primary border-primary/30"
+                    : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                }`}
+              >
+                {tier.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       {rangesInitialized && (
         <div className="space-y-4">
           <RangeSliderFilter

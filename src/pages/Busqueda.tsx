@@ -9,6 +9,7 @@ import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getSurfaceType, getMinSurfaceEnabled, getRenovationCosts } from "@/pages/Settings";
+import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
 import { Search, Loader2, CheckCircle, AlertCircle, RotateCcw, ChevronRight, Filter, Sparkles, History, Trash2, Star, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NeighborhoodDropdown, { ProvinceGroup } from "@/components/NeighborhoodDropdown";
@@ -27,6 +28,7 @@ interface SearchFilters {
   rooms_max: number | null;
   parking_min: number | null;
   budget_max: number | null;
+  condition_filters: string[];
 }
 
 interface SearchRun {
@@ -52,6 +54,7 @@ const EMPTY_FILTERS: SearchFilters = {
   rooms_max: null,
   parking_min: null,
   budget_max: null,
+  condition_filters: [],
 };
 
 const FilterStep = ({
@@ -193,6 +196,32 @@ const FilterStep = ({
           <p className="text-[10px] text-muted-foreground">
             Incluye precio + estimación de refacción. Se agrega un 10% de tolerancia para no descartar propiedades al límite.
           </p>
+        </div>
+
+        {/* Condition filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Estado de la propiedad</label>
+          <div className="flex flex-wrap gap-2">
+            {CONDITION_TIERS.map((tier) => (
+              <button
+                key={tier.value}
+                onClick={() => setFilters({ ...filters, condition_filters: toggleArray(filters.condition_filters, tier.value) })}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  filters.condition_filters.includes(tier.value)
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                }`}
+              >
+                {tier.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setFilters({ ...filters, condition_filters: [...ALL_CONDITION_VALUES] })}
+            className="text-[10px] text-primary hover:underline"
+          >
+            Seleccionar todas
+          </button>
         </div>
       </div>
 
@@ -386,6 +415,9 @@ const Busqueda = () => {
         ...f,
         budget_max: budgetMax,
       }));
+    }
+    if (onboardingFilters.conditionFilters.size > 0) {
+      setFilters((f) => ({ ...f, condition_filters: [...onboardingFilters.conditionFilters] }));
     }
     setOnboardingApplied(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps

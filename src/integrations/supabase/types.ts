@@ -564,6 +564,7 @@ export type Database = {
           budget_currency: string | null
           budget_max: number | null
           budget_min: number | null
+          condition_filters: string[] | null
           created_at: string
           id: string
           investment_goal: string | null
@@ -577,6 +578,7 @@ export type Database = {
           budget_currency?: string | null
           budget_max?: number | null
           budget_min?: number | null
+          condition_filters?: string[] | null
           created_at?: string
           id?: string
           investment_goal?: string | null
@@ -590,6 +592,7 @@ export type Database = {
           budget_currency?: string | null
           budget_max?: number | null
           budget_min?: number | null
+          condition_filters?: string[] | null
           created_at?: string
           id?: string
           investment_goal?: string | null
