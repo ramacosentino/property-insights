@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { FilterState, createFilterState } from "@/components/MultiFilter";
+import { ALL_CONDITION_VALUES } from "@/lib/filterUtils";
 
 export interface OnboardingFilters {
   neighborhoodFilter: FilterState;
   propertyTypeFilter: FilterState;
+  conditionFilters: Set<string>;
   priceRange: [number, number] | null;
   priceCurrency: string;
   loaded: boolean;
@@ -27,6 +29,7 @@ export function useOnboardingFilters() {
   const [filters, setFilters] = useState<OnboardingFilters>({
     neighborhoodFilter: createFilterState(),
     propertyTypeFilter: createFilterState(),
+    conditionFilters: new Set<string>(),
     priceRange: null,
     priceCurrency: "USD",
     loaded: false,
@@ -49,7 +52,7 @@ export function useOnboardingFilters() {
 
     supabase
       .from("user_onboarding")
-      .select("zones, budget_min, budget_max, budget_currency, property_types")
+      .select("zones, budget_min, budget_max, budget_currency, property_types, condition_filters")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
@@ -76,9 +79,16 @@ export function useOnboardingFilters() {
             ? [data.budget_min ?? 0, data.budget_max ?? 2000000]
             : null;
 
+        // Condition filters: if saved and non-empty use them, otherwise default to all
+        const condArr = (data as any).condition_filters;
+        const conditionFilters = new Set<string>(
+          condArr && condArr.length > 0 ? condArr : ALL_CONDITION_VALUES
+        );
+
         setFilters({
           neighborhoodFilter,
           propertyTypeFilter,
+          conditionFilters,
           priceRange,
           priceCurrency: data.budget_currency || "USD",
           loaded: true,
