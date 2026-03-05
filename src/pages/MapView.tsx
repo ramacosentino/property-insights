@@ -133,26 +133,51 @@ function scatterCoord(base: [number, number], id: string, spread = 0.015): [numb
   ];
 }
 
-// Color scale: blue (cheap) → green (expensive), green starts earlier and stronger
-function getPropertyColor(pricePerSqm: number, min: number, max: number): string {
-  const ratio = Math.max(0, Math.min(1, (pricePerSqm - min) / (max - min || 1)));
-  if (ratio < 0.25) {
-    // Deep blue (cheapest)
-    const t = ratio / 0.25;
+// Color scale: blue (cheap) → green (expensive)
+// Uses a ratio (0-1) that should be RANK-based (quantile) not linear
+function getPropertyColor(ratio: number): string {
+  const r = Math.max(0, Math.min(1, ratio));
+  if (r < 0.25) {
+    const t = r / 0.25;
     return `hsl(${220 - t * 10}, 70%, ${40 + t * 8}%)`;
-  } else if (ratio < 0.5) {
-    // Blue → teal transition
-    const t = (ratio - 0.25) / 0.25;
+  } else if (r < 0.5) {
+    const t = (r - 0.25) / 0.25;
     return `hsl(${210 - t * 60}, ${70 - t * 5}%, ${48 + t * 7}%)`;
-  } else if (ratio < 0.7) {
-    // Teal → green transition (green starts here)
-    const t = (ratio - 0.5) / 0.2;
+  } else if (r < 0.7) {
+    const t = (r - 0.5) / 0.2;
     return `hsl(${150 - t * 20}, ${65 + t * 10}%, ${55 - t * 5}%)`;
   } else {
-    // Strong green (expensive)
-    const t = (ratio - 0.7) / 0.3;
+    const t = (r - 0.7) / 0.3;
     return `hsl(${130 - t * 10}, ${75 + t * 10}%, ${50 - t * 10}%)`;
   }
+}
+
+/** Build a Map from price → quantile rank (0-1) for even color distribution */
+function buildPriceRankMap(sortedPrices: number[]): Map<number, number> {
+  const map = new Map<number, number>();
+  const len = sortedPrices.length;
+  if (len === 0) return map;
+  for (let i = 0; i < len; i++) {
+    const price = sortedPrices[i];
+    if (!map.has(price)) {
+      map.set(price, len > 1 ? i / (len - 1) : 0.5);
+    }
+  }
+  return map;
+}
+
+/** Get quantile ratio for a price using the rank map, with binary search fallback */
+function getPriceRatio(price: number, sortedPrices: number[], rankMap: Map<number, number>): number {
+  if (rankMap.has(price)) return rankMap.get(price)!;
+  if (sortedPrices.length === 0) return 0.5;
+  // Binary search for nearest
+  let lo = 0, hi = sortedPrices.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sortedPrices[mid] < price) lo = mid + 1;
+    else hi = mid;
+  }
+  return sortedPrices.length > 1 ? lo / (sortedPrices.length - 1) : 0.5;
 }
 
 
