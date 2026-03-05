@@ -17,9 +17,9 @@ export interface CachedGeoData {
 
 // Fetch cached geocoded coordinates + normalized geo from DB
 // Supports optional bounding box to limit data transfer
-// Fires all page requests in parallel without waiting for count
-const MAX_PARALLEL_PAGES = 10; // supports up to 10,000 geocoded addresses
+// Adaptive pagination: fires initial batch, stops when a page returns fewer rows
 const GEO_PAGE_SIZE = 1000;
+const INITIAL_BATCH = 4; // fire 4 pages in parallel first (covers up to 4000 rows)
 
 function buildGeoQuery(bounds?: { south: number; north: number; west: number; east: number }) {
   let query = supabase
@@ -38,35 +38,57 @@ function buildGeoQuery(bounds?: { south: number; north: number; west: number; ea
   return query;
 }
 
+function processRows(rows: any[], map: Map<string, CachedGeoData>) {
+  for (const row of rows) {
+    if (row.lat && row.lng) {
+      map.set(row.address, {
+        lat: row.lat,
+        lng: row.lng,
+        norm_neighborhood: row.norm_neighborhood,
+        norm_locality: row.norm_locality,
+        norm_province: row.norm_province,
+      });
+    }
+  }
+}
+
 export async function fetchCachedCoordinates(bounds?: {
   south: number; north: number; west: number; east: number;
 }): Promise<Map<string, CachedGeoData>> {
   const map = new Map<string, CachedGeoData>();
 
-  // Fire all pages in parallel — no sequential dependency
-  const requests = [];
-  for (let i = 0; i < MAX_PARALLEL_PAGES; i++) {
+  // Fire initial batch in parallel
+  const initialRequests = [];
+  for (let i = 0; i < INITIAL_BATCH; i++) {
     const from = i * GEO_PAGE_SIZE;
-    requests.push(buildGeoQuery(bounds).range(from, from + GEO_PAGE_SIZE - 1));
+    initialRequests.push(buildGeoQuery(bounds).range(from, from + GEO_PAGE_SIZE - 1));
   }
 
-  const results = await Promise.all(requests);
+  const initialResults = await Promise.all(initialRequests);
 
-  for (const result of results) {
+  let needMore = true;
+  for (const result of initialResults) {
     if (result.error) {
       console.error("Error fetching cached coordinates page:", result.error);
       continue;
     }
-    for (const row of result.data || []) {
-      if (row.lat && row.lng) {
-        map.set(row.address, {
-          lat: row.lat,
-          lng: row.lng,
-          norm_neighborhood: row.norm_neighborhood,
-          norm_locality: row.norm_locality,
-          norm_province: row.norm_province,
-        });
-      }
+    const rows = result.data || [];
+    processRows(rows, map);
+    if (rows.length < GEO_PAGE_SIZE) needMore = false;
+  }
+
+  // If all initial pages were full, fetch more pages sequentially until done
+  if (needMore) {
+    let page = INITIAL_BATCH;
+    while (true) {
+      const from = page * GEO_PAGE_SIZE;
+      const { data, error } = await buildGeoQuery(bounds).range(from, from + GEO_PAGE_SIZE - 1);
+      if (error) { console.error("Error fetching cached coordinates page:", error); break; }
+      const rows = data || [];
+      processRows(rows, map);
+      if (rows.length < GEO_PAGE_SIZE) break;
+      page++;
+      if (page > 20) break; // safety cap at 20k rows
     }
   }
 
