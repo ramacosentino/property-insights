@@ -353,7 +353,8 @@ const MapView = () => {
     + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0)
     + (rangesInitialized && (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) ? 1 : 0)
     + (importDateFilter !== "all" ? 1 : 0)
-    + (poiFilter.active ? 1 : 0);
+    + (poiFilter.active ? 1 : 0)
+    + (conditionFilter.size > 0 && conditionFilter.size < CONDITION_TIERS.length ? 1 : 0);
 
   const clearAllFilters = () => {
     setRoomsFilter(createFilterState());
@@ -366,6 +367,7 @@ const MapView = () => {
     setOrientationFilter(createFilterState());
     setImportDateFilter("all");
     setPoiFilter({ active: false, type: null, radius: 800, pois: [] });
+    setConditionFilter(new Set<string>());
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
