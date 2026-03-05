@@ -516,6 +516,7 @@ const MapView = () => {
         }
         return merged;
       });
+      setCoordsReady(true);
     }
   }, []);
 
