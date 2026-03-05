@@ -6,8 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
 /** Estimate renovation cost per m² based on score_multiplicador (defaults) */
 function defaultRenovationCostPerM2(score: number): number {
   if (score >= 1.0) return 0;
@@ -61,330 +59,73 @@ function enforceEstado(s: number): string {
   return "Refacción completa";
 }
 
-/** Scrape property with Firecrawl (with retry on timeout) */
-async function scrapeProperty(url: string, firecrawlKey: string) {
-  const waitTimes = [5000, 10000];
-  for (let attempt = 0; attempt < waitTimes.length; attempt++) {
-    const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url,
-        formats: ["markdown", "screenshot", "links"],
-        onlyMainContent: true,
-        waitFor: waitTimes[attempt],
-      }),
-    });
-
-    const scrapeData = await scrapeResponse.json();
-
-    if (scrapeResponse.ok && scrapeData.success) {
-      return { success: true, data: scrapeData };
-    }
-
-    const isTimeout = scrapeData?.code === "SCRAPE_TIMEOUT";
-    if (isTimeout && attempt < waitTimes.length - 1) {
-      console.log(`Scrape timeout (attempt ${attempt + 1}), retrying with longer wait...`);
-      continue;
-    }
-
-    console.error("Firecrawl error:", JSON.stringify(scrapeData));
-    return { success: false, error: scrapeData.error || "Unknown error" };
-  }
-  return { success: false, error: "All scrape attempts failed" };
-}
-
-/** Detect which fields are missing from a property */
-function detectMissingFields(prop: any): string[] {
-  const checks: [string, string][] = [
-    ["surface_total", "Superficie total (m²)"],
-    ["bedrooms", "Dormitorios"],
-    ["parking", "Cocheras"],
-    ["age_years", "Antigüedad (años)"],
-    ["expenses", "Expensas (ARS)"],
-    ["description", "Descripción"],
-    ["disposition", "Disposición (Frente/Contrafrente/Interno/Lateral)"],
-    ["orientation", "Orientación (Norte/Sur/Este/Oeste/etc.)"],
-    ["luminosity", "Luminosidad (Muy luminoso/Luminoso/Normal/Poco luminoso)"],
-    ["toilettes", "Toilettes"],
-    ["surface_covered", "Superficie cubierta (m²)"],
-  ];
-  const missing: string[] = [];
-  for (const [field, label] of checks) {
-    const val = prop[field];
-    if (val === null || val === undefined || val === "" || val === 0) {
-      missing.push(label);
-    }
-  }
-  return missing;
-}
-
-/** Map AI-extracted field labels back to DB column names */
-function mapExtractedFields(extracted: Record<string, any>): Record<string, any> {
-  const mapping: Record<string, { col: string; type: "num" | "text" }> = {
-    "Superficie total (m²)": { col: "surface_total", type: "num" },
-    "Superficie cubierta (m²)": { col: "surface_covered", type: "num" },
-    "Dormitorios": { col: "bedrooms", type: "num" },
-    "Cocheras": { col: "parking", type: "num" },
-    "Antigüedad (años)": { col: "age_years", type: "num" },
-    "Expensas (ARS)": { col: "expenses", type: "num" },
-    "Descripción": { col: "description", type: "text" },
-    "Disposición (Frente/Contrafrente/Interno/Lateral)": { col: "disposition", type: "text" },
-    "Orientación (Norte/Sur/Este/Oeste/etc.)": { col: "orientation", type: "text" },
-    "Luminosidad (Muy luminoso/Luminoso/Normal/Poco luminoso)": { col: "luminosity", type: "text" },
-    "Toilettes": { col: "toilettes", type: "num" },
-  };
-  const result: Record<string, any> = {};
-  for (const [label, value] of Object.entries(extracted)) {
-    const m = mapping[label];
-    if (!m || value === null || value === undefined || value === "") continue;
-    if (m.type === "num") {
-      const n = Number(value);
-      if (!isNaN(n) && n >= 0) result[m.col] = n;
-    } else {
-      result[m.col] = String(value).trim();
-    }
-  }
-  return result;
-}
-
-/** Call AI to analyze property */
-async function analyzeWithAI(prop: any, markdown: string, screenshot: string | null, lovableKey: string, missingFields: string[]) {
-  const missingSection = missingFields.length > 0
-    ? `\n\nCAMPOS FALTANTES A EXTRAER:
-Los siguientes campos NO están en nuestra base de datos para esta propiedad. 
-EXTRAELOS del contenido scrapeado si podés encontrarlos:
-${missingFields.map(f => `- ${f}`).join("\n")}
-
-En tu respuesta JSON, agregá un campo "extracted_fields" con los valores que pudiste extraer.
-Ejemplo: "extracted_fields": { "Superficie total (m²)": 120, "Dormitorios": 3, "Cocheras": 1 }
-Si no encontrás un campo, NO lo incluyas en extracted_fields (no pongas null ni 0).
-Para "Descripción", escribí un resumen breve de la publicación si no hay descripción en la DB (máximo 500 caracteres).
-Para "Antigüedad (años)", si dice "a estrenar" poné 0, si dice "años de antigüedad" poné el número.`
-    : "";
-
-  const prompt = `Eres un tasador inmobiliario experto en Argentina con 20 años de experiencia.
-
-INFORMACIÓN DE LA PROPIEDAD (de nuestra base de datos):
-- Tipo: ${prop.property_type || "N/A"}
-- Precio: ${prop.currency || "USD"} ${prop.price ? Number(prop.price).toLocaleString() : "N/A"}
-- Superficie: ${prop.surface_total || "N/A"} m² totales, ${prop.surface_covered || "N/A"} m² cubiertos
-- Ambientes: ${prop.rooms || "N/A"}
-- Dormitorios: ${prop.bedrooms || "N/A"}
-- Baños: ${prop.bathrooms || "N/A"}
-- Ubicación: ${prop.neighborhood || "N/A"}, ${prop.city || "N/A"}
-- Descripción DB: ${(prop.description || "N/A").substring(0, 500)}
-- Fuente: ${prop.source || "N/A"}
-
-CONTENIDO SCRAPEADO DE LA PUBLICACIÓN:
-${markdown.substring(0, 4000)}
-
-ANALIZA LA INFORMACIÓN Y LA IMAGEN (screenshot de la publicación):
-${missingSection}
-
-CRITERIOS DE SCORING (MULTIPLICADOR DE VALOR):
-Base = 1.0 (propiedad promedio: estado aceptable, luz normal, sin lujos ni problemas)
-
-FACTORES QUE SUMAN/RESTAN:
-
-1. ESTADO FÍSICO:
-   • Impecable/A estrenar/Recién reformado: +0.20 a +0.25
-   • Muy buen estado (bien mantenido, limpio): +0.10 a +0.15
-   • Estado aceptable (uso normal, pequeños detalles): 0
-   • Necesita mejoras (pintura, arreglos menores): -0.10 a -0.15
-   • Refacción parcial necesaria: -0.20 a -0.25
-   • Refacción completa: -0.30 a -0.40
-
-2. LUMINOSIDAD:
-   • Excepcional (muy luminosa, ventanales grandes, orientación norte): +0.15
-   • Muy buena (buena luz natural): +0.08 a +0.12
-   • Normal: 0
-   • Poca luz: -0.08 a -0.12
-   • Muy oscura: -0.15 a -0.20
-
-3. TERMINACIONES Y CALIDAD:
-   • Premium (porcelanato, cocina integrada moderna, baños de diseño): +0.15
-   • Muy buenas: +0.08 a +0.12
-   • Estándar: 0
-   • Básicas: -0.03 a -0.07
-   • Viejas/Deterioradas: -0.10 a -0.15
-
-4. DISEÑO Y DISTRIBUCIÓN:
-   • Diseño arquitectónico destacado: +0.10 a +0.15
-   • Distribución funcional estándar: 0
-   • Distribución obsoleta: -0.05 a -0.10
-
-5. EXTRAS Y AMENITIES:
-   • Vista premium + terraza + amenities: +0.15
-   • Vista abierta o terraza grande: +0.08 a +0.12
-   • Sin extras: 0
-   • Vista a medianera: -0.05 a -0.08
-
-6. PROBLEMAS CRÍTICOS:
-   • Humedad visible: -0.15 a -0.25
-   • Problemas estructurales: -0.20 a -0.30
-   • Instalaciones precarias: -0.10 a -0.15
-
-IMPORTANTE:
-- SÉ MUY CRÍTICO Y REALISTA. No todas las propiedades son "excelentes".
-- La MAYORÍA debe estar entre 0.85 y 1.15
-- Solo casos excepcionales merecen >1.25 o <0.70
-- Si ves problemas, mencionálos sin suavizar
-- PROPIEDADES EN MAL ESTADO: Si la propiedad está deteriorada, abandonada, necesita demolición parcial, tiene problemas estructurales severos, o es claramente inhabitable sin obras mayores, el score DEBE ser ≤ 0.55 (Refacción completa). No tengas miedo de dar scores de 0.40-0.55 cuando la evidencia lo justifica.
-- Si la descripción o las imágenes muestran una propiedad "a reciclar", "a refaccionar", "ideal para demoler y construir", o similar, eso indica Refacción completa (score ≤ 0.55).
-- CRÍTICO: el estado_general DEBE ser consistente con el score:
-  • score ≥ 1.0 → "Excelente"
-  • score 0.90–0.99 → "Buen estado"
-  • score 0.80–0.89 → "Aceptable"
-  • score 0.70–0.79 → "Necesita mejoras"
-  • score 0.55–0.69 → "Refacción parcial"
-  • score < 0.55 → "Refacción completa"
-
-RESPONDE SOLO CON ESTE JSON (sin markdown, sin explicaciones):
-{
-    "estado_general": "Debe coincidir con el rango del score (ver tabla arriba)",
-    "highlights": ["Punto positivo 1", "Punto positivo 2", "..."],
-    "lowlights": ["Punto negativo 1", "Punto negativo 2", "..."],
-    "score_multiplicador": 0.85,
-    "informe_breve": "Resumen de 2-3 oraciones sobre la propiedad, su estado y valor relativo."${missingFields.length > 0 ? ',\n    "extracted_fields": { "campo": "valor extraído" }' : ""}
-}`;
-
-  const messages: any[] = [
-    { role: "system", content: "Eres un tasador inmobiliario experto. Respondé SOLO con JSON válido, sin markdown ni explicaciones." },
-  ];
-
-  if (screenshot) {
-    messages.push({
-      role: "user",
-      content: [
-        { type: "image_url", image_url: { url: screenshot } },
-        { type: "text", text: prompt },
-      ],
-    });
-  } else {
-    messages.push({ role: "user", content: prompt });
-  }
-
-  const aiResponse = await fetch(AI_GATEWAY_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages,
-      temperature: 0.3,
-    }),
-  });
-
-  if (!aiResponse.ok) {
-    const errorText = await aiResponse.text();
-    console.error(`AI gateway error ${aiResponse.status}:`, errorText);
-    return { success: false, status: aiResponse.status, error: errorText };
-  }
-
-  const aiData = await aiResponse.json();
-  const aiText = aiData.choices?.[0]?.message?.content || "";
-
-  const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return { success: false, status: 500, error: "AI did not return valid JSON" };
-  }
-
-  try {
-    const analysis = JSON.parse(jsonMatch[0]);
-    const score = typeof analysis.score_multiplicador === "number"
-      ? Math.round(analysis.score_multiplicador * 100) / 100
-      : 1.0;
-    return {
-      success: true,
-      score,
-      highlights: Array.isArray(analysis.highlights) ? analysis.highlights : [],
-      lowlights: Array.isArray(analysis.lowlights) ? analysis.lowlights : [],
-      informe_breve: typeof analysis.informe_breve === "string" ? analysis.informe_breve : "",
-      estado_general: enforceEstado(score),
-      extracted_fields: analysis.extracted_fields || null,
-    };
-  } catch {
-    return { success: false, status: 500, error: "AI returned malformed JSON" };
-  }
-}
-
 /** Calculate comparables-based metrics */
-function calculateComparables(
-  prop: any,
-  property_id: string,
-  supabase: any,
-) {
-  return async () => {
-    const surfaceTotal = prop.surface_total ? Number(prop.surface_total) : null;
-    if (!surfaceTotal || surfaceTotal <= 0 || !prop.property_type) {
-      return { valorPotencialM2: null, valorPotencialTotal: null, valorPotencialMedianM2: null, comparablesCount: 0, oportunidadAjustada: null };
-    }
+async function calculateComparables(prop: any, property_id: string, supabase: any) {
+  const surfaceTotal = prop.surface_total ? Number(prop.surface_total) : null;
+  if (!surfaceTotal || surfaceTotal <= 0 || !prop.property_type) {
+    return { valorPotencialM2: null, valorPotencialTotal: null, valorPotencialMedianM2: null, comparablesCount: 0, oportunidadAjustada: null };
+  }
 
-    const surfaceMin = surfaceTotal * 0.6;
-    const surfaceMax = surfaceTotal * 1.4;
-    const pricePerM2 = prop.price_per_m2_total ? Number(prop.price_per_m2_total) : null;
+  const surfaceMin = surfaceTotal * 0.6;
+  const surfaceMax = surfaceTotal * 1.4;
+  const pricePerM2 = prop.price_per_m2_total ? Number(prop.price_per_m2_total) : null;
 
-    // Try neighborhood first
-    let { data: comparables } = await supabase
+  // Try neighborhood first (use norm_neighborhood with fallback)
+  const neighborhoodCol = prop.norm_neighborhood ? "norm_neighborhood" : "neighborhood";
+  const neighborhoodVal = prop.norm_neighborhood || prop.neighborhood;
+
+  let { data: comparables } = await supabase
+    .from("properties")
+    .select("price_per_m2_total")
+    .eq("property_type", prop.property_type)
+    .eq(neighborhoodCol, neighborhoodVal)
+    .gte("surface_total", surfaceMin)
+    .lte("surface_total", surfaceMax)
+    .gt("price_per_m2_total", 0)
+    .eq("status", "active")
+    .neq("id", property_id);
+
+  // Fallback to city if <3 comparables
+  if (!comparables || comparables.length < 3) {
+    console.log(`Only ${comparables?.length || 0} in neighborhood, falling back to city...`);
+    const cityCol = prop.norm_locality ? "norm_locality" : "city";
+    const cityVal = prop.norm_locality || prop.city;
+    const { data: cityComparables } = await supabase
       .from("properties")
       .select("price_per_m2_total")
       .eq("property_type", prop.property_type)
-      .eq("neighborhood", prop.neighborhood)
+      .eq(cityCol, cityVal)
       .gte("surface_total", surfaceMin)
       .lte("surface_total", surfaceMax)
       .gt("price_per_m2_total", 0)
+      .eq("status", "active")
       .neq("id", property_id);
 
-    // Fallback to city if <3 comparables
-    if (!comparables || comparables.length < 3) {
-      console.log(`Only ${comparables?.length || 0} in neighborhood, falling back to city...`);
-      const { data: cityComparables } = await supabase
-        .from("properties")
-        .select("price_per_m2_total")
-        .eq("property_type", prop.property_type)
-        .eq("city", prop.city)
-        .gte("surface_total", surfaceMin)
-        .lte("surface_total", surfaceMax)
-        .gt("price_per_m2_total", 0)
-        .neq("id", property_id);
-
-      if (cityComparables && cityComparables.length >= 3) {
-        comparables = cityComparables;
-      }
+    if (cityComparables && cityComparables.length >= 3) {
+      comparables = cityComparables;
     }
+  }
 
-    if (!comparables || comparables.length < 3) {
-      console.log(`Insufficient comparables: ${comparables?.length || 0}`);
-      return { valorPotencialM2: null, valorPotencialTotal: null, valorPotencialMedianM2: null, comparablesCount: 0, oportunidadAjustada: null };
-    }
+  if (!comparables || comparables.length < 3) {
+    console.log(`Insufficient comparables: ${comparables?.length || 0}`);
+    return { valorPotencialM2: null, valorPotencialTotal: null, valorPotencialMedianM2: null, comparablesCount: 0, oportunidadAjustada: null };
+  }
 
-    const prices = comparables.map((c: any) => Number(c.price_per_m2_total));
-    const comparablesCount = prices.length;
-    const q3Val = Math.round(q3(prices));
-    const medianVal = Math.round(median(prices));
-    const valorPotencialM2 = Math.round((medianVal + q3Val) / 2);
-    const valorPotencialTotal = Math.round(valorPotencialM2 * surfaceTotal);
+  const prices = comparables.map((c: any) => Number(c.price_per_m2_total));
+  const comparablesCount = prices.length;
+  const q3Val = Math.round(q3(prices));
+  const medianVal = Math.round(median(prices));
+  const valorPotencialM2 = Math.round((medianVal + q3Val) / 2);
+  const valorPotencialTotal = Math.round(valorPotencialM2 * surfaceTotal);
 
-    let oportunidadAjustada: number | null = null;
-    if (pricePerM2 && pricePerM2 > 0) {
-      const med = median(prices);
-      if (med > 0) {
-        const pctBelowMedian = ((med - pricePerM2) / med) * 100;
-        // We need the score to calculate this, but we'll pass it in later
-        oportunidadAjustada = pctBelowMedian; // raw pctBelowMedian, will be multiplied by score later
-      }
-    }
+  let oportunidadAjustada: number | null = null;
+  if (pricePerM2 && pricePerM2 > 0 && medianVal > 0) {
+    oportunidadAjustada = ((medianVal - pricePerM2) / medianVal) * 100;
+  }
 
-    console.log(`Comparables: ${comparablesCount}, Median: ${medianVal}, Q3: ${q3Val}, Avg: ${valorPotencialM2}, Valor potencial: USD ${valorPotencialTotal}`);
+  console.log(`Comparables: ${comparablesCount}, Median: ${medianVal}, Q3: ${q3Val}, Potential: ${valorPotencialM2}/m², Total: USD ${valorPotencialTotal}`);
 
-    return { valorPotencialM2, valorPotencialTotal, valorPotencialMedianM2: medianVal, comparablesCount, oportunidadAjustada };
-  };
+  return { valorPotencialM2, valorPotencialTotal, valorPotencialMedianM2: medianVal, comparablesCount, oportunidadAjustada };
 }
 
 Deno.serve(async (req) => {
@@ -395,10 +136,8 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
 
-  // --- Auth: validate JWT and verify user_id ---
+  // --- Auth: validate JWT or service role ---
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -409,9 +148,7 @@ Deno.serve(async (req) => {
   const token = authHeader.replace("Bearer ", "");
   let authenticatedUserId: string;
 
-  // Check if this is a service role call (from run-search)
   if (token === serviceKey) {
-    // Service role call — trust the user_id in the body
     authenticatedUserId = "__service_role__";
   } else {
     const anonClient = createClient(supabaseUrl, anonKey, {
@@ -425,41 +162,19 @@ Deno.serve(async (req) => {
     }
     authenticatedUserId = claimsData.claims.sub as string;
   }
-  // --- End auth ---
 
   const supabase = createClient(supabaseUrl, serviceKey);
 
-  if (!firecrawlKey) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Service unavailable" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-  if (!lovableKey) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Service unavailable" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
   try {
-    const { property_id, user_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null, force = false } = await req.json();
-    console.log("Received renovation_costs:", JSON.stringify(renovation_costs));
+    const { property_id, user_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
 
-    if (!property_id) {
+    if (!property_id || !user_id) {
       return new Response(
-        JSON.stringify({ success: false, error: "property_id is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    if (!user_id) {
-      return new Response(
-        JSON.stringify({ success: false, error: "user_id is required" }),
+        JSON.stringify({ success: false, error: "property_id and user_id are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Verify user_id matches authenticated user (skip for service role)
     if (authenticatedUserId !== "__service_role__" && authenticatedUserId !== user_id) {
       return new Response(
         JSON.stringify({ success: false, error: "user_id mismatch" }),
@@ -481,112 +196,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!prop.url) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Property has no URL" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // 2. Read pre-existing score from property (must come pre-enriched)
+    const score = prop.score_multiplicador != null ? Number(prop.score_multiplicador) : 0.85;
+    const highlights: string[] = prop.highlights || [];
+    const lowlights: string[] = prop.lowlights || [];
+    const informe: string = prop.informe_breve || "";
+    const estado: string = prop.estado_general || enforceEstado(score);
+
+    if (prop.score_multiplicador == null) {
+      console.warn(`Property ${property_id} has no pre-enriched score, using default 0.85`);
     }
 
-    // 2. Check if shared analysis already exists (skip if force=true)
-    const hasExistingAnalysis = !force && prop.score_multiplicador != null;
-    let score: number;
-    let highlights: string[];
-    let lowlights: string[];
-    let informe: string;
-    let estado: string;
-
-    if (hasExistingAnalysis) {
-      // Reuse existing shared analysis — skip scraping and AI
-      console.log(`Reusing existing analysis for property ${property_id}: score=${prop.score_multiplicador}`);
-      score = Number(prop.score_multiplicador);
-      highlights = prop.highlights || [];
-      lowlights = prop.lowlights || [];
-      informe = prop.informe_breve || "";
-      estado = prop.estado_general || enforceEstado(score);
-    } else {
-      // Run full scrape + AI analysis
-      console.log(`No existing analysis for property ${property_id}, running full analysis...`);
-
-      // Detect missing fields before scraping
-      const missingFields = detectMissingFields(prop);
-      if (missingFields.length > 0) {
-        console.log(`Missing fields to extract: ${missingFields.join(", ")}`);
-      }
-
-      // Scrape
-      const scrapeResult = await scrapeProperty(prop.url, firecrawlKey);
-      if (!scrapeResult.success) {
-        return new Response(
-          JSON.stringify({ success: false, error: `Scraping failed: ${scrapeResult.error}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const markdown = scrapeResult.data?.data?.markdown || scrapeResult.data?.markdown || "";
-      const screenshot = scrapeResult.data?.data?.screenshot || scrapeResult.data?.screenshot || null;
-      console.log(`Scraped: ${markdown.length} chars markdown, screenshot: ${!!screenshot}`);
-
-      // AI analysis (with missing fields extraction)
-      const aiResult = await analyzeWithAI(prop, markdown, screenshot, lovableKey, missingFields);
-      if (!aiResult.success) {
-        if (aiResult.status === 429) {
-          return new Response(
-            JSON.stringify({ success: false, error: "Rate limit exceeded. Intentá de nuevo en unos minutos." }),
-            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        if (aiResult.status === 402) {
-          return new Response(
-            JSON.stringify({ success: false, error: "Créditos de IA agotados." }),
-            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        return new Response(
-          JSON.stringify({ success: false, error: `AI analysis failed: ${aiResult.error}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      score = aiResult.score!;
-      highlights = aiResult.highlights!;
-      lowlights = aiResult.lowlights!;
-      informe = aiResult.informe_breve!;
-      estado = aiResult.estado_general!;
-
-      // Save extracted fields back to properties table
-      if (aiResult.extracted_fields && typeof aiResult.extracted_fields === "object") {
-        const dbFields = mapExtractedFields(aiResult.extracted_fields);
-        if (Object.keys(dbFields).length > 0) {
-          console.log(`Saving ${Object.keys(dbFields).length} extracted fields:`, JSON.stringify(dbFields));
-          const { error: extractError } = await supabase
-            .from("properties")
-            .update(dbFields)
-            .eq("id", property_id);
-          if (extractError) {
-            console.error("Error saving extracted fields:", extractError);
-          } else {
-            console.log(`Extracted fields saved for property ${property_id}`);
-            // Update local prop reference for comparables calculation
-            Object.assign(prop, dbFields);
-          }
-        }
-      }
-    }
-
-    // 3. Calculate comparables (always recalculate — prices may change)
-    const calcComparables = calculateComparables(prop, property_id, supabase);
-    const compResult = await calcComparables();
-
+    // 3. Calculate comparables (step 6)
+    const compResult = await calculateComparables(prop, property_id, supabase);
     let { valorPotencialM2, valorPotencialTotal, valorPotencialMedianM2, comparablesCount } = compResult;
-    let oportunidadAjustada: number | null = null;
 
+    let oportunidadAjustada: number | null = null;
     if (compResult.oportunidadAjustada != null) {
-      // Multiply raw pctBelowMedian by score
       oportunidadAjustada = Math.round(compResult.oportunidadAjustada * score * 100) / 100;
     }
 
-    // 4. Calculate user-specific oportunidad_neta
+    // 4. Calculate user-specific oportunidad_neta (step 7)
     const useCovered = surface_type === "covered";
     const surfaceTotal = prop.surface_total ? Number(prop.surface_total) : null;
     let renovSurface: number | null;
@@ -608,34 +238,25 @@ Deno.serve(async (req) => {
       const renovCostPerM2 = getRenovationCostPerM2(score, renovation_costs);
       const renovCostTotal = renovCostPerM2 * (renovSurface || surfaceTotal || 0);
       oportunidadNeta = Math.round(valorPotencialTotal - currentPrice - renovCostTotal);
-      console.log(`Renov cost: USD ${renovCostPerM2}/m² (${renovCostTotal} total), Oportunidad neta: USD ${oportunidadNeta}`);
+      console.log(`Renov: USD ${renovCostPerM2}/m² (${renovCostTotal} total), Neta: USD ${oportunidadNeta}`);
     }
 
-    // 5. Save shared analysis to properties table (if new)
-    if (!hasExistingAnalysis) {
-      const { error: updateError } = await supabase
-        .from("properties")
-        .update({
-          score_multiplicador: score,
-          informe_breve: informe,
-          highlights,
-          lowlights,
-          estado_general: estado,
-          valor_potencial_m2: valorPotencialM2,
-          valor_potencial_total: valorPotencialTotal,
-          comparables_count: comparablesCount,
-          oportunidad_ajustada: oportunidadAjustada,
-        })
-        .eq("id", property_id);
+    // 5. Update shared metrics on properties table (step 8a)
+    const { error: updateError } = await supabase
+      .from("properties")
+      .update({
+        valor_potencial_m2: valorPotencialM2,
+        valor_potencial_total: valorPotencialTotal,
+        comparables_count: comparablesCount,
+        oportunidad_ajustada: oportunidadAjustada,
+      })
+      .eq("id", property_id);
 
-      if (updateError) {
-        console.error("Error saving shared analysis to properties:", updateError);
-      } else {
-        console.log(`Shared analysis saved to properties table for ${property_id}`);
-      }
+    if (updateError) {
+      console.error("Error updating properties:", updateError);
     }
 
-    // 6. Save user-specific data to user_property_analysis
+    // 6. Save user-specific data to user_property_analysis (step 8b)
     const userAnalysisData = {
       user_id,
       property_id,
@@ -664,12 +285,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Analysis saved for user ${user_id}, property ${property_id}: score=${score}, reused=${hasExistingAnalysis}`);
+    console.log(`Analysis saved: user=${user_id}, property=${property_id}, score=${score}, comparables=${comparablesCount}, neta=${oportunidadNeta}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        reused: hasExistingAnalysis,
         analysis: {
           score_multiplicador: score,
           informe_breve: informe,
