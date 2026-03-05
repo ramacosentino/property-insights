@@ -129,6 +129,24 @@ Deno.serve(async (req) => {
       from += pageSize;
     }
 
+    // Apply condition filter (by score_multiplicador)
+    const condFilters = filters.condition_filters as string[] | undefined;
+    if (condFilters && condFilters.length > 0 && condFilters.length < 6) {
+      const allowedRanges = condFilters
+        .map((k: string) => CONDITION_RANGES[k])
+        .filter(Boolean);
+
+      const beforeCount = allMatched.length;
+      const filteredByCondition = allMatched.filter((p: any) => {
+        const score = p.score_multiplicador != null ? Number(p.score_multiplicador) : null;
+        if (score == null) return true; // NULL scores always included
+        return allowedRanges.some((r: any) => score >= r.min && score <= r.max);
+      });
+      allMatched.length = 0;
+      allMatched.push(...filteredByCondition);
+      console.log(`Condition filter: ${beforeCount} → ${allMatched.length}`);
+    }
+
     console.log(`Filtered: ${allMatched.length} properties matched`);
 
     // 2. Compute medians via Postgres RPC (much faster than in-memory)
