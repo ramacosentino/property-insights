@@ -32,12 +32,14 @@ const IconExport = () => {
                   borderRadius: radius,
                   backgroundColor: "#1c2130",
                   fontFamily: FONT,
-                  fontSize: Math.round(size * 0.62),
+                  fontSize: Math.round(size * 0.58),
                   lineHeight: 1,
                   color: "#ffffff",
                   fontWeight: 700,
-                  fontStretch: "normal",
-                  paddingBottom: Math.round(size * 0.04),
+                  letterSpacing: `${Math.round(size * 0.03)}px`,
+                  paddingLeft: Math.round(size * 0.03),
+                  paddingBottom: Math.round(size * 0.02),
+                  WebkitTextStroke: `${Math.max(1, Math.round(size * 0.008))}px #ffffff`,
                 }}
               >
                 U
