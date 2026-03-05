@@ -921,6 +921,41 @@ const MapView = () => {
     }
   }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel, coordsReady]);
 
+  // Render POI markers on the map
+  useEffect(() => {
+    const layer = poiLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+
+    if (!poiFilter.active || poiFilter.pois.length === 0) return;
+
+    const poiColor = "hsl(280, 70%, 55%)";
+    poiFilter.pois.forEach((poi) => {
+      const icon = L.divIcon({
+        className: "",
+        html: `<div style="
+          width: 18px; height: 18px;
+          background: ${poiColor};
+          color: white;
+          border-radius: 4px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 10px;
+          border: 1.5px solid white;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        ">📍</div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      });
+
+      L.marker([poi.lat, poi.lng], { icon })
+        .bindPopup(`<div style="font-family:Satoshi,sans-serif;font-size:12px;">
+          <strong>${escapeHtml(poi.name)}</strong>
+          ${poi.address ? `<br/><span style="color:#666;">${escapeHtml(poi.address)}</span>` : ""}
+        </div>`)
+        .addTo(layer);
+    });
+  }, [poiFilter, isDark]);
+
   // Reload coords on map move (debounced) + periodic refresh + initial load
   useEffect(() => {
     const map = mapInstanceRef.current;
