@@ -197,7 +197,16 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
           {!isCollapsed && <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>}
         </button>
 
-        {/* Collapse toggle removed — now in header */}
+        {/* Tour help button */}
+        <button
+          onClick={() => tour.restartTour()}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
+          title="Ver tour de ayuda"
+        >
+          <HelpCircle className="h-4 w-4 flex-shrink-0" />
+          {!isCollapsed && <span>Ayuda</span>}
+        </button>
+
 
         {/* User */}
         {user ? (
