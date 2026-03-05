@@ -620,9 +620,10 @@ const MapView = () => {
           if (m._ppm2 != null && m._ppm2 > 0) { sum += m._ppm2; cnt++; }
         }
         const avgPrice = cnt > 0 ? sum / cnt : 0;
-        const cMin = (children[0] as any)?._colorMin ?? 0;
-        const cMax = (children[0] as any)?._colorMax ?? 1;
-        const clusterColor = getPropertyColor(avgPrice, cMin, cMax);
+        const cSortedPrices = (children[0] as any)?._sortedPrices ?? allPrices;
+        const cRankMap = (children[0] as any)?._rankMap ?? priceRankMap;
+        const clusterRatio = getPriceRatio(avgPrice, cSortedPrices, cRankMap);
+        const clusterColor = getPropertyColor(clusterRatio);
 
         const dim = size === "large" ? 44 : size === "medium" ? 36 : 28;
         return L.divIcon({
@@ -791,7 +792,7 @@ const MapView = () => {
       // Clustered view: show all filtered properties
       mappedProperties.forEach((p) => {
         const coords = getCoord(p);
-        const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
+        const color = getPropertyColor(getPriceRatio(activeM2(p) ?? 0, allPrices, priceRankMap));
         const isDeal = p.opportunityScore >= dealThreshold;
         const dealColor = isDark ? "rgba(220,235,245,0.85)" : "rgba(20,20,20,0.85)";
         const dealBorder = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.15)";
@@ -812,8 +813,8 @@ const MapView = () => {
 
         const marker = L.marker(coords, { icon }) as any;
         marker._ppm2 = activeM2(p) ?? 0;
-        marker._colorMin = minPrice;
-        marker._colorMax = maxPrice;
+        marker._sortedPrices = allPrices;
+        marker._rankMap = priceRankMap;
         marker.bindPopup(
           `<div style="font-family:Satoshi,sans-serif;font-size:12px;min-width:200px;">
             ${isDiscardedProject(p.id) ? `<div style="background:hsl(0,84%,60%);color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;margin-bottom:6px;">
@@ -848,7 +849,7 @@ const MapView = () => {
       // Opportunities view: diffuse heatmap + deal dots
       mappedProperties.forEach((p) => {
         const coords = getCoord(p);
-        const color = getPropertyColor(activeM2(p) ?? 0, minPrice, maxPrice);
+        const color = getPropertyColor(getPriceRatio(activeM2(p) ?? 0, allPrices, priceRankMap));
 
         const radiusFactor = 0.55;
         const marker = L.circle(coords, {
@@ -907,7 +908,7 @@ const MapView = () => {
           .addTo(deals);
       });
     }
-  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
+  }, [mappedProperties, dealProperties, getCoord, allPrices, priceRankMap, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
 
   // Reload coords on map move (debounced) + periodic refresh
   useEffect(() => {
