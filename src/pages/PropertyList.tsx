@@ -32,6 +32,7 @@ import {
   ROOMS_KEYS, PARKING_KEYS, PROPERTY_TYPE_KEYS, BEDROOMS_KEYS,
   BATHROOMS_KEYS, DISPOSITION_KEYS, ORIENTATION_KEYS,
   PRICE_CAP, SURFACE_CAP, SURFACE_COVERED_CAP, AGE_CAP, EXPENSES_CAP,
+  CONDITION_TIERS, applyConditionFilter,
 } from "@/lib/filterUtils";
 
 function buildOptionsWithCounts(
@@ -93,6 +94,7 @@ const PropertyList = () => {
   const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
   const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
   const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
+  const [conditionFilter, setConditionFilter] = useState<Set<string>>(new Set<string>());
   const [sortBy, setSortBy] = useState<string>("opportunity");
   const [showOnlyDeals, setShowOnlyDeals] = useState(false);
   const [rangesInitialized, setRangesInitialized] = useState(false);
@@ -118,6 +120,9 @@ const PropertyList = () => {
     }
     if (onboardingFilters.propertyTypeFilter.included.size > 0) {
       setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
+    }
+    if (onboardingFilters.conditionFilters.size > 0) {
+      setConditionFilter(onboardingFilters.conditionFilters);
     }
     if (onboardingFilters.priceRange) {
       setPriceRange([
@@ -241,6 +246,10 @@ const PropertyList = () => {
     }
     if (orientationFilter.included.size > 0 || orientationFilter.excluded.size > 0) {
       result = result.filter((p) => applyFilter(p.orientation || "", orientationFilter));
+    }
+    // Condition filter
+    if (conditionFilter.size > 0 && conditionFilter.size < CONDITION_TIERS.length) {
+      result = result.filter((p) => applyConditionFilter(p.score_multiplicador, conditionFilter));
     }
     // Range filters
     if (rangesInitialized) {
