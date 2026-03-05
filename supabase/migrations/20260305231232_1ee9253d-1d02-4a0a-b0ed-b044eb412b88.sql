@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_geocoded_addresses_lat_lng ON public.geocoded_addresses (lat, lng) WHERE lat IS NOT NULL AND lat != 0;
