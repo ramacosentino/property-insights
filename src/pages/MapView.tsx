@@ -1483,6 +1483,8 @@ const MapView = () => {
           />
         </div>
       )}
+      {/* POI proximity filter */}
+      <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} />
     </div>
   );
 
