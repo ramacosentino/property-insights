@@ -48,10 +48,14 @@ function RequireOnboarding({ children }: { children: React.ReactNode }) {
 function RequirePremium({ children }: { children: React.ReactNode }) {
   const { isPremium, isLoading } = useSubscription();
   const { isAdmin, isLoading: adminLoading } = useIsAdmin();
+  
+  // Wait for BOTH queries to finish before making access decisions
   if (isLoading || adminLoading) return null;
-  if (isAdmin) return <>{children}</>;
-  if (!isPremium) return <Navigate to="/planes" replace />;
-  return <>{children}</>;
+  
+  // Admin bypass — full access regardless of subscription
+  if (isAdmin || isPremium) return <>{children}</>;
+  
+  return <Navigate to="/planes" replace />;
 }
 
 const App = () => (
