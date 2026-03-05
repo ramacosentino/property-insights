@@ -12,6 +12,7 @@ import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import RangeSliderFilter from "@/components/RangeSliderFilter";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFilter";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -272,6 +273,11 @@ const MapView = () => {
   // Mobile bottom sheet state: "collapsed" | "half" | "full"
   const [mobileSheet, setMobileSheet] = useState<"collapsed" | "half" | "full">("collapsed");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  // POI proximity filter
+  const [poiFilter, setPoiFilter] = useState<PoiFilterState>({ active: false, type: null, radius: 800, pois: [] });
+  const poiLayerRef = useRef<L.LayerGroup | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
   // Polygon draw filter
   const { polygon: drawnPolygon, isDrawing, startDraw, clearDraw, cancelDraw, isInsidePolygon } = useMapDraw(mapInstanceRef);
