@@ -8,7 +8,7 @@ const IconExport = () => {
       <h1 className="text-lg font-mono text-neutral-400">Urbanna Icon Export</h1>
 
       {sizes.map((size) => {
-        const dotSize = Math.max(3, Math.round(size * 0.12));
+        const dotSize = Math.max(3, Math.round(size * 0.11));
         const radius = Math.round(size * 0.22);
         return (
           <div key={size} className="flex flex-col items-center gap-4">
@@ -32,9 +32,12 @@ const IconExport = () => {
                   borderRadius: radius,
                   backgroundColor: "#1c2130",
                   fontFamily: FONT,
-                  fontSize: Math.round(size * 0.78),
+                  fontSize: Math.round(size * 0.62),
                   lineHeight: 1,
                   color: "#ffffff",
+                  fontWeight: 700,
+                  fontStretch: "normal",
+                  paddingBottom: Math.round(size * 0.04),
                 }}
               >
                 U
@@ -45,8 +48,8 @@ const IconExport = () => {
                     borderRadius: "50%",
                     backgroundColor: "hsl(215, 45%, 48%)",
                     position: "absolute",
-                    bottom: Math.round(size * 0.1),
-                    right: Math.round(size * 0.18),
+                    bottom: Math.round(size * 0.13),
+                    right: Math.round(size * 0.2),
                   }}
                 />
               </span>
