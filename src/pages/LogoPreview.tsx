@@ -230,6 +230,94 @@ const LogoPreview = () => (
           </div>
         ))}
       </section>
+
+      {/* Logo largo: actual vs con U estilo ícono */}
+      <section className="space-y-6">
+        <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest border-b border-border pb-2">
+          Wordmark: actual vs U estilo ícono
+        </h2>
+
+        {/* Actual */}
+        <div className="space-y-2">
+          <span className="text-xs text-muted-foreground font-mono">Actual</span>
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="px-6 py-5 rounded-xl border border-border bg-card">
+              <span
+                className="inline-flex items-baseline"
+                style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
+              >
+                <span>Urban</span>
+                <span className="text-primary">n</span>
+                <span>a.</span>
+              </span>
+            </div>
+            <div className="px-6 py-5 rounded-xl bg-foreground">
+              <span
+                className="inline-flex items-baseline text-background"
+                style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
+              >
+                <span>Urban</span>
+                <span className="text-primary">n</span>
+                <span>a.</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Propuesta: ícono + wordmark */}
+        <div className="space-y-2">
+          <span className="text-xs text-muted-foreground font-mono">Propuesta: ícono PNG + wordmark</span>
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="px-6 py-5 rounded-xl border border-border bg-card flex items-center gap-3">
+              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 44, height: 44 }} />
+              <span
+                className="inline-flex items-baseline"
+                style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
+              >
+                <span>rbanna.</span>
+              </span>
+            </div>
+            <div className="px-6 py-5 rounded-xl bg-foreground flex items-center gap-3">
+              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 44, height: 44 }} />
+              <span
+                className="inline-flex items-baseline text-background"
+                style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
+              >
+                <span>rbanna.</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Propuesta 2: ícono al lado del wordmark completo */}
+        <div className="space-y-2">
+          <span className="text-xs text-muted-foreground font-mono">Propuesta 2: ícono + Urbanna completo</span>
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="px-6 py-5 rounded-xl border border-border bg-card flex items-center gap-3">
+              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 40, height: 40 }} />
+              <span
+                className="inline-flex items-baseline"
+                style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
+              >
+                <span>Urban</span>
+                <span className="text-primary">n</span>
+                <span>a.</span>
+              </span>
+            </div>
+            <div className="px-6 py-5 rounded-xl bg-foreground flex items-center gap-3">
+              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 40, height: 40 }} />
+              <span
+                className="inline-flex items-baseline text-background"
+                style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
+              >
+                <span>Urban</span>
+                <span className="text-primary">n</span>
+                <span>a.</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 );
