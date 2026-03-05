@@ -1560,7 +1560,7 @@ const MapView = () => {
                   <SheetTitle>Filtros</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4">
-                  {filtersContent}
+                  {mobileFiltersContent}
                 </div>
               </SheetContent>
             </Sheet>
