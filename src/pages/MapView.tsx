@@ -1420,121 +1420,26 @@ const MapView = () => {
     </>
   );
 
-  const filtersContent = (
-    <div className="flex flex-col gap-4">
-      {/* Import date filter */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[11px] font-medium text-muted-foreground w-16 shrink-0">Importado</span>
-        <select
-          value={importDateFilter}
-          onChange={(e) => setImportDateFilter(e.target.value)}
-          className="text-[11px] bg-secondary border border-border rounded-lg px-2 py-1 text-foreground"
-        >
-          <option value="all">Todas las fechas</option>
-          <option value="1d">Último día</option>
-          <option value="7d">Última semana</option>
-          <option value="30d">Último mes</option>
-          <option value="90d">Últimos 3 meses</option>
-        </select>
-      </div>
-      <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
-      <MapFilterRow title="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
-      <MapFilterRow title="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
-      <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
-      <MapFilterRow title="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
-      <MapFilterRow title="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
-      <NeighborhoodDropdown
-        groups={neighborhoodsByProvince}
-        state={neighborhoodFilter}
-        onChange={setNeighborhoodFilter}
-        compact
-      />
-      <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
-      {/* Condition filter */}
-      <div className="space-y-1">
-        <span className="text-[11px] font-medium text-muted-foreground">Estado</span>
-        <div className="flex flex-wrap gap-1">
-          {CONDITION_TIERS.map((tier) => {
-            const isSelected = conditionFilter.has(tier.value);
-            const isAllSelected = conditionFilter.size === 0 || conditionFilter.size === CONDITION_TIERS.length;
-            return (
-              <button
-                key={tier.value}
-                onClick={() => {
-                  setConditionFilter((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(tier.value)) next.delete(tier.value);
-                    else next.add(tier.value);
-                    return next;
-                  });
-                }}
-                className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all border ${
-                  isSelected && !isAllSelected
-                    ? "bg-primary/20 text-primary border-primary/30"
-                    : "bg-secondary text-muted-foreground border-border hover:text-foreground"
-                }`}
-              >
-                {tier.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+  const mobileFiltersContent = (
+    <div className="flex flex-col gap-3">
+      <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+      <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+      <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
+      <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
+      <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+      <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+      <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
+      <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
+      <NeighborhoodDropdown groups={neighborhoodsByProvince} state={neighborhoodFilter} onChange={setNeighborhoodFilter} compact />
       {rangesInitialized && (
-        <div className="space-y-4">
-          <RangeSliderFilter
-            title="Precio USD"
-            min={dataRanges.priceMin}
-            max={dataRanges.priceMax}
-            value={priceRange}
-            onChange={setPriceRange}
-            step={5000}
-            formatValue={formatPrice}
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Sup. total m²"
-            min={dataRanges.surfaceMin}
-            max={dataRanges.surfaceMax}
-            value={surfaceRange}
-            onChange={setSurfaceRange}
-            step={5}
-            unit=" m²"
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Sup. cubierta m²"
-            min={dataRanges.surfaceCoveredMin}
-            max={dataRanges.surfaceCoveredMax}
-            value={surfaceCoveredRange}
-            onChange={setSurfaceCoveredRange}
-            step={5}
-            unit=" m²"
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Antigüedad"
-            min={dataRanges.ageMin}
-            max={dataRanges.ageMax}
-            value={ageRange}
-            onChange={setAgeRange}
-            step={1}
-            unit=" años"
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Expensas ARS"
-            min={dataRanges.expensesMin}
-            max={dataRanges.expensesMax}
-            value={expensesRange}
-            onChange={setExpensesRange}
-            step={5000}
-            formatValue={formatPrice}
-            cappedMax
-          />
-        </div>
+        <>
+          <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
+          <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
+          <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
+        </>
       )}
-      {/* POI proximity filter */}
       <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} />
     </div>
   );
