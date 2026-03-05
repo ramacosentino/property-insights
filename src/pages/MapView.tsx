@@ -171,8 +171,6 @@ const MapView = () => {
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
-  const filterPanelRef = useRef<HTMLDivElement>(null);
-  const [filterPanelHeight, setFilterPanelHeight] = useState(0);
 
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
@@ -222,7 +220,7 @@ const MapView = () => {
   const [statsGroupBy, setStatsGroupBy] = useState<"city" | "neighborhood">("city");
   const [hoveredStatName, setHoveredStatName] = useState<string | null>(null);
   const [hoveredStatPos, setHoveredStatPos] = useState({ top: 0, right: 0 });
-  const [showFilters, setShowFilters] = useState(false);
+  
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
@@ -515,14 +513,6 @@ const MapView = () => {
     }
   }, []);
 
-  // Measure filter panel height dynamically
-  useEffect(() => {
-    const el = filterPanelRef.current;
-    if (!el) { setFilterPanelHeight(0); return; }
-    const ro = new ResizeObserver(([entry]) => setFilterPanelHeight(entry.contentRect.height + 24));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [showFilters]);
 
   const getCoord = useCallback(
     (p: { id: string; location: string; neighborhood: string; address?: string | null }): [number, number] => {
