@@ -1437,6 +1437,36 @@ const MapView = () => {
         compact
       />
       <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+      {/* Condition filter */}
+      <div className="space-y-1">
+        <span className="text-[11px] font-medium text-muted-foreground">Estado</span>
+        <div className="flex flex-wrap gap-1">
+          {CONDITION_TIERS.map((tier) => {
+            const isSelected = conditionFilter.has(tier.value);
+            const isAllSelected = conditionFilter.size === 0 || conditionFilter.size === CONDITION_TIERS.length;
+            return (
+              <button
+                key={tier.value}
+                onClick={() => {
+                  setConditionFilter((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(tier.value)) next.delete(tier.value);
+                    else next.add(tier.value);
+                    return next;
+                  });
+                }}
+                className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all border ${
+                  isSelected && !isAllSelected
+                    ? "bg-primary/20 text-primary border-primary/30"
+                    : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                }`}
+              >
+                {tier.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       {rangesInitialized && (
         <div className="space-y-4">
           <RangeSliderFilter
