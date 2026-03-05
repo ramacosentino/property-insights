@@ -452,7 +452,45 @@ const PreferencesSection = () => {
                 </div>
               </div>
 
-              {/* Investment Goal (conditional) */}
+              {/* Condition Filters */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-medium">Estado de la propiedad</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {CONDITION_TIERS.map((tier) => {
+                    const selected = conditionFilters.includes(tier.value);
+                    return (
+                      <button
+                        key={tier.value}
+                        onClick={() => setConditionFilters((prev) =>
+                          selected ? prev.filter((v) => v !== tier.value) : [...prev, tier.value]
+                        )}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full border transition-all ${
+                          selected
+                            ? "border-primary bg-primary/10 text-primary font-medium"
+                            : "border-border text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
+                          selected ? "border-primary bg-primary" : "border-muted-foreground/30"
+                        }`}>
+                          {selected && <Check className="h-2 w-2 text-primary-foreground" />}
+                        </div>
+                        {tier.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setConditionFilters([...ALL_CONDITION_VALUES])}
+                  className="text-[11px] text-primary hover:underline"
+                >
+                  Seleccionar todas
+                </button>
+              </div>
+
               {isInvestor && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5">
