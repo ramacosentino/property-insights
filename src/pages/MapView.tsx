@@ -890,7 +890,7 @@ const MapView = () => {
           .addTo(deals);
       });
     }
-  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
+  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel, coordsReady]);
 
   // Reload coords on map move (debounced) + periodic refresh + initial load
   useEffect(() => {
