@@ -174,10 +174,12 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          discovery_checklist: Json
           display_name: string | null
           id: string
           onboarding_completed: boolean
           surface_preference: string
+          tour_completed: boolean
           updated_at: string
           user_id: string
           user_type: string | null
@@ -185,10 +187,12 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          discovery_checklist?: Json
           display_name?: string | null
           id?: string
           onboarding_completed?: boolean
           surface_preference?: string
+          tour_completed?: boolean
           updated_at?: string
           user_id: string
           user_type?: string | null
@@ -196,10 +200,12 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          discovery_checklist?: Json
           display_name?: string | null
           id?: string
           onboarding_completed?: boolean
           surface_preference?: string
+          tour_completed?: boolean
           updated_at?: string
           user_id?: string
           user_type?: string | null
