@@ -31,16 +31,33 @@ const IconExport = () => {
                   height: size,
                   borderRadius: radius,
                   backgroundColor: "#1c2130",
-                  fontFamily: FONT,
-                  fontSize: Math.round(size * 0.58),
-                  lineHeight: 1,
-                  color: "#ffffff",
-                  fontWeight: 700,
-                  letterSpacing: `${Math.round(size * 0.03)}px`,
-                  paddingLeft: Math.round(size * 0.03),
-                  paddingBottom: Math.round(size * 0.02),
-                  WebkitTextStroke: `${Math.max(1, Math.round(size * 0.008))}px #ffffff`,
+                  overflow: "hidden",
                 }}
+              >
+                <span
+                  style={{
+                    fontFamily: FONT,
+                    fontSize: Math.round(size * 0.6),
+                    lineHeight: 1,
+                    color: "#ffffff",
+                    fontWeight: 700,
+                    transform: "scaleX(1.15)",
+                    marginBottom: Math.round(size * 0.02),
+                  }}
+                >
+                  U
+                </span>
+                <span
+                  style={{
+                    width: dotSize,
+                    height: dotSize,
+                    borderRadius: "50%",
+                    backgroundColor: "hsl(215, 45%, 48%)",
+                    position: "absolute",
+                    bottom: Math.round(size * 0.14),
+                    right: Math.round(size * 0.19),
+                  }}
+                />
               >
                 U
                 <span
