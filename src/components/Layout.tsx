@@ -300,6 +300,22 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
         <main className="flex-1">{children}</main>
       </div>
+
+      {/* Guided Tour */}
+      {tour.showTour && !tour.loading && (
+        <GuidedTour onComplete={tour.completeTour} onSkip={tour.completeTour} />
+      )}
+
+      {/* Discovery Checklist */}
+      {tour.tourCompleted && !tour.allCompleted && !tour.showTour && (
+        <DiscoveryChecklist
+          checklist={tour.checklist}
+          items={tour.checklistItems}
+          completedCount={tour.completedCount}
+          allCompleted={tour.allCompleted}
+          onRestartTour={tour.restartTour}
+        />
+      )}
     </div>
   );
 };
