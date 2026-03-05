@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import OnboardingZoneSelector from "@/components/OnboardingZoneSelector";
 import { PLAN_LIMITS, PlanId } from "@/hooks/useSubscription";
-import {
+import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
   Home,
   TrendingUp,
   BarChart3,
@@ -110,6 +110,7 @@ const Onboarding = () => {
     budget_currency: "USD",
     property_types: [],
     investment_goal: null,
+    condition_filters: [...ALL_CONDITION_VALUES], // all ticked by default
   });
 
   const isInvestor = data.user_type === "inversor_recurrente" || data.user_type === "inmobiliaria";
