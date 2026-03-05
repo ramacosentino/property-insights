@@ -10,13 +10,13 @@ import { getRoomsLabel } from "@/lib/propertyData";
 import { useProperties } from "@/hooks/useProperties";
 import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
-import RangeSliderFilter from "@/components/RangeSliderFilter";
+import { MultiSelectChip, ConditionChip, RangeChip, SelectChip } from "@/components/FilterChipPopover";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFilter";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw } from "lucide-react";
+import { ArrowLeft, ExternalLink, TrendingDown, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
@@ -158,42 +158,8 @@ function getPropertyColor(pricePerSqm: number, min: number, max: number): string
 }
 
 
-const MapFilterRow = ({ title, keys, state, onChange }: {
-  title: string;
-  keys: string[];
-  state: FilterState;
-  onChange: (s: FilterState) => void;
-}) => {
-  const handleClick = (value: string) => {
-    const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
-    if (next.included.has(value)) { next.included.delete(value); next.excluded.add(value); }
-    else if (next.excluded.has(value)) { next.excluded.delete(value); }
-    else { next.included.add(value); }
-    onChange(next);
-  };
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[11px] font-medium text-muted-foreground w-16 shrink-0">{title}</span>
-      <div className="flex flex-wrap gap-1">
-        {keys.map((k) => {
-          const isIn = state.included.has(k);
-          const isEx = state.excluded.has(k);
-          return (
-            <button key={k} onClick={() => handleClick(k)}
-              className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border ${
-                isIn ? "bg-primary/20 text-primary border-primary/30"
-                : isEx ? "bg-destructive/10 text-destructive border-destructive/30 line-through"
-                : "bg-secondary/50 text-muted-foreground border-border/50 hover:text-foreground"
-              }`}
-            >
-              {isEx && "✕ "}{k}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+
+
 
 const CIRCLE_RADIUS_METERS = 800;
 
@@ -205,8 +171,6 @@ const MapView = () => {
   const dealLayerRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightLayerRef = useRef<L.LayerGroup | null>(null);
-  const filterPanelRef = useRef<HTMLDivElement>(null);
-  const [filterPanelHeight, setFilterPanelHeight] = useState(0);
 
   const { isDark } = useTheme();
   const isMobile = useIsMobile();
@@ -256,7 +220,7 @@ const MapView = () => {
   const [statsGroupBy, setStatsGroupBy] = useState<"city" | "neighborhood">("city");
   const [hoveredStatName, setHoveredStatName] = useState<string | null>(null);
   const [hoveredStatPos, setHoveredStatPos] = useState({ top: 0, right: 0 });
-  const [showFilters, setShowFilters] = useState(false);
+  
   const [roomsFilter, setRoomsFilter] = useState<FilterState>(createFilterState());
   const [parkingFilter, setParkingFilter] = useState<FilterState>(createFilterState());
   const [neighborhoodFilter, setNeighborhoodFilter] = useState<FilterState>(createFilterState());
@@ -549,14 +513,6 @@ const MapView = () => {
     }
   }, []);
 
-  // Measure filter panel height dynamically
-  useEffect(() => {
-    const el = filterPanelRef.current;
-    if (!el) { setFilterPanelHeight(0); return; }
-    const ro = new ResizeObserver(([entry]) => setFilterPanelHeight(entry.contentRect.height + 24));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [showFilters]);
 
   const getCoord = useCallback(
     (p: { id: string; location: string; neighborhood: string; address?: string | null }): [number, number] => {
@@ -1073,23 +1029,21 @@ const MapView = () => {
   const minMedian = mappedNeighborhoods.length ? Math.min(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
   const maxMedian = mappedNeighborhoods.length ? Math.max(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
 
-  const headerFilters = (
-    <div className="flex items-center gap-2 px-2">
-      <button
-        onClick={() => isMobile ? setMobileFiltersOpen(true) : setShowFilters(!showFilters)}
-        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium transition-all border shrink-0 ${
-          showFilters || mobileFiltersOpen || activeFilterCount > 0 ? "border-primary/30 text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <SlidersHorizontal className="h-3 w-3" />
-        Filtros{activeFilterCount > 0 && ` (${activeFilterCount})`}
-      </button>
+  const IMPORT_DATE_OPTIONS = [
+    { value: "all", label: "Todas las fechas" },
+    { value: "1d", label: "Último día" },
+    { value: "7d", label: "Última semana" },
+    { value: "30d", label: "Último mes" },
+    { value: "90d", label: "Últimos 3 meses" },
+  ];
 
+  const headerFilters = (
+    <div className="flex items-center gap-1.5 px-2 overflow-x-auto scrollbar-none">
       {/* View mode toggle */}
       <div className="flex items-center rounded-full border border-border overflow-hidden shrink-0">
         <button
           onClick={() => setViewMode("opportunities")}
-          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
             viewMode === "opportunities" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -1098,7 +1052,7 @@ const MapView = () => {
         </button>
         <button
           onClick={() => setViewMode("all")}
-          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
             viewMode === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -1107,7 +1061,7 @@ const MapView = () => {
         </button>
         <button
           onClick={() => setViewMode("projects")}
-          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
             viewMode === "projects" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -1116,40 +1070,53 @@ const MapView = () => {
         </button>
       </div>
 
-      {/* Import date filter */}
-      <select
-        value={importDateFilter}
-        onChange={(e) => setImportDateFilter(e.target.value)}
-        className="text-[11px] bg-secondary border border-border rounded-full px-2.5 py-1 text-foreground shrink-0"
-      >
-        <option value="all">Todas las fechas</option>
-        <option value="1d">Último día</option>
-        <option value="7d">Última semana</option>
-        <option value="30d">Último mes</option>
-        <option value="90d">Últimos 3 meses</option>
-      </select>
+      <div className="w-px h-4 bg-border shrink-0" />
+
+      {/* Filter chips */}
+      <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+      <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+      <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
+      <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
+      <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+      <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
+
+      {rangesInitialized && (
+        <>
+          <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
+          <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
+          <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
+        </>
+      )}
+
+      <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+      <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
+      <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
+
+      <div className="w-px h-4 bg-border shrink-0" />
 
       {/* Draw polygon filter */}
       {drawnPolygon ? (
         <button
           onClick={clearDraw}
-          className="flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
         >
           <Pentagon className="h-3 w-3" />
-          Zona dibujada
+          Zona
           <X className="h-3 w-3 ml-0.5" />
         </button>
       ) : (
         <button
           onClick={isDrawing ? cancelDraw : startDraw}
-          className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
             isDrawing
               ? "border-primary/30 text-primary bg-primary/10 animate-pulse"
               : "border-border text-muted-foreground hover:text-foreground"
           }`}
         >
           <Pentagon className="h-3 w-3" />
-          {isDrawing ? "Dibujando..." : "Dibujar zona"}
+          {isDrawing ? "Dibujando..." : "Zona"}
         </button>
       )}
 
@@ -1409,121 +1376,26 @@ const MapView = () => {
     </>
   );
 
-  const filtersContent = (
-    <div className="flex flex-col gap-4">
-      {/* Import date filter */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[11px] font-medium text-muted-foreground w-16 shrink-0">Importado</span>
-        <select
-          value={importDateFilter}
-          onChange={(e) => setImportDateFilter(e.target.value)}
-          className="text-[11px] bg-secondary border border-border rounded-lg px-2 py-1 text-foreground"
-        >
-          <option value="all">Todas las fechas</option>
-          <option value="1d">Último día</option>
-          <option value="7d">Última semana</option>
-          <option value="30d">Último mes</option>
-          <option value="90d">Últimos 3 meses</option>
-        </select>
-      </div>
-      <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
-      <MapFilterRow title="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
-      <MapFilterRow title="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
-      <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
-      <MapFilterRow title="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
-      <MapFilterRow title="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
-      <NeighborhoodDropdown
-        groups={neighborhoodsByProvince}
-        state={neighborhoodFilter}
-        onChange={setNeighborhoodFilter}
-        compact
-      />
-      <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
-      {/* Condition filter */}
-      <div className="space-y-1">
-        <span className="text-[11px] font-medium text-muted-foreground">Estado</span>
-        <div className="flex flex-wrap gap-1">
-          {CONDITION_TIERS.map((tier) => {
-            const isSelected = conditionFilter.has(tier.value);
-            const isAllSelected = conditionFilter.size === 0 || conditionFilter.size === CONDITION_TIERS.length;
-            return (
-              <button
-                key={tier.value}
-                onClick={() => {
-                  setConditionFilter((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(tier.value)) next.delete(tier.value);
-                    else next.add(tier.value);
-                    return next;
-                  });
-                }}
-                className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all border ${
-                  isSelected && !isAllSelected
-                    ? "bg-primary/20 text-primary border-primary/30"
-                    : "bg-secondary text-muted-foreground border-border hover:text-foreground"
-                }`}
-              >
-                {tier.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+  const mobileFiltersContent = (
+    <div className="flex flex-col gap-3">
+      <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+      <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+      <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
+      <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
+      <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+      <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+      <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
+      <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
+      <NeighborhoodDropdown groups={neighborhoodsByProvince} state={neighborhoodFilter} onChange={setNeighborhoodFilter} compact />
       {rangesInitialized && (
-        <div className="space-y-4">
-          <RangeSliderFilter
-            title="Precio USD"
-            min={dataRanges.priceMin}
-            max={dataRanges.priceMax}
-            value={priceRange}
-            onChange={setPriceRange}
-            step={5000}
-            formatValue={formatPrice}
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Sup. total m²"
-            min={dataRanges.surfaceMin}
-            max={dataRanges.surfaceMax}
-            value={surfaceRange}
-            onChange={setSurfaceRange}
-            step={5}
-            unit=" m²"
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Sup. cubierta m²"
-            min={dataRanges.surfaceCoveredMin}
-            max={dataRanges.surfaceCoveredMax}
-            value={surfaceCoveredRange}
-            onChange={setSurfaceCoveredRange}
-            step={5}
-            unit=" m²"
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Antigüedad"
-            min={dataRanges.ageMin}
-            max={dataRanges.ageMax}
-            value={ageRange}
-            onChange={setAgeRange}
-            step={1}
-            unit=" años"
-            cappedMax
-          />
-          <RangeSliderFilter
-            title="Expensas ARS"
-            min={dataRanges.expensesMin}
-            max={dataRanges.expensesMax}
-            value={expensesRange}
-            onChange={setExpensesRange}
-            step={5000}
-            formatValue={formatPrice}
-            cappedMax
-          />
-        </div>
+        <>
+          <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
+          <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
+          <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
+        </>
       )}
-      {/* POI proximity filter */}
       <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} />
     </div>
   );
@@ -1531,93 +1403,7 @@ const MapView = () => {
   return (
     <Layout headerContent={headerFilters}>
       <div className={`relative flex flex-col ${isMobile ? "h-[calc(100vh-5.5rem)]" : "h-[calc(100vh-3.5rem)]"}`}>
-        {/* Desktop filters panel */}
-        {!isMobile && showFilters && (
-          <div ref={filterPanelRef} className="bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex flex-col gap-3 z-[1100] relative">
-            <div className="flex items-center gap-4 flex-wrap">
-              <MapFilterRow title="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
-              <div className="w-px h-5 bg-border" />
-              <MapFilterRow title="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
-              <div className="w-px h-5 bg-border" />
-              <MapFilterRow title="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
-              <div className="w-px h-5 bg-border" />
-              <MapFilterRow title="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
-              <div className="w-px h-5 bg-border" />
-              <div className="w-56">
-                <NeighborhoodDropdown
-                  groups={neighborhoodsByProvince}
-                  state={neighborhoodFilter}
-                  onChange={setNeighborhoodFilter}
-                  compact
-                />
-              </div>
-              <div className="w-px h-5 bg-border" />
-              <MapFilterRow title="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
-              <div className="w-px h-5 bg-border" />
-              <MapFilterRow title="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
-              <div className="w-px h-5 bg-border" />
-              <MapFilterRow title="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
-            </div>
-            {rangesInitialized && (
-              <div className="grid grid-cols-5 gap-6 max-w-4xl">
-                <RangeSliderFilter
-                  title="Precio USD"
-                  min={dataRanges.priceMin}
-                  max={dataRanges.priceMax}
-                  value={priceRange}
-                  onChange={setPriceRange}
-                  step={5000}
-                  formatValue={formatPrice}
-                  cappedMax
-                />
-                <RangeSliderFilter
-                  title="Sup. total m²"
-                  min={dataRanges.surfaceMin}
-                  max={dataRanges.surfaceMax}
-                  value={surfaceRange}
-                  onChange={setSurfaceRange}
-                  step={5}
-                  unit=" m²"
-                  cappedMax
-                />
-                <RangeSliderFilter
-                  title="Sup. cubierta m²"
-                  min={dataRanges.surfaceCoveredMin}
-                  max={dataRanges.surfaceCoveredMax}
-                  value={surfaceCoveredRange}
-                  onChange={setSurfaceCoveredRange}
-                  step={5}
-                  unit=" m²"
-                  cappedMax
-                />
-                <RangeSliderFilter
-                  title="Antigüedad"
-                  min={dataRanges.ageMin}
-                  max={dataRanges.ageMax}
-                  value={ageRange}
-                  onChange={setAgeRange}
-                  step={1}
-                  unit=" años"
-                  cappedMax
-                />
-                <RangeSliderFilter
-                  title="Expensas ARS"
-                  min={dataRanges.expensesMin}
-                  max={dataRanges.expensesMax}
-                  value={expensesRange}
-                  onChange={setExpensesRange}
-                  step={5000}
-                  formatValue={formatPrice}
-                  cappedMax
-                />
-              </div>
-            )}
-            {/* POI proximity filter in desktop panel */}
-            <div className="max-w-xs">
-              <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} compact />
-            </div>
-          </div>
-        )}
+
 
         {isLoading && (
           <div className="absolute inset-0 z-[1200] flex items-center justify-center bg-background">
@@ -1633,7 +1419,7 @@ const MapView = () => {
         {!isMobile && (
           <>
             {/* Right sidebar */}
-            <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all`} style={{ top: showFilters ? `${filterPanelHeight + 16}px` : '16px' }}>
+            <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all`} style={{ top: '16px' }}>
               <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
                 {selectedProvince ? selectedDealsContent : statsListContent}
               </div>
@@ -1730,7 +1516,7 @@ const MapView = () => {
                   <SheetTitle>Filtros</SheetTitle>
                 </SheetHeader>
                 <div className="mt-4">
-                  {filtersContent}
+                  {mobileFiltersContent}
                 </div>
               </SheetContent>
             </Sheet>
