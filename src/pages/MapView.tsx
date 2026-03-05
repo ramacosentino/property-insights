@@ -680,12 +680,12 @@ const MapView = () => {
     tileLayerRef.current = newTile;
   }, [isDark]);
 
-  // Update markers
+  // Update markers — wait for geocoded coords to be ready before first render
   useEffect(() => {
     const diffuse = diffuseLayerRef.current;
     const deals = dealLayerRef.current;
     const cluster = clusterLayerRef.current;
-    if (!diffuse || !deals || !cluster) return;
+    if (!diffuse || !deals || !cluster || !coordsReady) return;
 
     diffuse.clearLayers();
     deals.clearLayers();
