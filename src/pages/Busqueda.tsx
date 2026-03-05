@@ -27,6 +27,7 @@ interface SearchFilters {
   rooms_max: number | null;
   parking_min: number | null;
   budget_max: number | null;
+  condition_filters: string[];
 }
 
 interface SearchRun {
@@ -52,6 +53,7 @@ const EMPTY_FILTERS: SearchFilters = {
   rooms_max: null,
   parking_min: null,
   budget_max: null,
+  condition_filters: [],
 };
 
 const FilterStep = ({
