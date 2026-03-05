@@ -12,6 +12,7 @@ import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import RangeSliderFilter from "@/components/RangeSliderFilter";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFilter";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -273,6 +274,11 @@ const MapView = () => {
   const [mobileSheet, setMobileSheet] = useState<"collapsed" | "half" | "full">("collapsed");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // POI proximity filter
+  const [poiFilter, setPoiFilter] = useState<PoiFilterState>({ active: false, type: null, radius: 800, pois: [] });
+  const poiLayerRef = useRef<L.LayerGroup | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+
   // Polygon draw filter
   const { polygon: drawnPolygon, isDrawing, startDraw, clearDraw, cancelDraw, isInsidePolygon } = useMapDraw(mapInstanceRef);
 
@@ -342,7 +348,8 @@ const MapView = () => {
     + (rangesInitialized && (surfaceCoveredRange[0] > dataRanges.surfaceCoveredMin || surfaceCoveredRange[1] < dataRanges.surfaceCoveredMax) ? 1 : 0)
     + (rangesInitialized && (ageRange[0] > dataRanges.ageMin || ageRange[1] < dataRanges.ageMax) ? 1 : 0)
     + (rangesInitialized && (expensesRange[0] > dataRanges.expensesMin || expensesRange[1] < dataRanges.expensesMax) ? 1 : 0)
-    + (importDateFilter !== "all" ? 1 : 0);
+    + (importDateFilter !== "all" ? 1 : 0)
+    + (poiFilter.active ? 1 : 0);
 
   const clearAllFilters = () => {
     setRoomsFilter(createFilterState());
@@ -354,6 +361,7 @@ const MapView = () => {
     setDispositionFilter(createFilterState());
     setOrientationFilter(createFilterState());
     setImportDateFilter("all");
+    setPoiFilter({ active: false, type: null, radius: 800, pois: [] });
     if (rangesInitialized) {
       setPriceRange([dataRanges.priceMin, dataRanges.priceMax]);
       setSurfaceRange([dataRanges.surfaceMin, dataRanges.surfaceMax]);
@@ -443,8 +451,19 @@ const MapView = () => {
         return false;
       });
     }
+    // POI proximity filter
+    if (poiFilter.active && poiFilter.pois.length > 0) {
+      result = result.filter((p) => {
+        const geo = geocodedCoords.get(p.address || p.location);
+        const coord = geo ? [geo.lat, geo.lng] : NEIGHBORHOOD_COORDS[p.neighborhood];
+        if (!coord) return false;
+        return poiFilter.pois.some((poi) =>
+          haversineDistance(coord[0], coord[1], poi.lat, poi.lng) <= poiFilter.radius
+        );
+      });
+    }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords, poiFilter]);
 
   const mappedProperties = filteredProperties;
 
@@ -584,6 +603,15 @@ const MapView = () => {
     diffuseLayerRef.current = L.layerGroup().addTo(map);
     dealLayerRef.current = L.layerGroup().addTo(map);
     highlightLayerRef.current = L.layerGroup().addTo(map);
+    poiLayerRef.current = L.layerGroup().addTo(map);
+
+    // Track map center for POI searches
+    const updateCenter = () => {
+      const c = map.getCenter();
+      setMapCenter({ lat: c.lat, lng: c.lng });
+    };
+    updateCenter();
+    map.on("moveend", updateCenter);
 
     // Create cluster group for "all" mode
     const clusterGroup = (L as any).markerClusterGroup({
@@ -660,6 +688,7 @@ const MapView = () => {
       dealLayerRef.current = null;
       clusterLayerRef.current = null;
       highlightLayerRef.current = null;
+      poiLayerRef.current = null;
     };
   }, [mappedNeighborhoods, isDark]);
 
@@ -891,6 +920,41 @@ const MapView = () => {
       });
     }
   }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel, coordsReady]);
+
+  // Render POI markers on the map
+  useEffect(() => {
+    const layer = poiLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+
+    if (!poiFilter.active || poiFilter.pois.length === 0) return;
+
+    const poiColor = "hsl(280, 70%, 55%)";
+    poiFilter.pois.forEach((poi) => {
+      const icon = L.divIcon({
+        className: "",
+        html: `<div style="
+          width: 18px; height: 18px;
+          background: ${poiColor};
+          color: white;
+          border-radius: 4px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 10px;
+          border: 1.5px solid white;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        ">📍</div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      });
+
+      L.marker([poi.lat, poi.lng], { icon })
+        .bindPopup(`<div style="font-family:Satoshi,sans-serif;font-size:12px;">
+          <strong>${escapeHtml(poi.name)}</strong>
+          ${poi.address ? `<br/><span style="color:#666;">${escapeHtml(poi.address)}</span>` : ""}
+        </div>`)
+        .addTo(layer);
+    });
+  }, [poiFilter, isDark]);
 
   // Reload coords on map move (debounced) + periodic refresh + initial load
   useEffect(() => {
@@ -1419,6 +1483,8 @@ const MapView = () => {
           />
         </div>
       )}
+      {/* POI proximity filter */}
+      <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} />
     </div>
   );
 
@@ -1506,6 +1572,10 @@ const MapView = () => {
                 />
               </div>
             )}
+            {/* POI proximity filter in desktop panel */}
+            <div className="max-w-xs">
+              <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} compact />
+            </div>
           </div>
         )}
 
