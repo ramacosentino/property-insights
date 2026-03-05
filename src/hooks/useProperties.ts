@@ -238,6 +238,19 @@ function computeStats(rawProperties: RawProperty[], surfaceType: SurfaceType): {
   return { properties, neighborhoodStats };
 }
 
+// Only select columns actually used by the frontend — skip heavy text fields
+const PROPERTY_SELECT = [
+  "id", "external_id", "property_type", "title", "url", "price", "currency",
+  "location", "neighborhood", "city", "norm_neighborhood", "norm_locality", "norm_province",
+  "scraped_at", "address", "street", "expenses", "surface_total", "surface_covered",
+  "rooms", "bedrooms", "bathrooms", "toilettes", "parking", "age_years",
+  "disposition", "orientation", "luminosity",
+  "price_per_m2_total", "price_per_m2_covered", "created_at",
+  "score_multiplicador", "highlights", "lowlights", "estado_general",
+  "valor_potencial_m2", "valor_potencial_total", "comparables_count",
+  "oportunidad_ajustada", "oportunidad_neta",
+].join(",");
+
 async function fetchAllProperties(): Promise<RawProperty[]> {
   const allRows: DBPropertyRow[] = [];
   const pageSize = 1000;
@@ -247,7 +260,7 @@ async function fetchAllProperties(): Promise<RawProperty[]> {
   while (hasMore) {
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select(PROPERTY_SELECT)
       .eq("status", "active")
       .range(from, from + pageSize - 1);
 
