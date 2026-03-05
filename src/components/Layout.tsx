@@ -49,6 +49,15 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { surfaceType, toggle: toggleSurface } = useSurfacePreference();
+  const tour = useTour();
+
+  // Track route-based checklist completions
+  useEffect(() => {
+    if (!tour || tour.loading) return;
+    const path = location.pathname;
+    if (path === "/mapa") tour.completeChecklistItem("explored_map");
+    if (path === "/inteligencia-precios") tour.completeChecklistItem("viewed_intelligence");
+  }, [location.pathname, tour]);
 
   const handleSignOut = async () => {
     await signOut();
