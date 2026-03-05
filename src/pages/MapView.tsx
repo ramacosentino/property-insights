@@ -249,6 +249,7 @@ const MapView = () => {
   }, []);
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
+  const [coordsReady, setCoordsReady] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [statsGroupBy, setStatsGroupBy] = useState<"city" | "neighborhood">("city");
   const [hoveredStatName, setHoveredStatName] = useState<string | null>(null);
