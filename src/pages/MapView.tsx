@@ -10,7 +10,7 @@ import { getRoomsLabel } from "@/lib/propertyData";
 import { useProperties } from "@/hooks/useProperties";
 import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
-import RangeSliderFilter from "@/components/RangeSliderFilter";
+import { MultiSelectChip, ConditionChip, RangeChip, SelectChip } from "@/components/FilterChipPopover";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFilter";
 import { Slider } from "@/components/ui/slider";
