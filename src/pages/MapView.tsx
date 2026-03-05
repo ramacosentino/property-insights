@@ -393,7 +393,11 @@ const MapView = () => {
     const prices = properties.filter((p) => activeM2(p) && activeM2(p)! > 0).map((p) => activeM2(p)!);
     return prices.sort((a, b) => a - b);
   }, [properties, activeM2]);
-  // Use percentiles (p5/p95) to avoid outliers compressing the color scale
+
+  // Quantile-based rank map for even color distribution
+  const priceRankMap = useMemo(() => buildPriceRankMap(allPrices), [allPrices]);
+
+  // Keep min/max for sidebar display only
   const minPrice = useMemo(() => {
     if (allPrices.length === 0) return 0;
     return allPrices[Math.floor(allPrices.length * 0.05)];
