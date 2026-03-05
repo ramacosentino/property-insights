@@ -9,12 +9,14 @@ export function useIsAdmin() {
     queryKey: ["is_admin", user?.id],
     queryFn: async () => {
       if (!user) return false;
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      if (error) {
+        console.error("useIsAdmin error:", error);
+        return false;
+      }
       return !!data;
     },
     enabled: !!user,
