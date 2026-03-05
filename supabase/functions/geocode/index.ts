@@ -452,7 +452,13 @@ Deno.serve(async (req) => {
         query = parts.join(", ");
         console.log(`Retry query for "${item.address}": "${query}"`);
       } else {
-        query = `${cleanAddr}, Argentina`;
+        // Always include neighborhood/city context to avoid ambiguous matches
+        // e.g. "Av. del Libertador 1200" could match Belgrano (CABA) instead of Vicente López
+        const contextParts = [cleanAddr];
+        if (item.neighborhood) contextParts.push(item.neighborhood);
+        if (item.province) contextParts.push(item.province);
+        contextParts.push("Argentina");
+        query = contextParts.join(", ");
       }
 
       try {
