@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock, Ruler } from "lucide-react";
+import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock, Ruler, HelpCircle } from "lucide-react";
 import UrbbanLogo, { UrbannaIcon } from "./UrbbanLogo";
 import CsvUploadButton from "./CsvUploadButton";
 import { useTheme } from "@/hooks/useTheme";
@@ -7,10 +7,13 @@ import { usePreselection } from "@/hooks/usePreselection";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
+import { useTour } from "@/hooks/useTour";
+import GuidedTour from "@/components/GuidedTour";
+import DiscoveryChecklist from "@/components/DiscoveryChecklist";
 
 interface LayoutProps {
   children: React.ReactNode;
