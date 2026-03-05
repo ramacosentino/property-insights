@@ -451,8 +451,19 @@ const MapView = () => {
         return false;
       });
     }
+    // POI proximity filter
+    if (poiFilter.active && poiFilter.pois.length > 0) {
+      result = result.filter((p) => {
+        const geo = geocodedCoords.get(p.address || p.location);
+        const coord = geo ? [geo.lat, geo.lng] : NEIGHBORHOOD_COORDS[p.neighborhood];
+        if (!coord) return false;
+        return poiFilter.pois.some((poi) =>
+          haversineDistance(coord[0], coord[1], poi.lat, poi.lng) <= poiFilter.radius
+        );
+      });
+    }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords, poiFilter]);
 
   const mappedProperties = filteredProperties;
 
