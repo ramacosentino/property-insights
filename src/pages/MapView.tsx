@@ -507,7 +507,14 @@ const MapView = () => {
     });
     // Only apply if this is still the latest request
     if (requestId === coordsRequestRef.current) {
-      setGeocodedCoords(updated);
+      // Merge new data into existing map to preserve coords from previous views
+      setGeocodedCoords(prev => {
+        const merged = new Map(prev);
+        for (const [key, value] of updated) {
+          merged.set(key, value);
+        }
+        return merged;
+      });
     }
   }, []);
 
