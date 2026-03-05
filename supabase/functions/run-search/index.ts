@@ -40,6 +40,16 @@ Deno.serve(async (req) => {
   try {
     const { search_id, filters, user_id, surface_type = "total", min_surface_enabled = true, renovation_costs = null } = await req.json();
 
+    // Condition tier ranges for filtering by score_multiplicador
+    const CONDITION_RANGES: Record<string, { min: number; max: number }> = {
+      excelente: { min: 1.0, max: Infinity },
+      buen_estado: { min: 0.9, max: 0.999 },
+      aceptable: { min: 0.8, max: 0.899 },
+      necesita_mejoras: { min: 0.7, max: 0.799 },
+      refaccion_parcial: { min: 0.55, max: 0.699 },
+      refaccion_completa: { min: 0, max: 0.549 },
+    };
+
     if (!search_id || !user_id) {
       return new Response(
         JSON.stringify({ success: false, error: "search_id and user_id required" }),
