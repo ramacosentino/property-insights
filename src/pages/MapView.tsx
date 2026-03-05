@@ -883,10 +883,13 @@ const MapView = () => {
     }
   }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
 
-  // Reload coords on map move (debounced) + periodic refresh
+  // Reload coords on map move (debounced) + periodic refresh + initial load
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+
+    // Initial load for current bounds
+    loadCoordsForBounds();
 
     let timeout: ReturnType<typeof setTimeout>;
     const onMoveEnd = () => {
