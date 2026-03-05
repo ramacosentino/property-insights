@@ -272,6 +272,7 @@ const RenovationCostsSection = () => {
   );
 };
 
+import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
 const PROPERTY_TYPES_OPTIONS = ["Departamento", "Casa", "PH", "Local comercial", "Terreno", "Oficina", "Cochera"];
 const INVESTMENT_GOALS = [
   { value: "refaccion_venta", label: "Refacción + Venta" },
@@ -294,6 +295,7 @@ const PreferencesSection = () => {
   const [propertyTypes, setPropertyTypes] = useState<string[]>([]);
   const [investmentGoal, setInvestmentGoal] = useState<string | null>(null);
   const [userType, setUserType] = useState<string>("");
+  const [conditionFilters, setConditionFilters] = useState<string[]>([...ALL_CONDITION_VALUES]);
 
   useEffect(() => {
     if (!user || !open) return;
@@ -312,6 +314,7 @@ const PreferencesSection = () => {
           setPropertyTypes(data.property_types ?? []);
           setInvestmentGoal(data.investment_goal);
           setUserType(data.user_type ?? "");
+          setConditionFilters((data as any).condition_filters?.length > 0 ? (data as any).condition_filters : [...ALL_CONDITION_VALUES]);
         }
         setLoading(false);
       });
@@ -336,6 +339,7 @@ const PreferencesSection = () => {
         budget_currency: budgetCurrency,
         property_types: propertyTypes,
         investment_goal: investmentGoal,
+        condition_filters: conditionFilters,
       }, { onConflict: "user_id" });
     setSaving(false);
     if (error) {
