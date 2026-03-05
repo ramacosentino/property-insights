@@ -1073,23 +1073,21 @@ const MapView = () => {
   const minMedian = mappedNeighborhoods.length ? Math.min(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
   const maxMedian = mappedNeighborhoods.length ? Math.max(...mappedNeighborhoods.map((n) => n.medianPricePerSqm)) : 0;
 
-  const headerFilters = (
-    <div className="flex items-center gap-2 px-2">
-      <button
-        onClick={() => isMobile ? setMobileFiltersOpen(true) : setShowFilters(!showFilters)}
-        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium transition-all border shrink-0 ${
-          showFilters || mobileFiltersOpen || activeFilterCount > 0 ? "border-primary/30 text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        <SlidersHorizontal className="h-3 w-3" />
-        Filtros{activeFilterCount > 0 && ` (${activeFilterCount})`}
-      </button>
+  const IMPORT_DATE_OPTIONS = [
+    { value: "all", label: "Todas las fechas" },
+    { value: "1d", label: "Último día" },
+    { value: "7d", label: "Última semana" },
+    { value: "30d", label: "Último mes" },
+    { value: "90d", label: "Últimos 3 meses" },
+  ];
 
+  const headerFilters = (
+    <div className="flex items-center gap-1.5 px-2 overflow-x-auto scrollbar-none">
       {/* View mode toggle */}
       <div className="flex items-center rounded-full border border-border overflow-hidden shrink-0">
         <button
           onClick={() => setViewMode("opportunities")}
-          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
             viewMode === "opportunities" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -1098,7 +1096,7 @@ const MapView = () => {
         </button>
         <button
           onClick={() => setViewMode("all")}
-          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
             viewMode === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -1107,7 +1105,7 @@ const MapView = () => {
         </button>
         <button
           onClick={() => setViewMode("projects")}
-          className={`flex items-center gap-1 px-3 py-1 text-[11px] font-medium transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
             viewMode === "projects" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -1116,40 +1114,53 @@ const MapView = () => {
         </button>
       </div>
 
-      {/* Import date filter */}
-      <select
-        value={importDateFilter}
-        onChange={(e) => setImportDateFilter(e.target.value)}
-        className="text-[11px] bg-secondary border border-border rounded-full px-2.5 py-1 text-foreground shrink-0"
-      >
-        <option value="all">Todas las fechas</option>
-        <option value="1d">Último día</option>
-        <option value="7d">Última semana</option>
-        <option value="30d">Último mes</option>
-        <option value="90d">Últimos 3 meses</option>
-      </select>
+      <div className="w-px h-4 bg-border shrink-0" />
+
+      {/* Filter chips */}
+      <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+      <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+      <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
+      <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
+      <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+      <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
+
+      {rangesInitialized && (
+        <>
+          <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
+          <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
+          <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
+        </>
+      )}
+
+      <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+      <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
+      <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
+
+      <div className="w-px h-4 bg-border shrink-0" />
 
       {/* Draw polygon filter */}
       {drawnPolygon ? (
         <button
           onClick={clearDraw}
-          className="flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
         >
           <Pentagon className="h-3 w-3" />
-          Zona dibujada
+          Zona
           <X className="h-3 w-3 ml-0.5" />
         </button>
       ) : (
         <button
           onClick={isDrawing ? cancelDraw : startDraw}
-          className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
             isDrawing
               ? "border-primary/30 text-primary bg-primary/10 animate-pulse"
               : "border-border text-muted-foreground hover:text-foreground"
           }`}
         >
           <Pentagon className="h-3 w-3" />
-          {isDrawing ? "Dibujando..." : "Dibujar zona"}
+          {isDrawing ? "Dibujando..." : "Zona"}
         </button>
       )}
 
