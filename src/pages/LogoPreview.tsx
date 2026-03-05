@@ -273,7 +273,7 @@ const LogoPreview = () => (
                 className="inline-flex items-baseline"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span style={{ display: "inline-block", transform: "scaleX(1.15)", WebkitTextStroke: "0.5px currentColor" }}>U</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.15)", WebkitTextStroke: "0.5px currentColor", marginRight: 3 }}>U</span>
                 <span>rban</span>
                 <span className="text-primary">n</span>
                 <span>a.</span>
@@ -284,7 +284,7 @@ const LogoPreview = () => (
                 className="inline-flex items-baseline text-background"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span style={{ display: "inline-block", transform: "scaleX(1.15)", WebkitTextStroke: "0.5px currentColor" }}>U</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.15)", WebkitTextStroke: "0.5px currentColor", marginRight: 3 }}>U</span>
                 <span>rban</span>
                 <span className="text-primary">n</span>
                 <span>a.</span>
@@ -302,7 +302,7 @@ const LogoPreview = () => (
                 className="inline-flex items-baseline"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span style={{ display: "inline-block", transform: "scaleX(1.2)", WebkitTextStroke: "1px currentColor" }}>U</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.2)", WebkitTextStroke: "1px currentColor", marginRight: 4 }}>U</span>
                 <span>rban</span>
                 <span className="text-primary">n</span>
                 <span>a.</span>
@@ -313,7 +313,7 @@ const LogoPreview = () => (
                 className="inline-flex items-baseline text-background"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span style={{ display: "inline-block", transform: "scaleX(1.2)", WebkitTextStroke: "1px currentColor" }}>U</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.2)", WebkitTextStroke: "1px currentColor", marginRight: 4 }}>U</span>
                 <span>rban</span>
                 <span className="text-primary">n</span>
                 <span>a.</span>
