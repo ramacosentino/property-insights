@@ -264,53 +264,57 @@ const LogoPreview = () => (
           </div>
         </div>
 
-        {/* Propuesta: ícono + wordmark */}
+        {/* Propuesta: U más ancha/bold estilo ícono */}
         <div className="space-y-2">
-          <span className="text-xs text-muted-foreground font-mono">Propuesta: ícono PNG + wordmark</span>
+          <span className="text-xs text-muted-foreground font-mono">Propuesta: U bold (scaleX + stroke)</span>
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="px-6 py-5 rounded-xl border border-border bg-card flex items-center gap-3">
-              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 44, height: 44 }} />
+            <div className="px-6 py-5 rounded-xl border border-border bg-card">
               <span
                 className="inline-flex items-baseline"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span>rbanna.</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.15)", WebkitTextStroke: "0.5px currentColor" }}>U</span>
+                <span>rban</span>
+                <span className="text-primary">n</span>
+                <span>a.</span>
               </span>
             </div>
-            <div className="px-6 py-5 rounded-xl bg-foreground flex items-center gap-3">
-              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 44, height: 44 }} />
+            <div className="px-6 py-5 rounded-xl bg-foreground">
               <span
                 className="inline-flex items-baseline text-background"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span>rbanna.</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.15)", WebkitTextStroke: "0.5px currentColor" }}>U</span>
+                <span>rban</span>
+                <span className="text-primary">n</span>
+                <span>a.</span>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Propuesta 2: ícono al lado del wordmark completo */}
+        {/* Propuesta 2: U aún más bold */}
         <div className="space-y-2">
-          <span className="text-xs text-muted-foreground font-mono">Propuesta 2: ícono + Urbanna completo</span>
+          <span className="text-xs text-muted-foreground font-mono">Propuesta 2: U extra bold (scaleX 1.2 + stroke 1px)</span>
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="px-6 py-5 rounded-xl border border-border bg-card flex items-center gap-3">
-              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 40, height: 40 }} />
+            <div className="px-6 py-5 rounded-xl border border-border bg-card">
               <span
                 className="inline-flex items-baseline"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span>Urban</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.2)", WebkitTextStroke: "1px currentColor" }}>U</span>
+                <span>rban</span>
                 <span className="text-primary">n</span>
                 <span>a.</span>
               </span>
             </div>
-            <div className="px-6 py-5 rounded-xl bg-foreground flex items-center gap-3">
-              <img src="/urbanna-icon.png" alt="U" className="rounded-[22%]" style={{ width: 40, height: 40 }} />
+            <div className="px-6 py-5 rounded-xl bg-foreground">
               <span
                 className="inline-flex items-baseline text-background"
                 style={{ fontFamily: FONT, fontSize: 42, letterSpacing: "-0.02em", lineHeight: 1 }}
               >
-                <span>Urban</span>
+                <span style={{ display: "inline-block", transform: "scaleX(1.2)", WebkitTextStroke: "1px currentColor" }}>U</span>
+                <span>rban</span>
                 <span className="text-primary">n</span>
                 <span>a.</span>
               </span>
