@@ -16,7 +16,7 @@ import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFi
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, ExternalLink, TrendingDown, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, ExternalLink, TrendingDown, Star, X, Eye, ChevronUp, ChevronDown, List, Pentagon, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
@@ -1037,93 +1037,118 @@ const MapView = () => {
     { value: "90d", label: "Últimos 3 meses" },
   ];
 
+  const [showFilters, setShowFilters] = useState(false);
+
   const headerFilters = (
-    <div className="flex items-center gap-1.5 px-2 overflow-x-auto scrollbar-none">
-      {/* View mode toggle */}
-      <div className="flex items-center rounded-full border border-border overflow-hidden shrink-0">
+    <div className="flex flex-col gap-1.5 px-2">
+      {/* Top bar: view toggle + Filtros button + draw + clear */}
+      <div className="flex items-center gap-1.5">
+        {/* View mode toggle */}
+        <div className="flex items-center rounded-full border border-border overflow-hidden shrink-0">
+          <button
+            onClick={() => setViewMode("opportunities")}
+            className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
+              viewMode === "opportunities" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Star className="h-3 w-3" />
+            Oportunidades
+          </button>
+          <button
+            onClick={() => setViewMode("all")}
+            className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
+              viewMode === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Eye className="h-3 w-3" />
+            Todas
+          </button>
+          <button
+            onClick={() => setViewMode("projects")}
+            className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
+              viewMode === "projects" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Star className="h-3 w-3 fill-current" />
+            Proyectos
+          </button>
+        </div>
+
+        <div className="w-px h-4 bg-border shrink-0" />
+
         <button
-          onClick={() => setViewMode("opportunities")}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
-            viewMode === "opportunities" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Star className="h-3 w-3" />
-          Oportunidades
-        </button>
-        <button
-          onClick={() => setViewMode("all")}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
-            viewMode === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Eye className="h-3 w-3" />
-          Todas
-        </button>
-        <button
-          onClick={() => setViewMode("projects")}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-all ${
-            viewMode === "projects" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Star className="h-3 w-3 fill-current" />
-          Proyectos
-        </button>
-      </div>
-
-      <div className="w-px h-4 bg-border shrink-0" />
-
-      {/* Filter chips */}
-      <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
-      <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
-      <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
-      <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
-      <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
-      <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
-
-      {rangesInitialized && (
-        <>
-          <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
-          <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
-          <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
-          <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
-          <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
-        </>
-      )}
-
-      <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
-      <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
-      <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
-
-      <div className="w-px h-4 bg-border shrink-0" />
-
-      {/* Draw polygon filter */}
-      {drawnPolygon ? (
-        <button
-          onClick={clearDraw}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
-        >
-          <Pentagon className="h-3 w-3" />
-          Zona
-          <X className="h-3 w-3 ml-0.5" />
-        </button>
-      ) : (
-        <button
-          onClick={isDrawing ? cancelDraw : startDraw}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
-            isDrawing
-              ? "border-primary/30 text-primary bg-primary/10 animate-pulse"
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all shrink-0 ${
+            showFilters || activeFilterCount > 0
+              ? "border-primary/30 text-primary bg-primary/10"
               : "border-border text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Pentagon className="h-3 w-3" />
-          {isDrawing ? "Dibujando..." : "Zona"}
+          <SlidersHorizontal className="h-3 w-3" />
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="bg-primary/20 text-primary text-[10px] font-semibold rounded-full px-1.5 min-w-[18px] text-center">
+              {activeFilterCount}
+            </span>
+          )}
+          <ChevronDown className={`h-3 w-3 transition-transform ${showFilters ? "rotate-180" : ""}`} />
         </button>
-      )}
 
-      {activeFilterCount > 0 && (
-        <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border shrink-0">
-          <X className="h-3 w-3" /> Limpiar
-        </button>
+        {/* Draw polygon filter */}
+        {drawnPolygon ? (
+          <button
+            onClick={clearDraw}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border border-primary/30 text-primary bg-primary/10 shrink-0"
+          >
+            <Pentagon className="h-3 w-3" />
+            Zona
+            <X className="h-3 w-3 ml-0.5" />
+          </button>
+        ) : (
+          <button
+            onClick={isDrawing ? cancelDraw : startDraw}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border shrink-0 transition-all ${
+              isDrawing
+                ? "border-primary/30 text-primary bg-primary/10 animate-pulse"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Pentagon className="h-3 w-3" />
+            {isDrawing ? "Dibujando..." : "Zona"}
+          </button>
+        )}
+
+        {activeFilterCount > 0 && (
+          <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border shrink-0">
+            <X className="h-3 w-3" /> Limpiar
+          </button>
+        )}
+      </div>
+
+      {/* Collapsible filter chips - wrap into rows */}
+      {showFilters && (
+        <div className="flex flex-wrap items-center gap-1.5 pb-1">
+          <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+          <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
+          <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
+          <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
+          <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
+          <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
+
+          {rangesInitialized && (
+            <>
+              <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
+              <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
+              <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
+              <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
+              <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
+            </>
+          )}
+
+          <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+          <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
+          <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
+        </div>
       )}
     </div>
   );
