@@ -40,7 +40,7 @@ const IconExport = () => {
                     lineHeight: 1,
                     color: "#ffffff",
                     fontWeight: 700,
-                    transform: "scaleX(1.25) translateX(2%)",
+                    transform: "scaleX(1.3) translateX(4%)",
                     marginBottom: Math.round(size * 0.02),
                   }}
                 >
