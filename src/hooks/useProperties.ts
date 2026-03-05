@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
 import { computeSegmentedFactorPremiums, getPropertyFactorAdjustment } from "@/lib/priceFactors";
 import { useSurfacePreference, SurfaceType } from "@/contexts/SurfacePreferenceContext";
+import { useMemo } from "react";
 
 interface DBPropertyRow {
   id: string;
@@ -65,7 +66,7 @@ function computeIQRBounds(values: number[], multiplier = 4): { lower: number; up
   return { lower: q1 - multiplier * iqr, upper: q3 + multiplier * iqr };
 }
 
-/** Get the relevant USD/m² for a property based on surface preference */
+/** Get the relevant USD/m² value for a property based on surface preference */
 function getM2Value(
   p: { pricePerM2Total: number | null; pricePerM2Covered: number | null },
   surfaceType: SurfaceType
@@ -76,57 +77,62 @@ function getM2Value(
   return p.pricePerM2Total;
 }
 
-function computeStats(rows: DBPropertyRow[], surfaceType: SurfaceType): {
+/** Maps DB rows to raw property objects (no scoring) */
+function mapRows(rows: DBPropertyRow[]) {
+  return rows
+    .filter((r) => r.price && r.price > 0)
+    .map((r) => ({
+      id: r.id,
+      externalId: r.external_id,
+      propertyType: r.property_type,
+      title: r.title,
+      url: r.url || "",
+      price: r.price!,
+      currency: r.currency || "USD",
+      location: r.location || "",
+      neighborhood: r.norm_neighborhood || r.neighborhood || "Sin barrio",
+      city: r.norm_locality || r.norm_province || r.city || "Sin ciudad",
+      normNeighborhood: r.norm_neighborhood,
+      normLocality: r.norm_locality,
+      normProvince: r.norm_province,
+      scrapedAt: r.scraped_at || "",
+      createdAt: r.created_at,
+      address: r.address,
+      street: r.street,
+      expenses: r.expenses,
+      description: r.description,
+      surfaceTotal: r.surface_total,
+      surfaceCovered: r.surface_covered,
+      rooms: r.rooms,
+      bedrooms: r.bedrooms,
+      bathrooms: r.bathrooms,
+      toilettes: r.toilettes,
+      parking: r.parking,
+      ageYears: r.age_years,
+      disposition: r.disposition,
+      orientation: r.orientation,
+      luminosity: r.luminosity,
+      pricePerM2Total: r.price_per_m2_total,
+      pricePerM2Covered: r.price_per_m2_covered,
+      score_multiplicador: r.score_multiplicador,
+      informe_breve: r.informe_breve,
+      highlights: r.highlights,
+      lowlights: r.lowlights,
+      estado_general: r.estado_general,
+      valor_potencial_m2: r.valor_potencial_m2,
+      valor_potencial_total: r.valor_potencial_total,
+      comparables_count: r.comparables_count,
+      oportunidad_ajustada: r.oportunidad_ajustada,
+      oportunidad_neta: r.oportunidad_neta,
+    }));
+}
+
+type RawProperty = ReturnType<typeof mapRows>[number];
+
+function computeStats(rawProperties: RawProperty[], surfaceType: SurfaceType): {
   properties: Property[];
   neighborhoodStats: Map<string, NeighborhoodStats>;
 } {
-  const valid = rows.filter((r) => r.price && r.price > 0);
-
-  const rawProperties = valid.map((r) => ({
-    id: r.id,
-    externalId: r.external_id,
-    propertyType: r.property_type,
-    title: r.title,
-    url: r.url || "",
-    price: r.price!,
-    currency: r.currency || "USD",
-    location: r.location || "",
-    neighborhood: r.norm_neighborhood || r.neighborhood || "Sin barrio",
-    city: r.norm_locality || r.norm_province || r.city || "Sin ciudad",
-    normNeighborhood: r.norm_neighborhood,
-    normLocality: r.norm_locality,
-    normProvince: r.norm_province,
-    scrapedAt: r.scraped_at || "",
-    createdAt: r.created_at,
-    address: r.address,
-    street: r.street,
-    expenses: r.expenses,
-    description: r.description,
-    surfaceTotal: r.surface_total,
-    surfaceCovered: r.surface_covered,
-    rooms: r.rooms,
-    bedrooms: r.bedrooms,
-    bathrooms: r.bathrooms,
-    toilettes: r.toilettes,
-    parking: r.parking,
-    ageYears: r.age_years,
-    disposition: r.disposition,
-    orientation: r.orientation,
-    luminosity: r.luminosity,
-    pricePerM2Total: r.price_per_m2_total,
-    pricePerM2Covered: r.price_per_m2_covered,
-    score_multiplicador: r.score_multiplicador,
-    informe_breve: r.informe_breve,
-    highlights: r.highlights,
-    lowlights: r.lowlights,
-    estado_general: r.estado_general,
-    valor_potencial_m2: r.valor_potencial_m2,
-    valor_potencial_total: r.valor_potencial_total,
-    comparables_count: r.comparables_count,
-    oportunidad_ajustada: r.oportunidad_ajustada,
-    oportunidad_neta: r.oportunidad_neta,
-  }));
-
   // --- IQR outlier detection per neighborhood + propertyType ---
   const groupKey = (p: { neighborhood: string; propertyType: string | null }) =>
     `${p.neighborhood}|||${p.propertyType || ""}`;
@@ -145,7 +151,7 @@ function computeStats(rows: DBPropertyRow[], surfaceType: SurfaceType): {
     groupBounds.set(key, computeIQRBounds(values, 4));
   }
 
-  const isOutlier = (p: typeof rawProperties[0]): boolean => {
+  const isOutlier = (p: RawProperty): boolean => {
     const m2 = getM2Value(p, surfaceType);
     if (!m2 || m2 <= 0) return false;
     const bounds = groupBounds.get(groupKey(p));
@@ -232,7 +238,7 @@ function computeStats(rows: DBPropertyRow[], surfaceType: SurfaceType): {
   return { properties, neighborhoodStats };
 }
 
-async function fetchAllProperties(): Promise<DBPropertyRow[]> {
+async function fetchAllProperties(): Promise<RawProperty[]> {
   const allRows: DBPropertyRow[] = [];
   const pageSize = 1000;
   let from = 0;
@@ -255,18 +261,30 @@ async function fetchAllProperties(): Promise<DBPropertyRow[]> {
     from += pageSize;
   }
 
-  return allRows;
+  return mapRows(allRows);
 }
 
 export function useProperties() {
   const { surfaceType } = useSurfacePreference();
   
-  return useQuery({
-    queryKey: ["properties", surfaceType],
-    queryFn: async () => {
-      const rows = await fetchAllProperties();
-      return computeStats(rows, surfaceType);
-    },
+  // Fetch raw rows once — surfaceType does NOT trigger refetch
+  const rawQuery = useQuery({
+    queryKey: ["properties-raw"],
+    queryFn: fetchAllProperties,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Compute stats from cached rows when surfaceType changes (no refetch)
+  const computed = useMemo(() => {
+    if (!rawQuery.data) return undefined;
+    return computeStats(rawQuery.data, surfaceType);
+  }, [rawQuery.data, surfaceType]);
+
+  return {
+    data: computed,
+    isLoading: rawQuery.isLoading,
+    error: rawQuery.error,
+    isError: rawQuery.isError,
+    refetch: rawQuery.refetch,
+  };
 }
