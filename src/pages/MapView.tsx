@@ -603,6 +603,15 @@ const MapView = () => {
     diffuseLayerRef.current = L.layerGroup().addTo(map);
     dealLayerRef.current = L.layerGroup().addTo(map);
     highlightLayerRef.current = L.layerGroup().addTo(map);
+    poiLayerRef.current = L.layerGroup().addTo(map);
+
+    // Track map center for POI searches
+    const updateCenter = () => {
+      const c = map.getCenter();
+      setMapCenter({ lat: c.lat, lng: c.lng });
+    };
+    updateCenter();
+    map.on("moveend", updateCenter);
 
     // Create cluster group for "all" mode
     const clusterGroup = (L as any).markerClusterGroup({
