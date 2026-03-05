@@ -13,7 +13,6 @@ const IconExport = () => {
         return (
           <div key={size} className="flex flex-col items-center gap-4">
             <span className="text-xs font-mono text-neutral-400">{size}×{size}px</span>
-            {/* The icon on checkered bg so user sees it clearly */}
             <div
               style={{
                 background: "repeating-conic-gradient(#e5e5e5 0% 25%, transparent 0% 50%) 50% / 20px 20px",
@@ -56,19 +55,6 @@ const IconExport = () => {
                     position: "absolute",
                     bottom: Math.round(size * 0.14),
                     right: Math.round(size * 0.19),
-                  }}
-                />
-              >
-                U
-                <span
-                  style={{
-                    width: dotSize,
-                    height: dotSize,
-                    borderRadius: "50%",
-                    backgroundColor: "hsl(215, 45%, 48%)",
-                    position: "absolute",
-                    bottom: Math.round(size * 0.13),
-                    right: Math.round(size * 0.2),
                   }}
                 />
               </span>
