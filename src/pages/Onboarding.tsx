@@ -295,8 +295,60 @@ const Onboarding = () => {
           </div>
         )}
 
-        {/* Step 4: Investment Goal (conditional) */}
-        {step === 4 && isInvestor && (
+        {/* Step 4: Condition Filter */}
+        {step === 4 && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <h1 className="text-xl font-bold text-foreground">Estado de la propiedad</h1>
+              <p className="text-sm text-muted-foreground">¿Qué estados te interesan? Recomendamos dejar todas tildadas para más opciones</p>
+            </div>
+            <div className="grid gap-2">
+              {CONDITION_TIERS.map((tier) => {
+                const selected = data.condition_filters.includes(tier.value);
+                return (
+                  <button
+                    key={tier.value}
+                    onClick={() =>
+                      setData((d) => ({
+                        ...d,
+                        condition_filters: selected
+                          ? d.condition_filters.filter((v) => v !== tier.value)
+                          : [...d.condition_filters, tier.value],
+                      }))
+                    }
+                    className={`flex items-center gap-3 px-4 py-3 text-sm rounded-lg border text-left transition-all ${
+                      selected
+                        ? "border-primary bg-primary/5 text-primary font-medium ring-1 ring-primary/20"
+                        : "border-border bg-card text-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      selected ? "border-primary bg-primary" : "border-muted-foreground/30"
+                    }`}>
+                      {selected && <Check className="h-3 w-3 text-primary-foreground" />}
+                    </div>
+                    <span>{tier.label}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {tier.minScore >= 1 ? "≥ 1.0" : `${tier.minScore} – ${tier.maxScore}`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setData((d) => ({ ...d, condition_filters: [...ALL_CONDITION_VALUES] }))}
+              className="text-xs text-primary hover:underline"
+            >
+              Seleccionar todas
+            </button>
+          </div>
+        )}
+
+        {/* Step 5: Investment Goal (conditional) */}
+        {step === 5 && isInvestor && (
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="text-center space-y-1">
               <div className="flex items-center justify-center gap-2 text-primary">
