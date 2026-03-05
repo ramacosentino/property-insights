@@ -1572,6 +1572,10 @@ const MapView = () => {
                 />
               </div>
             )}
+            {/* POI proximity filter in desktop panel */}
+            <div className="max-w-xs">
+              <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} compact />
+            </div>
           </div>
         )}
 
