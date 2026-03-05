@@ -389,6 +389,9 @@ const Busqueda = () => {
         budget_max: budgetMax,
       }));
     }
+    if (onboardingFilters.conditionFilters.size > 0) {
+      setFilters((f) => ({ ...f, condition_filters: [...onboardingFilters.conditionFilters] }));
+    }
     setOnboardingApplied(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onboardingFilters.revision]);
