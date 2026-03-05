@@ -249,6 +249,7 @@ const MapView = () => {
   }, []);
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const [geocodedCoords, setGeocodedCoords] = useState<Map<string, CachedGeoData>>(new Map());
+  const [coordsReady, setCoordsReady] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [statsGroupBy, setStatsGroupBy] = useState<"city" | "neighborhood">("city");
   const [hoveredStatName, setHoveredStatName] = useState<string | null>(null);
@@ -515,6 +516,7 @@ const MapView = () => {
         }
         return merged;
       });
+      setCoordsReady(true);
     }
   }, []);
 
@@ -678,12 +680,12 @@ const MapView = () => {
     tileLayerRef.current = newTile;
   }, [isDark]);
 
-  // Update markers
+  // Update markers — wait for geocoded coords to be ready before first render
   useEffect(() => {
     const diffuse = diffuseLayerRef.current;
     const deals = dealLayerRef.current;
     const cluster = clusterLayerRef.current;
-    if (!diffuse || !deals || !cluster) return;
+    if (!diffuse || !deals || !cluster || !coordsReady) return;
 
     diffuse.clearLayers();
     deals.clearLayers();
@@ -888,7 +890,7 @@ const MapView = () => {
           .addTo(deals);
       });
     }
-  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
+  }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel, coordsReady]);
 
   // Reload coords on map move (debounced) + periodic refresh + initial load
   useEffect(() => {
