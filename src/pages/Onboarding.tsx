@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import OnboardingZoneSelector from "@/components/OnboardingZoneSelector";
 import { PLAN_LIMITS, PlanId } from "@/hooks/useSubscription";
 import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
+import {
   Home,
   TrendingUp,
   BarChart3,
@@ -22,6 +23,7 @@ import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
   Zap,
   Crown,
   Check,
+  ShieldCheck,
 } from "lucide-react";
 
 const USER_TYPES = [
