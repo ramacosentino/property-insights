@@ -36,11 +36,12 @@ const IconExport = () => {
                 <span
                   style={{
                     fontFamily: FONT,
-                    fontSize: Math.round(size * 0.58),
+                    fontSize: Math.round(size * 0.6),
                     lineHeight: 1,
                     color: "#ffffff",
                     fontWeight: 700,
-                    transform: "scaleX(1.3) translateX(4%)",
+                    transform: "scaleX(1.15)",
+                    WebkitTextStroke: `${Math.max(1, Math.round(size * 0.006))}px #ffffff`,
                     marginBottom: Math.round(size * 0.02),
                   }}
                 >
