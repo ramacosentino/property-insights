@@ -688,6 +688,7 @@ const MapView = () => {
       dealLayerRef.current = null;
       clusterLayerRef.current = null;
       highlightLayerRef.current = null;
+      poiLayerRef.current = null;
     };
   }, [mappedNeighborhoods, isDark]);
 
