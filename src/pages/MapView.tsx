@@ -473,7 +473,7 @@ const MapView = () => {
       });
     }
     return result;
-  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords, poiFilter]);
+  }, [allMappedProperties, selectedProvince, statsGroupBy, neighborhoodFilter, propertyTypeFilter, roomsFilter, parkingFilter, bedroomsFilter, bathroomsFilter, dispositionFilter, orientationFilter, conditionFilter, priceRange, surfaceRange, surfaceCoveredRange, ageRange, expensesRange, rangesInitialized, dataRanges, viewMode, isPreselectedHook, importDateFilter, drawnPolygon, isInsidePolygon, geocodedCoords, poiFilter]);
 
   const mappedProperties = filteredProperties;
 
