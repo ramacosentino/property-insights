@@ -116,8 +116,8 @@ const Onboarding = () => {
   });
 
   const isInvestor = data.user_type === "inversor_recurrente" || data.user_type === "inmobiliaria";
-  // Steps: 0=user_type, 1=zones, 2=budget, 3=property_types, 4?=investment_goal, last=plan
-  const baseSteps = isInvestor ? 5 : 4;
+  // Steps: 0=user_type, 1=zones, 2=budget, 3=property_types, 4=condition, 5?=investment_goal, last=plan
+  const baseSteps = isInvestor ? 6 : 5;
   const totalSteps = baseSteps + 1; // +1 for plan selection
   const planStep = baseSteps;
   const progress = ((step + 1) / totalSteps) * 100;
@@ -128,7 +128,8 @@ const Onboarding = () => {
       case 1: return data.zones.length > 0;
       case 2: return true;
       case 3: return data.property_types.length > 0;
-      case 4: return isInvestor ? !!data.investment_goal : true; // plan step if !isInvestor
+      case 4: return data.condition_filters.length > 0;
+      case 5: return isInvestor ? !!data.investment_goal : true;
       default: return true;
     }
   };
