@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     // 1. Build query with filters
     let query = supabase
       .from("properties")
-      .select("id, price, price_per_m2_total, surface_total, surface_covered, neighborhood, norm_neighborhood, norm_locality, norm_province, city, property_type, rooms, parking, url")
+      .select("id, price, price_per_m2_total, surface_total, surface_covered, neighborhood, norm_neighborhood, norm_locality, norm_province, city, property_type, rooms, parking, url, score_multiplicador")
       .gt("price", 0)
       .gt("price_per_m2_total", 0)
       .not("url", "is", null);
