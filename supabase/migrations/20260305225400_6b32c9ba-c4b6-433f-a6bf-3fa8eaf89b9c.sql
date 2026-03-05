@@ -1,0 +1,1 @@
+ALTER TABLE public.user_onboarding ADD COLUMN condition_filters text[] DEFAULT '{}'::text[];
