@@ -16,7 +16,7 @@ import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFi
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, ExternalLink, TrendingDown, SlidersHorizontal, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw } from "lucide-react";
+import { ArrowLeft, ExternalLink, TrendingDown, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
@@ -158,42 +158,8 @@ function getPropertyColor(pricePerSqm: number, min: number, max: number): string
 }
 
 
-const MapFilterRow = ({ title, keys, state, onChange }: {
-  title: string;
-  keys: string[];
-  state: FilterState;
-  onChange: (s: FilterState) => void;
-}) => {
-  const handleClick = (value: string) => {
-    const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
-    if (next.included.has(value)) { next.included.delete(value); next.excluded.add(value); }
-    else if (next.excluded.has(value)) { next.excluded.delete(value); }
-    else { next.included.add(value); }
-    onChange(next);
-  };
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[11px] font-medium text-muted-foreground w-16 shrink-0">{title}</span>
-      <div className="flex flex-wrap gap-1">
-        {keys.map((k) => {
-          const isIn = state.included.has(k);
-          const isEx = state.excluded.has(k);
-          return (
-            <button key={k} onClick={() => handleClick(k)}
-              className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all border ${
-                isIn ? "bg-primary/20 text-primary border-primary/30"
-                : isEx ? "bg-destructive/10 text-destructive border-destructive/30 line-through"
-                : "bg-secondary/50 text-muted-foreground border-border/50 hover:text-foreground"
-              }`}
-            >
-              {isEx && "✕ "}{k}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+
+
 
 const CIRCLE_RADIUS_METERS = 800;
 
@@ -1463,7 +1429,7 @@ const MapView = () => {
         {!isMobile && (
           <>
             {/* Right sidebar */}
-            <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all`} style={{ top: showFilters ? `${filterPanelHeight + 16}px` : '16px' }}>
+            <div className={`absolute right-4 bottom-4 z-[1000] flex flex-col gap-3 w-[250px] transition-all`} style={{ top: '16px' }}>
               <div className="glass-card rounded-2xl p-4 flex-1 min-h-0 flex flex-col">
                 {selectedProvince ? selectedDealsContent : statsListContent}
               </div>
