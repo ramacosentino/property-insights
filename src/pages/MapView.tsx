@@ -487,26 +487,28 @@ const MapView = () => {
     [filteredProperties, selectedProvince, statsGroupBy, viewMode, dealThreshold]
   );
 
-  // Load cached coordinates on mount (initial full load)
-  useEffect(() => {
-    fetchCachedCoordinates().then(setGeocodedCoords);
-  }, []);
+  // No unbounded initial load — we rely on bounds-based loading triggered after map init
 
   // Reload coordinates when map moves (bounding box filter)
+  // Uses a request counter to discard stale responses (prevents "rotating" effect)
+  const coordsRequestRef = useRef(0);
   const loadCoordsForBounds = useCallback(async () => {
     const map = mapInstanceRef.current;
     if (!map) return;
     const b = map.getBounds();
-    // Add 20% padding to avoid popping
     const latPad = (b.getNorth() - b.getSouth()) * 0.2;
     const lngPad = (b.getEast() - b.getWest()) * 0.2;
+    const requestId = ++coordsRequestRef.current;
     const updated = await fetchCachedCoordinates({
       south: b.getSouth() - latPad,
       north: b.getNorth() + latPad,
       west: b.getWest() - lngPad,
       east: b.getEast() + lngPad,
     });
-    setGeocodedCoords(updated);
+    // Only apply if this is still the latest request
+    if (requestId === coordsRequestRef.current) {
+      setGeocodedCoords(updated);
+    }
   }, []);
 
   // Measure filter panel height dynamically
@@ -881,10 +883,13 @@ const MapView = () => {
     }
   }, [mappedProperties, dealProperties, getCoord, minPrice, maxPrice, viewMode, dealThreshold, isDark, activeM2, m2ShortLabel]);
 
-  // Reload coords on map move (debounced) + periodic refresh
+  // Reload coords on map move (debounced) + periodic refresh + initial load
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
+
+    // Initial load for current bounds
+    loadCoordsForBounds();
 
     let timeout: ReturnType<typeof setTimeout>;
     const onMoveEnd = () => {
