@@ -265,7 +265,7 @@ const MapView = () => {
   const [bathroomsFilter, setBathroomsFilter] = useState<FilterState>(createFilterState());
   const [dispositionFilter, setDispositionFilter] = useState<FilterState>(createFilterState());
   const [orientationFilter, setOrientationFilter] = useState<FilterState>(createFilterState());
-  // View mode: "opportunities" or "all"
+  const [conditionFilter, setConditionFilter] = useState<Set<string>>(new Set<string>());
   const [viewMode, setViewMode] = useState<"opportunities" | "all" | "projects">("opportunities");
   // Import date filter
   const [importDateFilter, setImportDateFilter] = useState<string>("all");
@@ -331,6 +331,9 @@ const MapView = () => {
     }
     if (onboardingFilters.propertyTypeFilter.included.size > 0) {
       setPropertyTypeFilter(onboardingFilters.propertyTypeFilter);
+    }
+    if (onboardingFilters.conditionFilters.size > 0) {
+      setConditionFilter(onboardingFilters.conditionFilters);
     }
     if (onboardingFilters.priceRange) {
       setPriceRange([
@@ -422,6 +425,10 @@ const MapView = () => {
       result = result.filter((p) => applyFilter(p.disposition || "", dispositionFilter));
     if (orientationFilter.included.size > 0 || orientationFilter.excluded.size > 0)
       result = result.filter((p) => applyFilter(p.orientation || "", orientationFilter));
+    // Condition filter
+    if (conditionFilter.size > 0 && conditionFilter.size < CONDITION_TIERS.length) {
+      result = result.filter((p) => applyConditionFilter(p.score_multiplicador, conditionFilter));
+    }
     // Import date filter
     if (importDateFilter !== "all") {
       const now = Date.now();
