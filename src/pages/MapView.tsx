@@ -16,7 +16,7 @@ import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFi
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft, ExternalLink, TrendingDown, Star, X, Eye, ChevronUp, List, Pentagon, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, ExternalLink, TrendingDown, Star, X, Eye, ChevronUp, ChevronDown, List, Pentagon, EyeOff, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMapDraw } from "@/hooks/useMapDraw";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
