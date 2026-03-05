@@ -219,6 +219,7 @@ export type Database = {
           currency: string | null
           description: string | null
           disposition: string | null
+          enriched_at: string | null
           estado_general: string | null
           expenses: number | null
           external_id: string
@@ -269,6 +270,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           disposition?: string | null
+          enriched_at?: string | null
           estado_general?: string | null
           expenses?: number | null
           external_id: string
@@ -319,6 +321,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           disposition?: string | null
+          enriched_at?: string | null
           estado_general?: string | null
           expenses?: number | null
           external_id?: string
