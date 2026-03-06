@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, ChevronUp, Rocket, X, HelpCircle } from "lucide-react";
+import { Check, ChevronUp, X, HelpCircle } from "lucide-react";
 import { DiscoveryChecklist as ChecklistType } from "@/hooks/useTour";
 
 interface DiscoveryChecklistProps {
@@ -22,48 +22,17 @@ export default function DiscoveryChecklist({
 
   if (dismissed && allCompleted) return null;
 
-  const progress = Math.round((completedCount / items.length) * 100);
-
   return (
-    <div className="fixed bottom-4 right-4 z-[9000] w-72 animate-in slide-in-from-bottom-4 duration-500">
-      {/* Collapsed bar */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 bg-popover border border-border rounded-xl shadow-lg hover:shadow-xl transition-all"
-      >
-        <div className="relative h-8 w-8 shrink-0">
-          <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32">
-            <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" className="text-muted" strokeWidth="3" />
-            <circle
-              cx="16" cy="16" r="13" fill="none" stroke="currentColor"
-              className="text-primary transition-all duration-500"
-              strokeWidth="3"
-              strokeDasharray={`${progress * 0.817} 100`}
-              strokeLinecap="round"
-            />
-          </svg>
-          {allCompleted ? (
-            <Check className="absolute inset-0 m-auto h-3.5 w-3.5 text-primary" />
-          ) : (
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-foreground">
-              {completedCount}/{items.length}
-            </span>
-          )}
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <p className="text-xs font-semibold text-foreground truncate">
-            {allCompleted ? "¡Tour completado!" : "Descubrí Urbanna"}
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            {allCompleted ? "Exploraste todas las funciones" : `${completedCount} de ${items.length} completados`}
-          </p>
-        </div>
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />}
-      </button>
-
-      {/* Expanded list */}
+    <div className="fixed bottom-4 left-20 z-[1300]">
+      {/* Expanded panel */}
       {expanded && (
-        <div className="mt-1.5 bg-popover border border-border rounded-xl shadow-lg p-3 space-y-1.5 animate-in slide-in-from-bottom-2 duration-200">
+        <div className="mb-2 w-72 bg-popover border border-border rounded-xl shadow-lg p-3 space-y-1.5 animate-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-semibold text-foreground">Descubrí Urbanna</p>
+            <button onClick={() => setExpanded(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
           {items.map((item) => {
             const done = checklist[item.key];
             return (
@@ -87,7 +56,6 @@ export default function DiscoveryChecklist({
               </div>
             );
           })}
-
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <button
               onClick={onRestartTour}
@@ -108,6 +76,19 @@ export default function DiscoveryChecklist({
           </div>
         </div>
       )}
+
+      {/* Small pill */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="h-8 px-2.5 flex items-center gap-1.5 bg-popover border border-border rounded-lg shadow-md hover:shadow-lg transition-all text-xs font-semibold text-foreground"
+      >
+        {allCompleted ? (
+          <Check className="h-3.5 w-3.5 text-primary" />
+        ) : (
+          <span className="text-primary">{completedCount}/{items.length}</span>
+        )}
+        <ChevronUp className={`h-3 w-3 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
     </div>
   );
 }
