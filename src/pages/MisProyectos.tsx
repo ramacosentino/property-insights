@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
-import { useProperties } from "@/hooks/useProperties";
+import { usePropertiesByIds } from "@/hooks/usePropertiesByIds";
 import { usePreselection } from "@/hooks/usePreselection";
 import { Property } from "@/lib/propertyData";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,9 +16,8 @@ import Comparador from "@/pages/Comparador";
 
 
 const MisProyectos = () => {
-  const { data, isLoading } = useProperties();
-  const properties = data?.properties ?? [];
   const { selectedIds, clear, count } = usePreselection();
+  const { properties, isLoading } = usePropertiesByIds(selectedIds);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
