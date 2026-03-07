@@ -10,7 +10,7 @@ import { getRoomsLabel } from "@/lib/propertyData";
 import { useProperties } from "@/hooks/useProperties";
 import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
-import { MultiSelectChip, ConditionChip, RangeChip, SelectChip } from "@/components/FilterChipPopover";
+import { MultiSelectChip, ConditionChip, RangeChip, SelectChip, NeighborhoodChip } from "@/components/FilterChipPopover";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
 import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFilter";
 import { Slider } from "@/components/ui/slider";
@@ -1118,6 +1118,8 @@ const MapView = () => {
           </button>
         )}
 
+        <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
+
         {activeFilterCount > 0 && (
           <button onClick={clearAllFilters} className="flex items-center gap-0.5 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground border border-border shrink-0">
             <X className="h-3 w-3" /> Limpiar
@@ -1128,26 +1130,35 @@ const MapView = () => {
       {/* Collapsible filter chips - wrap into rows */}
       {showFilters && (
         <div className="flex flex-wrap items-center gap-1.5 pb-1">
+          {/* Primary filters */}
           <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+          {rangesInitialized && (
+            <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
+          )}
+          <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
+          {rangesInitialized && (
+            <>
+              <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
+              <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
+            </>
+          )}
+
+          <div className="w-px h-4 bg-border/50 shrink-0" />
+
+          {/* Secondary filters */}
+          <NeighborhoodChip groups={neighborhoodsByProvince} state={neighborhoodFilter} onChange={setNeighborhoodFilter} />
           <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
           <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
           <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
           <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
-          <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
-
+          <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
+          <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
           {rangesInitialized && (
             <>
-              <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
-              <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
-              <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
               <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
               <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
             </>
           )}
-
-          <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
-          <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
-          <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
         </div>
       )}
     </div>
@@ -1403,24 +1414,33 @@ const MapView = () => {
 
   const mobileFiltersContent = (
     <div className="flex flex-col gap-3">
+      {/* Primary */}
       <MultiSelectChip label="Tipo" keys={PROPERTY_TYPE_KEYS} state={propertyTypeFilter} onChange={setPropertyTypeFilter} />
+      {rangesInitialized && (
+        <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
+      )}
+      <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
+      {rangesInitialized && (
+        <>
+          <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
+          <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
+        </>
+      )}
+      {/* Secondary */}
+      <NeighborhoodDropdown groups={neighborhoodsByProvince} state={neighborhoodFilter} onChange={setNeighborhoodFilter} compact />
       <MultiSelectChip label="Amb." keys={ROOMS_KEYS} state={roomsFilter} onChange={setRoomsFilter} />
       <MultiSelectChip label="Dorm." keys={BEDROOMS_KEYS} state={bedroomsFilter} onChange={setBedroomsFilter} />
       <MultiSelectChip label="Baños" keys={BATHROOMS_KEYS} state={bathroomsFilter} onChange={setBathroomsFilter} />
       <MultiSelectChip label="Cocheras" keys={PARKING_KEYS} state={parkingFilter} onChange={setParkingFilter} />
       <MultiSelectChip label="Disp." keys={DISPOSITION_KEYS} state={dispositionFilter} onChange={setDispositionFilter} />
       <MultiSelectChip label="Orient." keys={ORIENTATION_KEYS} state={orientationFilter} onChange={setOrientationFilter} />
-      <ConditionChip label="Estado" tiers={CONDITION_TIERS} selected={conditionFilter} onChange={setConditionFilter} totalTiers={CONDITION_TIERS.length} />
-      <NeighborhoodDropdown groups={neighborhoodsByProvince} state={neighborhoodFilter} onChange={setNeighborhoodFilter} compact />
       {rangesInitialized && (
         <>
-          <RangeChip label="Precio USD" min={dataRanges.priceMin} max={dataRanges.priceMax} value={priceRange} onChange={setPriceRange} step={5000} formatValue={formatPrice} cappedMax />
-          <RangeChip label="Sup. total" min={dataRanges.surfaceMin} max={dataRanges.surfaceMax} value={surfaceRange} onChange={setSurfaceRange} step={5} unit=" m²" cappedMax />
-          <RangeChip label="Sup. cub." min={dataRanges.surfaceCoveredMin} max={dataRanges.surfaceCoveredMax} value={surfaceCoveredRange} onChange={setSurfaceCoveredRange} step={5} unit=" m²" cappedMax />
           <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
           <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
         </>
       )}
+      <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
       <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} />
     </div>
   );

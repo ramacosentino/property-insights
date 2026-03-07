@@ -298,4 +298,142 @@ export function SelectChip({ label, value, onChange, options, defaultValue = "al
   );
 }
 
+/* ─── Neighborhood chip (compact popover with search + groups) ─── */
+
+import { Input } from "@/components/ui/input";
+
+interface NeighborhoodChipGroup {
+  province: string;
+  totalCount: number;
+  neighborhoods: { value: string; label: string; count: number }[];
+}
+
+interface NeighborhoodChipProps {
+  label?: string;
+  groups: NeighborhoodChipGroup[];
+  state: FilterState;
+  onChange: (s: FilterState) => void;
+}
+
+export function NeighborhoodChip({ label = "Barrios", groups, state, onChange }: NeighborhoodChipProps) {
+  const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const count = state.included.size + state.excluded.size;
+
+  const handleClick = (value: string) => {
+    const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
+    if (next.included.has(value)) { next.included.delete(value); next.excluded.add(value); }
+    else if (next.excluded.has(value)) { next.excluded.delete(value); }
+    else { next.included.add(value); }
+    onChange(next);
+  };
+
+  const handleProvinceToggle = (group: NeighborhoodChipGroup) => {
+    const allValues = group.neighborhoods.map((n) => n.value);
+    const allIncluded = allValues.every((v) => state.included.has(v));
+    const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
+    if (allIncluded) {
+      allValues.forEach((v) => next.included.delete(v));
+    } else {
+      allValues.forEach((v) => { next.excluded.delete(v); next.included.add(v); });
+    }
+    onChange(next);
+  };
+
+  const filteredGroups = groups
+    .map((g) => ({
+      ...g,
+      neighborhoods: query
+        ? g.neighborhoods.filter((n) => n.value.toLowerCase().includes(query.toLowerCase()) || g.province.toLowerCase().includes(query.toLowerCase()))
+        : g.neighborhoods,
+    }))
+    .filter((g) => g.neighborhoods.length > 0);
+
+  return (
+    <ChipShell
+      label={label}
+      badge={count > 0 ? String(count) : undefined}
+      isActive={count > 0}
+      onClear={() => onChange(createFilterState())}
+    >
+      <div className="w-[280px]">
+        <Input
+          placeholder="Buscar barrio..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="h-8 text-[11px] bg-secondary border-border rounded-full mb-2"
+          autoFocus
+        />
+        {count > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2 max-h-16 overflow-y-auto">
+            {Array.from(state.included).map((v) => (
+              <span key={v} onClick={() => handleClick(v)} className="cursor-pointer px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/20 text-primary border border-primary/30">
+                {v} ×
+              </span>
+            ))}
+            {Array.from(state.excluded).map((v) => (
+              <span key={v} onClick={() => handleClick(v)} className="cursor-pointer px-2 py-0.5 rounded-full text-[10px] font-medium bg-destructive/10 text-destructive border border-destructive/30 line-through">
+                ✕ {v} ×
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="overflow-y-auto max-h-52">
+          {filteredGroups.map((group) => {
+            const allIncluded = group.neighborhoods.every((n) => state.included.has(n.value));
+            const isCollapsed = collapsed.has(group.province) && !query;
+            return (
+              <div key={group.province}>
+                <div className="flex items-center border-b border-border/50">
+                  <button
+                    onClick={() => {
+                      const next = new Set(collapsed);
+                      if (next.has(group.province)) next.delete(group.province); else next.add(group.province);
+                      setCollapsed(next);
+                    }}
+                    className="px-1.5 py-1 text-[10px] text-muted-foreground hover:text-foreground"
+                  >
+                    <ChevronDown className={`h-3 w-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`} />
+                  </button>
+                  <button
+                    onClick={() => handleProvinceToggle(group)}
+                    className={`flex-1 text-left py-1 pr-2 text-[11px] font-semibold flex items-center justify-between ${
+                      allIncluded ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <span>{group.province} ({group.totalCount})</span>
+                    {allIncluded && <span className="text-primary text-[9px]">✓</span>}
+                  </button>
+                </div>
+                {!isCollapsed && group.neighborhoods.map((opt) => {
+                  const isIn = state.included.has(opt.value);
+                  const isEx = state.excluded.has(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleClick(opt.value)}
+                      className={`w-full text-left pl-5 pr-2 py-0.5 text-[10px] transition-colors flex items-center justify-between ${
+                        isIn ? "bg-primary/5 text-primary"
+                        : isEx ? "bg-destructive/5 text-destructive line-through"
+                        : "text-foreground hover:bg-secondary/50"
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {isIn && <span className="text-primary">✓</span>}
+                      {isEx && <span className="text-destructive">✕</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+          {filteredGroups.length === 0 && (
+            <p className="text-[10px] text-muted-foreground text-center py-2">Sin resultados</p>
+          )}
+        </div>
+      </div>
+    </ChipShell>
+  );
+}
+
 export default ChipShell;
