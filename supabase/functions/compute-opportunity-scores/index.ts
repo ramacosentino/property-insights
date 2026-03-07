@@ -294,44 +294,34 @@ Deno.serve(async (req) => {
     const totalScores = computeScores(allRows, "total");
     const coveredScores = computeScores(allRows, "covered");
 
-    // Build SQL for batch update using a CTE
-    const allUpdates = allRows.map((p) => ({
-      id: p.id,
-      ost: totalScores.get(p.id)?.score ?? 0,
-      osc: coveredScores.get(p.id)?.score ?? 0,
-      iot: totalScores.get(p.id)?.isOutlier ?? false,
-      ioc: coveredScores.get(p.id)?.isOutlier ?? false,
-    }));
-
-    // Update in batches using upsert-like pattern
+    // Bulk update via RPC in batches of 2000
     let updated = 0;
-    const batchSize = 500;
+    const batchSize = 2000;
 
-    for (let i = 0; i < allUpdates.length; i += batchSize) {
-      const batch = allUpdates.slice(i, i + batchSize);
+    for (let i = 0; i < allRows.length; i += batchSize) {
+      const batch = allRows.slice(i, i + batchSize);
+      const ids = batch.map((p) => p.id);
+      const scoreTotal = ids.map((id) => totalScores.get(id)?.score ?? 0);
+      const scoreCovered = ids.map((id) => coveredScores.get(id)?.score ?? 0);
+      const outlierTotal = ids.map((id) => totalScores.get(id)?.isOutlier ?? false);
+      const outlierCovered = ids.map((id) => coveredScores.get(id)?.isOutlier ?? false);
 
-      // Build values for a raw SQL update via RPC
-      // Since we can't do raw SQL, use parallel promises with eq filters
-      const promises = batch.map((u) =>
-        supabase
-          .from("properties")
-          .update({
-            opportunity_score_total: u.ost,
-            opportunity_score_covered: u.osc,
-            is_outlier_total: u.iot,
-            is_outlier_covered: u.ioc,
-          })
-          .eq("id", u.id)
-      );
+      const { data, error } = await supabase.rpc("bulk_update_opportunity_scores", {
+        p_ids: ids,
+        p_score_total: scoreTotal,
+        p_score_covered: scoreCovered,
+        p_outlier_total: outlierTotal,
+        p_outlier_covered: outlierCovered,
+      });
 
-      const results = await Promise.all(promises);
-      const errors = results.filter((r) => r.error);
-      if (errors.length > 0) {
-        console.error(`Batch errors: ${errors.length}/${batch.length}`);
+      if (error) {
+        console.error(`Batch RPC error:`, error.message);
+      } else {
+        console.log(`Batch updated: ${data} rows`);
       }
 
       updated += batch.length;
-      console.log(`Updated ${updated}/${allUpdates.length}...`);
+      console.log(`Processed ${updated}/${allRows.length}...`);
     }
 
     console.log(`Done. Updated ${updated} properties.`);
