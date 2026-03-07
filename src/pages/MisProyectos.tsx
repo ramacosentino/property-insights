@@ -311,7 +311,7 @@ const MisProyectos = () => {
                     onAnalyze={handleAnalyze}
                     isAnalyzing={analyzingIds.has(p.id)}
                     allProperties={properties}
-                    neighborhoodStats={data?.neighborhoodStats ?? new Map()}
+                    neighborhoodStats={new Map()}
                     onDiscard={handleDiscard}
                     onRestore={handleRestore}
                     isDiscarded={tab === "discarded"}
