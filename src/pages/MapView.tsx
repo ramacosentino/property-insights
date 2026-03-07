@@ -1439,9 +1439,8 @@ const MapView = () => {
           <RangeChip label="Antigüedad" min={dataRanges.ageMin} max={dataRanges.ageMax} value={ageRange} onChange={setAgeRange} step={1} unit=" años" cappedMax />
           <RangeChip label="Expensas" min={dataRanges.expensesMin} max={dataRanges.expensesMax} value={expensesRange} onChange={setExpensesRange} step={5000} formatValue={formatPrice} cappedMax />
         </>
-      )
-        </>
       )}
+      <SelectChip label="Importado" value={importDateFilter} onChange={setImportDateFilter} options={IMPORT_DATE_OPTIONS} />
       <PoiFilter state={poiFilter} onChange={setPoiFilter} mapCenter={mapCenter} />
     </div>
   );
