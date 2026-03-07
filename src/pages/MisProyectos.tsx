@@ -35,24 +35,26 @@ const MisProyectos = () => {
 
     supabase
       .from("user_property_analysis")
-      .select("property_id, oportunidad_neta, valor_potencial_median_m2")
+      .select("property_id, score_multiplicador, informe_breve, highlights, lowlights, estado_general, valor_potencial_m2, valor_potencial_total, valor_potencial_median_m2, comparables_count, oportunidad_ajustada, oportunidad_neta")
       .eq("user_id", user.id)
       .then(({ data: analyses }) => {
         const map: Record<string, UserAnalysis> = {};
         (analyses ?? []).forEach((a: any) => {
-          // Find the property to merge shared analysis from properties table
+          // Find the property to merge: prefer user_property_analysis data, fallback to properties table
           const prop = properties.find(p => p.id === a.property_id);
+          const hasUpaHighlights = a.highlights && a.highlights.length > 0;
+          const hasUpaLowlights = a.lowlights && a.lowlights.length > 0;
           map[a.property_id] = {
-            score_multiplicador: prop?.score_multiplicador ?? null,
-            informe_breve: prop?.informe_breve ?? null,
-            highlights: prop?.highlights ?? null,
-            lowlights: prop?.lowlights ?? null,
-            estado_general: prop?.estado_general ?? null,
-            valor_potencial_m2: prop?.valor_potencial_m2 ?? null,
-            valor_potencial_total: prop?.valor_potencial_total ?? null,
+            score_multiplicador: a.score_multiplicador ?? prop?.score_multiplicador ?? null,
+            informe_breve: a.informe_breve || prop?.informe_breve || null,
+            highlights: hasUpaHighlights ? a.highlights : (prop?.highlights ?? null),
+            lowlights: hasUpaLowlights ? a.lowlights : (prop?.lowlights ?? null),
+            estado_general: a.estado_general || prop?.estado_general || null,
+            valor_potencial_m2: a.valor_potencial_m2 ?? prop?.valor_potencial_m2 ?? null,
+            valor_potencial_total: a.valor_potencial_total ?? prop?.valor_potencial_total ?? null,
             valor_potencial_median_m2: a.valor_potencial_median_m2 ?? null,
-            comparables_count: prop?.comparables_count ?? null,
-            oportunidad_ajustada: prop?.oportunidad_ajustada ?? null,
+            comparables_count: a.comparables_count ?? prop?.comparables_count ?? null,
+            oportunidad_ajustada: a.oportunidad_ajustada ?? prop?.oportunidad_ajustada ?? null,
             oportunidad_neta: a.oportunidad_neta,
           };
         });
