@@ -294,40 +294,34 @@ Deno.serve(async (req) => {
     const totalScores = computeScores(allRows, "total");
     const coveredScores = computeScores(allRows, "covered");
 
-    // Update in batches
+    // Bulk update via RPC in batches of 2000
     let updated = 0;
-    const batchSize = 200;
-    const ids = allRows.map((p) => p.id);
+    const batchSize = 2000;
 
-    for (let i = 0; i < ids.length; i += batchSize) {
-      const batch = ids.slice(i, i + batchSize);
-      const updates = batch.map((id) => ({
-        id,
-        opportunity_score_total: totalScores.get(id)?.score ?? 0,
-        opportunity_score_covered: coveredScores.get(id)?.score ?? 0,
-        is_outlier_total: totalScores.get(id)?.isOutlier ?? false,
-        is_outlier_covered: coveredScores.get(id)?.isOutlier ?? false,
-      }));
+    for (let i = 0; i < allRows.length; i += batchSize) {
+      const batch = allRows.slice(i, i + batchSize);
+      const ids = batch.map((p) => p.id);
+      const scoreTotal = ids.map((id) => totalScores.get(id)?.score ?? 0);
+      const scoreCovered = ids.map((id) => coveredScores.get(id)?.score ?? 0);
+      const outlierTotal = ids.map((id) => totalScores.get(id)?.isOutlier ?? false);
+      const outlierCovered = ids.map((id) => coveredScores.get(id)?.isOutlier ?? false);
 
-      // Upsert each row (supabase doesn't support bulk update by different ids easily)
-      for (const upd of updates) {
-        const { error } = await supabase
-          .from("properties")
-          .update({
-            opportunity_score_total: upd.opportunity_score_total,
-            opportunity_score_covered: upd.opportunity_score_covered,
-            is_outlier_total: upd.is_outlier_total,
-            is_outlier_covered: upd.is_outlier_covered,
-          })
-          .eq("id", upd.id);
+      const { data, error } = await supabase.rpc("bulk_update_opportunity_scores", {
+        p_ids: ids,
+        p_score_total: scoreTotal,
+        p_score_covered: scoreCovered,
+        p_outlier_total: outlierTotal,
+        p_outlier_covered: outlierCovered,
+      });
 
-        if (error) {
-          console.error(`Error updating ${upd.id}:`, error.message);
-        }
+      if (error) {
+        console.error(`Batch RPC error:`, error.message);
+      } else {
+        console.log(`Batch updated: ${data} rows`);
       }
 
       updated += batch.length;
-      console.log(`Updated ${updated}/${ids.length}...`);
+      console.log(`Processed ${updated}/${allRows.length}...`);
     }
 
     console.log(`Done. Updated ${updated} properties.`);
