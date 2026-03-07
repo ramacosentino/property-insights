@@ -1,7 +1,6 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
-import { computeSegmentedFactorPremiums, getPropertyFactorAdjustment } from "@/lib/priceFactors";
 import { useSurfacePreference, SurfaceType } from "@/contexts/SurfacePreferenceContext";
 import { useMemo } from "react";
 
@@ -23,7 +22,6 @@ interface DBPropertyRow {
   address: string | null;
   street: string | null;
   expenses: number | null;
-  description: string | null;
   surface_total: number | null;
   surface_covered: number | null;
   rooms: number | null;
@@ -39,7 +37,6 @@ interface DBPropertyRow {
   price_per_m2_covered: number | null;
   created_at: string;
   score_multiplicador: number | null;
-  informe_breve: string | null;
   highlights: string[] | null;
   lowlights: string[] | null;
   estado_general: string | null;
@@ -48,6 +45,11 @@ interface DBPropertyRow {
   comparables_count: number | null;
   oportunidad_ajustada: number | null;
   oportunidad_neta: number | null;
+  // Pre-computed scores
+  opportunity_score_total: number | null;
+  opportunity_score_covered: number | null;
+  is_outlier_total: boolean | null;
+  is_outlier_covered: boolean | null;
 }
 
 function median(values: number[]): number {
@@ -55,15 +57,6 @@ function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
-
-function computeIQRBounds(values: number[], multiplier = 4): { lower: number; upper: number } {
-  if (values.length < 3) return { lower: -Infinity, upper: Infinity };
-  const sorted = [...values].sort((a, b) => a - b);
-  const q1 = sorted[Math.floor(sorted.length * 0.25)];
-  const q3 = sorted[Math.floor(sorted.length * 0.75)];
-  const iqr = q3 - q1;
-  return { lower: q1 - multiplier * iqr, upper: q3 + multiplier * iqr };
 }
 
 /** Get the relevant USD/m² value for a property based on surface preference */
@@ -77,96 +70,77 @@ function getM2Value(
   return p.pricePerM2Total;
 }
 
-/** Maps DB rows to raw property objects (no scoring) */
-function mapRows(rows: DBPropertyRow[]) {
-  return rows
-    .filter((r) => r.price && r.price > 0)
-    .map((r) => ({
-      id: r.id,
-      externalId: r.external_id,
-      propertyType: r.property_type,
-      title: r.title,
-      url: r.url || "",
-      price: r.price!,
-      currency: r.currency || "USD",
-      location: r.location || "",
-      neighborhood: r.norm_neighborhood || r.neighborhood || "Sin barrio",
-      city: r.norm_locality || r.norm_province || r.city || "Sin ciudad",
-      normNeighborhood: r.norm_neighborhood,
-      normLocality: r.norm_locality,
-      normProvince: r.norm_province,
-      scrapedAt: r.scraped_at || "",
-      createdAt: r.created_at,
-      address: r.address,
-      street: r.street,
-      expenses: r.expenses,
-      description: r.description,
-      surfaceTotal: r.surface_total,
-      surfaceCovered: r.surface_covered,
-      rooms: r.rooms,
-      bedrooms: r.bedrooms,
-      bathrooms: r.bathrooms,
-      toilettes: r.toilettes,
-      parking: r.parking,
-      ageYears: r.age_years,
-      disposition: r.disposition,
-      orientation: r.orientation,
-      luminosity: r.luminosity,
-      pricePerM2Total: r.price_per_m2_total,
-      pricePerM2Covered: r.price_per_m2_covered,
-      score_multiplicador: r.score_multiplicador,
-      informe_breve: r.informe_breve,
-      highlights: r.highlights,
-      lowlights: r.lowlights,
-      estado_general: r.estado_general,
-      valor_potencial_m2: r.valor_potencial_m2,
-      valor_potencial_total: r.valor_potencial_total,
-      comparables_count: r.comparables_count,
-      oportunidad_ajustada: r.oportunidad_ajustada,
-      oportunidad_neta: r.oportunidad_neta,
-    }));
-}
-
-type RawProperty = ReturnType<typeof mapRows>[number];
-
-function computeStats(rawProperties: RawProperty[], surfaceType: SurfaceType): {
+/** Maps DB rows to Property objects using pre-computed scores */
+function mapRowsWithScores(rows: DBPropertyRow[], surfaceType: SurfaceType): {
   properties: Property[];
   neighborhoodStats: Map<string, NeighborhoodStats>;
 } {
-  // --- IQR outlier detection per neighborhood + propertyType ---
-  const groupKey = (p: { neighborhood: string; propertyType: string | null }) =>
-    `${p.neighborhood}|||${p.propertyType || ""}`;
+  const mapped = rows
+    .filter((r) => r.price && r.price > 0)
+    .map((r) => {
+      const isOutlier = surfaceType === "covered"
+        ? (r.is_outlier_covered ?? false)
+        : (r.is_outlier_total ?? false);
 
-  const groupValues = new Map<string, number[]>();
-  for (const p of rawProperties) {
-    const m2 = getM2Value(p, surfaceType);
-    if (!m2 || m2 <= 0) continue;
-    const key = groupKey(p);
-    if (!groupValues.has(key)) groupValues.set(key, []);
-    groupValues.get(key)!.push(m2);
-  }
+      const opportunityScore = surfaceType === "covered"
+        ? (r.opportunity_score_covered ?? 0)
+        : (r.opportunity_score_total ?? 0);
 
-  const groupBounds = new Map<string, { lower: number; upper: number }>();
-  for (const [key, values] of groupValues) {
-    groupBounds.set(key, computeIQRBounds(values, 4));
-  }
+      return {
+        id: r.id,
+        externalId: r.external_id,
+        propertyType: r.property_type,
+        title: r.title,
+        url: r.url || "",
+        price: r.price!,
+        currency: r.currency || "USD",
+        location: r.location || "",
+        neighborhood: r.norm_neighborhood || r.neighborhood || "Sin barrio",
+        city: r.norm_locality || r.norm_province || r.city || "Sin ciudad",
+        normNeighborhood: r.norm_neighborhood,
+        normLocality: r.norm_locality,
+        normProvince: r.norm_province,
+        scrapedAt: r.scraped_at || "",
+        createdAt: r.created_at,
+        address: r.address,
+        street: r.street,
+        expenses: r.expenses,
+        description: null as string | null,
+        surfaceTotal: r.surface_total,
+        surfaceCovered: r.surface_covered,
+        rooms: r.rooms,
+        bedrooms: r.bedrooms,
+        bathrooms: r.bathrooms,
+        toilettes: r.toilettes,
+        parking: r.parking,
+        ageYears: r.age_years,
+        disposition: r.disposition,
+        orientation: r.orientation,
+        luminosity: r.luminosity,
+        pricePerM2Total: r.price_per_m2_total,
+        pricePerM2Covered: r.price_per_m2_covered,
+        score_multiplicador: r.score_multiplicador,
+        informe_breve: null as string | null,
+        highlights: r.highlights,
+        lowlights: r.lowlights,
+        estado_general: r.estado_general,
+        valor_potencial_m2: r.valor_potencial_m2,
+        valor_potencial_total: r.valor_potencial_total,
+        comparables_count: r.comparables_count,
+        oportunidad_ajustada: r.oportunidad_ajustada,
+        oportunidad_neta: r.oportunidad_neta,
+        opportunityScore: isOutlier ? 0 : opportunityScore,
+        isTopOpportunity: false, // computed below
+        isNeighborhoodDeal: !isOutlier && opportunityScore > 40,
+        _isOutlier: isOutlier,
+      };
+    });
 
-  const isOutlier = (p: RawProperty): boolean => {
-    const m2 = getM2Value(p, surfaceType);
-    if (!m2 || m2 <= 0) return false;
-    const bounds = groupBounds.get(groupKey(p));
-    if (!bounds) return false;
-    return m2 < bounds.lower || m2 > bounds.upper;
-  };
-
-  const outlierIds = new Set(rawProperties.filter(isOutlier).map((p) => p.id));
-
-  // --- Neighborhood stats (excluding outliers) ---
+  // Compute neighborhood stats (lightweight — just medians from pre-filtered data)
   const neighborhoodMap = new Map<string, number[]>();
-  for (const p of rawProperties) {
+  for (const p of mapped) {
     const m2 = getM2Value(p, surfaceType);
-    if (!m2 || m2 <= 0) continue;
-    if (outlierIds.has(p.id)) continue;
+    if (!m2 || m2 <= 0 || p._isOutlier) continue;
     if (!neighborhoodMap.has(p.neighborhood)) neighborhoodMap.set(p.neighborhood, []);
     neighborhoodMap.get(p.neighborhood)!.push(m2);
   }
@@ -174,7 +148,7 @@ function computeStats(rawProperties: RawProperty[], surfaceType: SurfaceType): {
   const neighborhoodStats = new Map<string, NeighborhoodStats>();
   for (const [name, values] of neighborhoodMap) {
     const sorted = [...values].sort((a, b) => a - b);
-    const sample = rawProperties.find((p) => p.neighborhood === name);
+    const sample = mapped.find((p) => p.neighborhood === name);
     neighborhoodStats.set(name, {
       name,
       city: sample?.city || "",
@@ -186,59 +160,30 @@ function computeStats(rawProperties: RawProperty[], surfaceType: SurfaceType): {
     });
   }
 
-  // --- Neighborhood + type median (excluding outliers) for opportunity score ---
-  const groupMedians = new Map<string, number>();
-  for (const [key, values] of groupValues) {
-    const bounds = groupBounds.get(key)!;
-    const filtered = values.filter((v) => v >= bounds.lower && v <= bounds.upper);
-    if (filtered.length > 0) groupMedians.set(key, median(filtered));
-  }
-
-  // --- Factor premiums for adjusted opportunity score ---
-  const nonOutlierProps = rawProperties.filter((p) => !outlierIds.has(p.id)) as unknown as Property[];
-  const factorPremiums = computeSegmentedFactorPremiums(nonOutlierProps);
-
-  // --- Top 10% by price (excluding outliers) ---
-  const withPrice = rawProperties.filter((p) => {
+  // Top 10% by price (excluding outliers)
+  const withPrice = mapped.filter((p) => {
     const m2 = getM2Value(p, surfaceType);
-    return m2 && m2 > 0 && !outlierIds.has(p.id);
+    return m2 && m2 > 0 && !p._isOutlier;
   });
-  const sortedByPrice = [...withPrice].sort((a, b) => 
-    (getM2Value(a, surfaceType) ?? 0) - (getM2Value(b, surfaceType) ?? 0)
+  const sortedByPrice = [...withPrice].sort(
+    (a, b) => (getM2Value(a, surfaceType) ?? 0) - (getM2Value(b, surfaceType) ?? 0)
   );
   const top10Percent = Math.ceil(sortedByPrice.length * 0.1);
   const topIds = new Set(sortedByPrice.slice(0, top10Percent).map((p) => p.id));
 
-  const properties: Property[] = rawProperties.map((p) => {
-    const m2 = getM2Value(p, surfaceType);
-    const hasPriceData = m2 != null && m2 > 0;
-    const isOlr = outlierIds.has(p.id);
-    const canScore = hasPriceData && !isOlr;
-
-    let opportunityScore = 0;
-    if (canScore) {
-      const key = groupKey(p);
-      const typeMedian = groupMedians.get(key);
-      const baseMedian = typeMedian ?? neighborhoodStats.get(p.neighborhood)?.medianPricePerSqm ?? 0;
-      if (baseMedian > 0) {
-        const factorAdj = getPropertyFactorAdjustment(p as unknown as Property, factorPremiums);
-        const expectedPrice = baseMedian * (1 + factorAdj);
-        opportunityScore = ((expectedPrice - m2!) / expectedPrice) * 100;
-      }
-    }
-
+  // Finalize properties (strip internal _isOutlier)
+  const properties: Property[] = mapped.map((p) => {
+    const { _isOutlier, ...rest } = p;
     return {
-      ...p,
-      opportunityScore,
-      isTopOpportunity: canScore && topIds.has(p.id),
-      isNeighborhoodDeal: canScore && opportunityScore > 40,
+      ...rest,
+      isTopOpportunity: !_isOutlier && topIds.has(p.id),
     };
   });
 
   return { properties, neighborhoodStats };
 }
 
-// Only select columns actually used by the frontend — skip heavy text fields
+// Only select columns actually used by the frontend
 const PROPERTY_SELECT = [
   "id", "external_id", "property_type", "title", "url", "price", "currency",
   "location", "neighborhood", "city", "norm_neighborhood", "norm_locality", "norm_province",
@@ -249,9 +194,12 @@ const PROPERTY_SELECT = [
   "score_multiplicador", "highlights", "lowlights", "estado_general",
   "valor_potencial_m2", "valor_potencial_total", "comparables_count",
   "oportunidad_ajustada", "oportunidad_neta",
+  // Pre-computed scores
+  "opportunity_score_total", "opportunity_score_covered",
+  "is_outlier_total", "is_outlier_covered",
 ].join(",");
 
-async function fetchAllProperties(): Promise<RawProperty[]> {
+async function fetchAllProperties(): Promise<DBPropertyRow[]> {
   const allRows: DBPropertyRow[] = [];
   const pageSize = 1000;
   let from = 0;
@@ -274,12 +222,12 @@ async function fetchAllProperties(): Promise<RawProperty[]> {
     from += pageSize;
   }
 
-  return mapRows(allRows);
+  return allRows;
 }
 
 export function useProperties() {
   const { surfaceType } = useSurfacePreference();
-  
+
   // Fetch raw rows once — surfaceType does NOT trigger refetch
   const rawQuery = useQuery({
     queryKey: ["properties-raw"],
@@ -287,10 +235,10 @@ export function useProperties() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Compute stats from cached rows when surfaceType changes (no refetch)
+  // Map rows with pre-computed scores based on surfaceType (no heavy computation)
   const computed = useMemo(() => {
     if (!rawQuery.data) return undefined;
-    return computeStats(rawQuery.data, surfaceType);
+    return mapRowsWithScores(rawQuery.data, surfaceType);
   }, [rawQuery.data, surfaceType]);
 
   return {

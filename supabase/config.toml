@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.run-search]
 verify_jwt = false
+
+[functions.compute-opportunity-scores]
+verify_jwt = false

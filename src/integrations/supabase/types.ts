@@ -232,6 +232,8 @@ export type Database = {
           highlights: string[] | null
           id: string
           informe_breve: string | null
+          is_outlier_covered: boolean | null
+          is_outlier_total: boolean | null
           last_checked_at: string | null
           location: string | null
           lowlights: string[] | null
@@ -242,6 +244,8 @@ export type Database = {
           norm_province: string | null
           oportunidad_ajustada: number | null
           oportunidad_neta: number | null
+          opportunity_score_covered: number | null
+          opportunity_score_total: number | null
           orientation: string | null
           parking: number | null
           price: number | null
@@ -283,6 +287,8 @@ export type Database = {
           highlights?: string[] | null
           id?: string
           informe_breve?: string | null
+          is_outlier_covered?: boolean | null
+          is_outlier_total?: boolean | null
           last_checked_at?: string | null
           location?: string | null
           lowlights?: string[] | null
@@ -293,6 +299,8 @@ export type Database = {
           norm_province?: string | null
           oportunidad_ajustada?: number | null
           oportunidad_neta?: number | null
+          opportunity_score_covered?: number | null
+          opportunity_score_total?: number | null
           orientation?: string | null
           parking?: number | null
           price?: number | null
@@ -334,6 +342,8 @@ export type Database = {
           highlights?: string[] | null
           id?: string
           informe_breve?: string | null
+          is_outlier_covered?: boolean | null
+          is_outlier_total?: boolean | null
           last_checked_at?: string | null
           location?: string | null
           lowlights?: string[] | null
@@ -344,6 +354,8 @@ export type Database = {
           norm_province?: string | null
           oportunidad_ajustada?: number | null
           oportunidad_neta?: number | null
+          opportunity_score_covered?: number | null
+          opportunity_score_total?: number | null
           orientation?: string | null
           parking?: number | null
           price?: number | null
