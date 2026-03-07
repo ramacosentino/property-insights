@@ -294,40 +294,44 @@ Deno.serve(async (req) => {
     const totalScores = computeScores(allRows, "total");
     const coveredScores = computeScores(allRows, "covered");
 
-    // Update in batches
+    // Build SQL for batch update using a CTE
+    const allUpdates = allRows.map((p) => ({
+      id: p.id,
+      ost: totalScores.get(p.id)?.score ?? 0,
+      osc: coveredScores.get(p.id)?.score ?? 0,
+      iot: totalScores.get(p.id)?.isOutlier ?? false,
+      ioc: coveredScores.get(p.id)?.isOutlier ?? false,
+    }));
+
+    // Update in batches using upsert-like pattern
     let updated = 0;
-    const batchSize = 200;
-    const ids = allRows.map((p) => p.id);
+    const batchSize = 500;
 
-    for (let i = 0; i < ids.length; i += batchSize) {
-      const batch = ids.slice(i, i + batchSize);
-      const updates = batch.map((id) => ({
-        id,
-        opportunity_score_total: totalScores.get(id)?.score ?? 0,
-        opportunity_score_covered: coveredScores.get(id)?.score ?? 0,
-        is_outlier_total: totalScores.get(id)?.isOutlier ?? false,
-        is_outlier_covered: coveredScores.get(id)?.isOutlier ?? false,
-      }));
+    for (let i = 0; i < allUpdates.length; i += batchSize) {
+      const batch = allUpdates.slice(i, i + batchSize);
 
-      // Upsert each row (supabase doesn't support bulk update by different ids easily)
-      for (const upd of updates) {
-        const { error } = await supabase
+      // Build values for a raw SQL update via RPC
+      // Since we can't do raw SQL, use parallel promises with eq filters
+      const promises = batch.map((u) =>
+        supabase
           .from("properties")
           .update({
-            opportunity_score_total: upd.opportunity_score_total,
-            opportunity_score_covered: upd.opportunity_score_covered,
-            is_outlier_total: upd.is_outlier_total,
-            is_outlier_covered: upd.is_outlier_covered,
+            opportunity_score_total: u.ost,
+            opportunity_score_covered: u.osc,
+            is_outlier_total: u.iot,
+            is_outlier_covered: u.ioc,
           })
-          .eq("id", upd.id);
+          .eq("id", u.id)
+      );
 
-        if (error) {
-          console.error(`Error updating ${upd.id}:`, error.message);
-        }
+      const results = await Promise.all(promises);
+      const errors = results.filter((r) => r.error);
+      if (errors.length > 0) {
+        console.error(`Batch errors: ${errors.length}/${batch.length}`);
       }
 
       updated += batch.length;
-      console.log(`Updated ${updated}/${ids.length}...`);
+      console.log(`Updated ${updated}/${allUpdates.length}...`);
     }
 
     console.log(`Done. Updated ${updated} properties.`);
