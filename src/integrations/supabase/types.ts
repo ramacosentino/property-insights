@@ -710,6 +710,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bulk_update_opportunity_scores: {
+        Args: {
+          p_ids: string[]
+          p_outlier_covered: boolean[]
+          p_outlier_total: boolean[]
+          p_score_covered: number[]
+          p_score_total: number[]
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
