@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
 import { useSurfacePreference, SurfaceType } from "@/contexts/SurfacePreferenceContext";
@@ -194,29 +194,39 @@ const PROPERTY_SELECT = [
   "score_multiplicador", "highlights", "lowlights", "estado_general",
   "valor_potencial_m2", "valor_potencial_total", "comparables_count",
   "oportunidad_ajustada", "oportunidad_neta",
-  // Pre-computed scores
   "opportunity_score_total", "opportunity_score_covered",
   "is_outlier_total", "is_outlier_covered",
+  "updated_at", "status",
 ].join(",");
 
-async function fetchAllProperties(): Promise<DBPropertyRow[]> {
+// ─── Delta sync state (module-level singleton) ───────────────────
+let cachedRows: DBPropertyRow[] | null = null;
+let lastSyncTimestamp: string | null = null;
+
+async function fetchPaginated(
+  filter?: { updatedAfter?: string }
+): Promise<DBPropertyRow[]> {
   const allRows: DBPropertyRow[] = [];
   const pageSize = 1000;
   let from = 0;
   let hasMore = true;
 
   while (hasMore) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("properties")
       .select(PROPERTY_SELECT)
       .eq("status", "active")
       .range(from, from + pageSize - 1);
 
+    if (filter?.updatedAfter) {
+      query = query.gt("updated_at", filter.updatedAfter);
+    }
+
+    const { data, error } = await query;
     if (error) {
       console.error("Error fetching properties:", error);
       break;
     }
-
     if (data) allRows.push(...(data as unknown as DBPropertyRow[]));
     hasMore = (data?.length || 0) === pageSize;
     from += pageSize;
@@ -225,17 +235,100 @@ async function fetchAllProperties(): Promise<DBPropertyRow[]> {
   return allRows;
 }
 
+/**
+ * Fetches all properties on first call, then only changed rows on subsequent calls.
+ * Merges delta into cached data and removes properties no longer active.
+ */
+async function fetchWithDeltaSync(): Promise<DBPropertyRow[]> {
+  if (!cachedRows || !lastSyncTimestamp) {
+    // Full initial load
+    console.log("[properties] Full initial load...");
+    const rows = await fetchPaginated();
+    cachedRows = rows;
+    lastSyncTimestamp = rows.reduce(
+      (max, r) => ((r as any).updated_at > max ? (r as any).updated_at : max),
+      ""
+    );
+    console.log(`[properties] Loaded ${rows.length} properties`);
+    return cachedRows;
+  }
+
+  // Delta sync — only fetch rows updated since last sync
+  console.log(`[properties] Delta sync since ${lastSyncTimestamp}...`);
+  const delta = await fetchPaginated({ updatedAfter: lastSyncTimestamp });
+
+  if (delta.length === 0) {
+    console.log("[properties] No changes since last sync");
+    return cachedRows;
+  }
+
+  console.log(`[properties] ${delta.length} changed properties`);
+
+  // Build a map for fast merge
+  const rowMap = new Map(cachedRows.map((r) => [r.id, r]));
+
+  // Also check for removed properties (status changed to 'removed')
+  // by fetching recently updated non-active rows
+  const removedRows = await fetchRemovedSince(lastSyncTimestamp);
+  const removedIds = new Set(removedRows.map((r) => r.id));
+
+  // Apply delta
+  for (const row of delta) {
+    rowMap.set(row.id, row);
+  }
+
+  // Remove properties that are no longer active
+  for (const id of removedIds) {
+    rowMap.delete(id);
+  }
+
+  cachedRows = Array.from(rowMap.values());
+
+  // Update timestamp
+  const allTimestamps = delta.map((r) => (r as any).updated_at as string);
+  if (removedRows.length > 0) {
+    allTimestamps.push(...removedRows.map((r) => (r as any).updated_at as string));
+  }
+  const maxDelta = allTimestamps.reduce((max, t) => (t > max ? t : max), lastSyncTimestamp);
+  lastSyncTimestamp = maxDelta;
+
+  return cachedRows;
+}
+
+/** Fetch IDs of properties that were removed/deactivated since last sync */
+async function fetchRemovedSince(since: string): Promise<{ id: string; updated_at: string }[]> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("id, updated_at")
+    .neq("status", "active")
+    .gt("updated_at", since)
+    .limit(1000);
+
+  if (error) {
+    console.error("Error fetching removed properties:", error);
+    return [];
+  }
+  return (data as any[]) ?? [];
+}
+
+/** Reset cache — useful after manual data changes */
+export function resetPropertiesCache() {
+  cachedRows = null;
+  lastSyncTimestamp = null;
+}
+
 export function useProperties() {
   const { surfaceType } = useSurfacePreference();
+  const queryClient = useQueryClient();
 
-  // Fetch raw rows once — surfaceType does NOT trigger refetch
   const rawQuery = useQuery({
     queryKey: ["properties-raw"],
-    queryFn: fetchAllProperties,
+    queryFn: fetchWithDeltaSync,
     staleTime: 5 * 60 * 1000,
+    // On window refocus, only do delta sync (not full refetch)
+    refetchOnWindowFocus: true,
   });
 
-  // Map rows with pre-computed scores based on surfaceType (no heavy computation)
   const computed = useMemo(() => {
     if (!rawQuery.data) return undefined;
     return mapRowsWithScores(rawQuery.data, surfaceType);
@@ -247,5 +340,10 @@ export function useProperties() {
     error: rawQuery.error,
     isError: rawQuery.isError,
     refetch: rawQuery.refetch,
+    /** Force a full reload (clears cache) */
+    hardRefetch: () => {
+      resetPropertiesCache();
+      queryClient.invalidateQueries({ queryKey: ["properties-raw"] });
+    },
   };
 }
