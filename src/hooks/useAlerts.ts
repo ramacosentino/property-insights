@@ -53,7 +53,15 @@ export function useAlerts() {
       if (!user) throw new Error("No user");
       const { data, error } = await supabase
         .from("alerts")
-        .insert({ ...alert, user_id: user.id })
+        .insert({
+          user_id: user.id,
+          name: alert.name,
+          filters: alert.filters as any,
+          email_enabled: alert.email_enabled,
+          in_app_enabled: alert.in_app_enabled,
+          email_frequency: alert.email_frequency,
+          active: alert.active,
+        })
         .select()
         .single();
       if (error) throw error;
@@ -64,9 +72,11 @@ export function useAlerts() {
 
   const updateAlert = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Alert> & { id: string }) => {
+      const updatePayload: Record<string, any> = { ...updates, updated_at: new Date().toISOString() };
+      delete updatePayload.id;
       const { error } = await supabase
         .from("alerts")
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(updatePayload)
         .eq("id", id);
       if (error) throw error;
     },
