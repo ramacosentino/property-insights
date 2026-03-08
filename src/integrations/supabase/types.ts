@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          active: boolean
+          created_at: string
+          email_enabled: boolean
+          email_frequency: string
+          filters: Json
+          id: string
+          in_app_enabled: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          email_frequency?: string
+          filters?: Json
+          id?: string
+          in_app_enabled?: boolean
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          email_frequency?: string
+          filters?: Json
+          id?: string
+          in_app_enabled?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       geocoded_addresses: {
         Row: {
           address: string
@@ -169,6 +208,60 @@ export type Database = {
           year_month?: string
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          alert_id: string | null
+          created_at: string
+          id: string
+          message: string | null
+          metadata: Json | null
+          property_id: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          alert_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          property_id?: string | null
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          property_id?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

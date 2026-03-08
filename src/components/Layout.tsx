@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 import { useTour } from "@/hooks/useTour";
+import { useNotifications } from "@/hooks/useNotifications";
 import GuidedTour from "@/components/GuidedTour";
 import DiscoveryChecklist from "@/components/DiscoveryChecklist";
 
@@ -50,6 +51,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const { surfaceType, toggle: toggleSurface } = useSurfacePreference();
   const tour = useTour();
+  const { unreadCount } = useNotifications();
 
   // Track route-based checklist completions
   useEffect(() => {
@@ -67,8 +69,9 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0];
 
-  const getBadge = (badgeKey?: string) => {
-    if (badgeKey === "preselection" && preselectionCount > 0) return preselectionCount;
+  const getBadge = (item: typeof navItems[0]) => {
+    if ((item as any).badgeKey === "preselection" && preselectionCount > 0) return preselectionCount;
+    if (item.path === "/alertas" && unreadCount > 0) return unreadCount;
     return null;
   };
 
@@ -76,7 +79,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
   const renderNavItem = (item: typeof navItems[0], isCollapsed = false) => {
     const isActive = location.pathname === item.path;
-    const badge = getBadge((item as any).badgeKey);
+    const badge = getBadge(item);
     const isLocked = (item as any).premium && !isPremium && !isAdmin;
 
     const content = (
