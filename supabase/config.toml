@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.compute-opportunity-scores]
 verify_jwt = false
+
+[functions.evaluate-alerts]
+verify_jwt = false
