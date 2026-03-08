@@ -23,6 +23,7 @@ export type Database = {
           filters: Json
           id: string
           in_app_enabled: boolean
+          last_evaluated_at: string | null
           name: string
           updated_at: string
           user_id: string
@@ -35,6 +36,7 @@ export type Database = {
           filters?: Json
           id?: string
           in_app_enabled?: boolean
+          last_evaluated_at?: string | null
           name?: string
           updated_at?: string
           user_id: string
@@ -47,6 +49,7 @@ export type Database = {
           filters?: Json
           id?: string
           in_app_enabled?: boolean
+          last_evaluated_at?: string | null
           name?: string
           updated_at?: string
           user_id?: string
@@ -478,7 +481,9 @@ export type Database = {
           created_at: string
           discarded_at: string | null
           id: string
+          last_known_price: number | null
           notes: string | null
+          notified_removed: boolean
           property_id: string
           user_id: string
         }
@@ -486,7 +491,9 @@ export type Database = {
           created_at?: string
           discarded_at?: string | null
           id?: string
+          last_known_price?: number | null
           notes?: string | null
+          notified_removed?: boolean
           property_id: string
           user_id: string
         }
@@ -494,7 +501,9 @@ export type Database = {
           created_at?: string
           discarded_at?: string | null
           id?: string
+          last_known_price?: number | null
           notes?: string | null
+          notified_removed?: boolean
           property_id?: string
           user_id?: string
         }
