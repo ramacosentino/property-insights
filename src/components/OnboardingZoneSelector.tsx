@@ -213,7 +213,11 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
 
       const gbaCounts: Record<string, number> = {};
       gbaData.forEach((p: any) => {
-        const n = p.norm_locality!;
+        let n = p.norm_locality as string;
+        // Map aliases to canonical names
+        if (GBA_LOCALITY_ALIASES[n]) n = GBA_LOCALITY_ALIASES[n];
+        // Only include if it's a recognized locality
+        if (!VALID_GBA_LOCALITIES.has(n)) return;
         gbaCounts[n] = (gbaCounts[n] || 0) + 1;
       });
 
@@ -223,16 +227,13 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
 
       Object.entries(gbaCounts).forEach(([name, count]) => {
         const item: ZoneItem = { name, count, type: "locality" };
-        let placed = false;
         for (const [key, macro] of Object.entries(MACRO_ZONES)) {
           if (key === "caba") continue;
           if (macro.localities?.includes(name)) {
             gbaClassified[key]?.push(item);
-            placed = true;
             break;
           }
         }
-        if (!placed) gbaClassified.gba_norte.push(item);
       });
 
       for (const key of Object.keys(gbaClassified)) {
