@@ -66,11 +66,11 @@ const Alertas = () => {
 
   return (
     <Layout>
-      <div className="container px-6 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container px-4 sm:px-6 py-4 sm:py-8 max-w-4xl">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-1">Alertas</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-0.5">Alertas</h2>
+            <p className="text-sm text-muted-foreground">
               Configurá alertas y revisá tus notificaciones.
             </p>
           </div>
