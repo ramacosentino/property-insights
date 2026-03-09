@@ -8,7 +8,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
+import { usePreselection } from "@/hooks/usePreselection";
 import { useTour } from "@/hooks/useTour";
 import { useNotifications } from "@/hooks/useNotifications";
 import GuidedTour from "@/components/GuidedTour";
