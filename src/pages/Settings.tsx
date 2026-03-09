@@ -39,10 +39,10 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; class
 const DEFAULT_RENOVATION_COSTS = [
   { label: "Excelente (≥ 1.0)", minScore: 1.0, costPerM2: 0 },
   { label: "Buen estado (0.9 – 0.99)", minScore: 0.9, costPerM2: 100 },
-  { label: "Aceptable (0.8 – 0.89)", minScore: 0.8, costPerM2: 200 },
-  { label: "Necesita mejoras (0.7 – 0.79)", minScore: 0.7, costPerM2: 350 },
-  { label: "Refacción parcial (0.55 – 0.69)", minScore: 0.55, costPerM2: 500 },
-  { label: "Refacción completa (< 0.55)", minScore: 0, costPerM2: 700 },
+  { label: "Aceptable (0.8 – 0.89)", minScore: 0.8, costPerM2: 300 },
+  { label: "Necesita mejoras (0.7 – 0.79)", minScore: 0.7, costPerM2: 600 },
+  { label: "Refacción parcial (0.55 – 0.69)", minScore: 0.55, costPerM2: 1000 },
+  { label: "Refacción completa (< 0.55)", minScore: 0, costPerM2: 1500 },
 ];
 
 const STORAGE_KEY = "renovation_costs";

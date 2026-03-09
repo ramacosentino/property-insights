@@ -10,10 +10,10 @@ const corsHeaders = {
 function defaultRenovationCostPerM2(score: number): number {
   if (score >= 1.0) return 0;
   if (score >= 0.9) return 100;
-  if (score >= 0.8) return 200;
-  if (score >= 0.7) return 350;
-  if (score >= 0.55) return 500;
-  return 700;
+  if (score >= 0.8) return 300;
+  if (score >= 0.7) return 600;
+  if (score >= 0.55) return 1000;
+  return 1500;
 }
 
 /** Get renovation cost using user-configured costs or defaults */
