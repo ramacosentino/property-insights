@@ -74,16 +74,20 @@ const INVESTMENT_GOALS = [
 const ONBOARDING_PLANS = [
   {
     id: "free" as PlanId,
-    name: "Free",
+    name: "Gratuito",
     icon: Star,
     description: "Para explorar la plataforma",
+    priceMonthly: null,
+    priceYearly: null,
     highlights: ["5 análisis IA / mes", "3 búsquedas / mes", "1 alerta activa"],
   },
   {
     id: "pro" as PlanId,
     name: "Pro",
     icon: Zap,
-    description: "Para inversores activos",
+    description: "Ideal para buscar tu próxima propiedad",
+    priceMonthly: "$20.000",
+    priceYearly: "$200.000",
     highlights: ["50 análisis IA / mes", "30 búsquedas / mes", "Exportar datos"],
     popular: true,
   },
@@ -91,7 +95,9 @@ const ONBOARDING_PLANS = [
     id: "premium" as PlanId,
     name: "Premium",
     icon: Crown,
-    description: "Acceso total sin límites",
+    description: "Ideal si buscás una inversión",
+    priceMonthly: "$100.000",
+    priceYearly: "$1.000.000",
     highlights: ["Análisis ilimitados", "Tasación automática", "Inteligencia de precios"],
   },
 ];
@@ -406,6 +412,14 @@ const Onboarding = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm text-foreground">{plan.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
+                      {plan.priceMonthly ? (
+                        <div className="mt-1.5 flex items-baseline gap-2">
+                          <span className="text-sm font-semibold text-foreground">{plan.priceMonthly}<span className="text-xs font-normal text-muted-foreground">/mes</span></span>
+                          <span className="text-xs text-muted-foreground">o {plan.priceYearly}/año</span>
+                        </div>
+                      ) : (
+                        <p className="mt-1.5 text-sm font-semibold text-foreground">Gratis</p>
+                      )}
                       <ul className="mt-2 space-y-1">
                         {plan.highlights.map((h) => (
                           <li key={h} className="flex items-center gap-1.5 text-xs text-muted-foreground">
