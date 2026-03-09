@@ -156,7 +156,11 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
 
       const cabaCounts: Record<string, number> = {};
       cabaData.forEach((p: any) => {
-        const n = p.norm_neighborhood!;
+        let n = p.norm_neighborhood as string;
+        // Map aliases to canonical names
+        if (CABA_BARRIO_ALIASES[n]) n = CABA_BARRIO_ALIASES[n];
+        // Only include if it's a recognized barrio
+        if (!CABA_CANONICAL_BARRIOS.has(n)) return;
         cabaCounts[n] = (cabaCounts[n] || 0) + 1;
       });
 
