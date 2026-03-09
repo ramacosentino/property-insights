@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Mail, Lock, ArrowLeft } from "lucide-react";
 import UrbbanLogo from "@/components/UrbbanLogo";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+
 
 type AuthView = "login" | "register" | "forgot";
 
