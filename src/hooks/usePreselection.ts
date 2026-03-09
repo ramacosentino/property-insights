@@ -84,8 +84,11 @@ export function usePreselection() {
           .eq("user_id", userId);
         const allIds = new Set((data ?? []).map((r: any) => r.property_id));
         const discarded = new Set((data ?? []).filter((r: any) => r.discarded_at).map((r: any) => r.property_id));
+        const dates: Record<string, string> = {};
+        (data ?? []).forEach((r: any) => { dates[r.property_id] = r.created_at; });
         setSelectedIds(allIds);
         setDiscardedIds(discarded);
+        setSavedDates(dates);
         _discardedIds = discarded;
         setLoaded(true);
       })();
