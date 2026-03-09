@@ -51,6 +51,34 @@ const CABA_BARRIO_ALIASES: Record<string, string> = {
   "Microcentro": "San Nicolás",
   "Tribunales": "San Nicolás",
 };
+// Map Google's non-standard locality names to canonical ones
+const GBA_LOCALITY_ALIASES: Record<string, string> = {
+  "Beccar": "Béccar",
+  "Benavidez": "Benavídez",
+  "Rincon de Milberg": "Rincón de Milberg",
+  "Dique Lujan": "Dique Luján",
+  "Dique Luján (Territorialmente Escobar Islas)": "Dique Luján",
+  "Villa Maipu": "Villa Maipú",
+  "Santo Tomas": "Santo Tomás",
+  "San Sebastian": "San Sebastián",
+  "Santa Maria": "Santa María",
+  "Boulogne Sur Mer": "Boulogne",
+  "ingeniero maschiwitz": "Ingeniero Maschwitz",
+  "Ingeniero Pablo Nogués": "Pablo Nogués",
+  "Luis Lagomarsino o Maquinista F. Savio (Oeste)": "Maquinista Savio",
+  "Ciudad Jardín Lomas del Palomar": "El Palomar",
+  "Ciudad Jardín El Libertador": "El Palomar",
+  "Fatima": "Fátima",
+  "Garin": "Garín",
+  "Lomas de San Isidro": "San Isidro",
+  "General San Martín": "San Martín",
+  "Carapachay": "Vicente López",
+  "Garcia del Río": "Vicente López",
+  "Barrio Parque Las Acacias": "Pilar",
+  "Barrio Parque Presidente Figueroa Alcorta": "Pilar",
+  "Gran Buenos Aires": "Buenos Aires",
+  "Pilar Centro": "Pilar",
+};
 
 const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   caba: { label: "CABA" },
@@ -58,17 +86,17 @@ const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
     label: "GBA Norte",
     localities: [
       "Vicente López", "Olivos", "Munro", "Florida", "Florida Oeste", "La Lucila",
-      "San Isidro", "Martínez", "Béccar", "Beccar", "Acassuso", "Punta Chica",
+      "San Isidro", "Martínez", "Béccar", "Acassuso", "Punta Chica",
       "San Fernando", "Victoria", "Virreyes",
-      "Tigre", "General Pacheco", "Don Torcuato", "El Talar", "Rincón de Milberg", "Rincon de Milberg", "Nordelta", "Benavídez", "Benavidez", "Bancalari", "Ricardo Rojas", "Dique Luján", "Dique Lujan",
+      "Tigre", "General Pacheco", "Don Torcuato", "El Talar", "Rincón de Milberg", "Nordelta", "Benavídez", "Bancalari", "Ricardo Rojas", "Dique Luján",
       "San Miguel", "Muñiz", "Bella Vista", "José C. Paz", "Grand Bourg", "Tortuguitas", "Los Polvorines", "Pablo Nogués", "Villa de Mayo",
       "Pilar", "Presidente Derqui", "Del Viso", "Villa Rosa", "Fátima", "Manuel Alberti", "La Lonja", "Pilar Sur", "Manzanares",
       "Escobar", "Belén de Escobar", "Garín", "Ingeniero Maschwitz", "Loma Verde", "Matheu", "Maquinista Savio",
       "Campana", "Los Cardales", "Alto Los Cardales", "Capilla del Señor", "Parada Robles", "Exaltación de la Cruz",
       "Zárate", "Zelaya",
-      "Villa Adelina", "Villa Ballester", "Villa Maipú", "Villa Maipu",
-      "Boulogne", "Boulogne Sur Mer", "Villanueva", "El Cazador", "Santo Tomás", "Santo Tomas", "Ingeniero Adolfo Sourdeaux",
-      "San Sebastián", "San Sebastian", "Santa María", "Santa Maria",
+      "Villa Adelina", "Villa Ballester", "Villa Maipú", "San Martín",
+      "Boulogne", "Villanueva", "El Cazador", "Santo Tomás", "Ingeniero Adolfo Sourdeaux",
+      "San Sebastián", "Santa María",
       "José León Suárez",
     ],
   },
@@ -77,7 +105,7 @@ const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
     localities: [
       "Morón", "Haedo", "Castelar", "Ituzaingó", "Merlo", "Moreno", "Paso del Rey",
       "Ramos Mejía", "San Justo", "La Tablada", "Villa Luzuriaga", "Hurlingham", "William Morris",
-      "Caseros", "El Palomar", "Ciudad Jardín Lomas del Palomar",
+      "Caseros", "El Palomar",
     ],
   },
   gba_sur: {
@@ -89,6 +117,12 @@ const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
     ],
   },
 };
+
+// Build set of all valid GBA localities from MACRO_ZONES
+const VALID_GBA_LOCALITIES = new Set<string>();
+for (const macro of Object.values(MACRO_ZONES)) {
+  if (macro.localities) macro.localities.forEach((l) => VALID_GBA_LOCALITIES.add(l));
+}
 
 interface ZoneItem {
   name: string;
@@ -179,7 +213,11 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
 
       const gbaCounts: Record<string, number> = {};
       gbaData.forEach((p: any) => {
-        const n = p.norm_locality!;
+        let n = p.norm_locality as string;
+        // Map aliases to canonical names
+        if (GBA_LOCALITY_ALIASES[n]) n = GBA_LOCALITY_ALIASES[n];
+        // Only include if it's a recognized locality
+        if (!VALID_GBA_LOCALITIES.has(n)) return;
         gbaCounts[n] = (gbaCounts[n] || 0) + 1;
       });
 
@@ -189,16 +227,13 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
 
       Object.entries(gbaCounts).forEach(([name, count]) => {
         const item: ZoneItem = { name, count, type: "locality" };
-        let placed = false;
         for (const [key, macro] of Object.entries(MACRO_ZONES)) {
           if (key === "caba") continue;
           if (macro.localities?.includes(name)) {
             gbaClassified[key]?.push(item);
-            placed = true;
             break;
           }
         }
-        if (!placed) gbaClassified.gba_norte.push(item);
       });
 
       for (const key of Object.keys(gbaClassified)) {
