@@ -278,7 +278,7 @@ const Landing = () => {
                   <Link to="/auth">Iniciar sesión</Link>
                 </Button>
                 <Button asChild size="sm" className="rounded-full px-5">
-                  <Link to="/auth">Empezar gratis</Link>
+                  <Link to="/auth?mode=register">Empezar gratis</Link>
                 </Button>
               </>
             )}
