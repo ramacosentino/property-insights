@@ -8,6 +8,50 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 
+// Canonical CABA barrios (48 official + commonly used sub-names)
+const CABA_CANONICAL_BARRIOS = new Set([
+  "Agronomía", "Almagro", "Balvanera", "Barracas", "Belgrano", "Boedo",
+  "Caballito", "Chacarita", "Coghlan", "Colegiales", "Constitución",
+  "Flores", "Floresta", "La Boca", "La Paternal", "Liniers",
+  "Mataderos", "Monte Castro", "Monserrat", "Nueva Pompeya", "Núñez",
+  "Palermo", "Parque Avellaneda", "Parque Chacabuco", "Parque Chas",
+  "Parque Patricios", "Puerto Madero", "Recoleta", "Retiro", "Saavedra",
+  "San Cristóbal", "San Nicolás", "San Telmo", "Vélez Sársfield",
+  "Versalles", "Villa Crespo", "Villa del Parque", "Villa Devoto",
+  "Villa General Mitre", "Villa Lugano", "Villa Luro", "Villa Ortúzar",
+  "Villa Pueyrredón", "Villa Real", "Villa Riachuelo", "Villa Santa Rita",
+  "Villa Soldati", "Villa Urquiza",
+  // Commonly used sub-barrios that people recognize
+  "Barrio Norte", "Palermo Hollywood", "Palermo Chico", "Belgrano Residencial",
+  "Bajo Flores",
+]);
+
+// Map Google's non-standard names to canonical barrios
+const CABA_BARRIO_ALIASES: Record<string, string> = {
+  "Barrio Chino": "Belgrano",
+  "Barrio Catalinas Sur": "La Boca",
+  "Barrio Olímpico": "Villa Soldati",
+  "Barrio Piedrabuena": "Villa Lugano",
+  "Barrio General Savio": "Villa Lugano",
+  "Barrio Cildáñez - Villa 6": "Villa Lugano",
+  "Barrio Lafuente": "Flores",
+  "Barrio Espora": "Mataderos",
+  "Barrio Hogar Obrero": "Caballito",
+  "Barrio 20": "Villa Lugano",
+  "Barrio Castex": "Retiro",
+  "Complejo de Edificios Donizetti y Rivadavia": "Caballito",
+  "Palermo Soho": "Palermo",
+  "Palermo Viejo": "Palermo",
+  "Recoleta chica": "Recoleta",
+  "Barrio Parque": "Recoleta",
+  "Once": "Balvanera",
+  "Abasto": "Balvanera",
+  "Congreso": "Monserrat",
+  "Centro": "San Nicolás",
+  "Microcentro": "San Nicolás",
+  "Tribunales": "San Nicolás",
+};
+
 const MACRO_ZONES: Record<string, { label: string; localities?: string[] }> = {
   caba: { label: "CABA" },
   gba_norte: {
@@ -112,7 +156,11 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
 
       const cabaCounts: Record<string, number> = {};
       cabaData.forEach((p: any) => {
-        const n = p.norm_neighborhood!;
+        let n = p.norm_neighborhood as string;
+        // Map aliases to canonical names
+        if (CABA_BARRIO_ALIASES[n]) n = CABA_BARRIO_ALIASES[n];
+        // Only include if it's a recognized barrio
+        if (!CABA_CANONICAL_BARRIOS.has(n)) return;
         cabaCounts[n] = (cabaCounts[n] || 0) + 1;
       });
 
