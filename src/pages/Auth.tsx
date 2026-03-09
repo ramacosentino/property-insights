@@ -157,10 +157,9 @@ const Auth = () => {
         {/* Login / Register views */}
         {view !== "forgot" && (
           <>
-            {/* Google — solo en login */}
-            {view === "login" && (
-              <>
-                <button
+            {/* Google */}
+            <>
+              <button
                   onClick={handleGoogle}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card hover:bg-secondary text-sm font-medium transition-all"
                 >
