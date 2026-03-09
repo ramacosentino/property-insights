@@ -103,7 +103,7 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         supabase
           .from("properties")
           .select("neighborhood")
-          .eq("norm_province", "Autonomous City of Buenos Aires")
+          .or("norm_province.eq.Ciudad Autónoma de Buenos Aires,norm_province.eq.Autonomous City of Buenos Aires")
           .eq("status", "active")
           .not("neighborhood", "is", null)
       );
