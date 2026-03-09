@@ -180,7 +180,6 @@ const Auth = () => {
                 </div>
               </>
             )}
-            </div>
 
             {/* Email form */}
             <form onSubmit={handleEmailAuth} className="space-y-3">
