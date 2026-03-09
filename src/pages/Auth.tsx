@@ -13,8 +13,10 @@ type AuthView = "login" | "register" | "forgot";
 const Auth = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const [view, setView] = useState<AuthView>("login");
+  const initialMode = searchParams.get("mode") === "register" ? "register" : "login";
+  const [view, setView] = useState<AuthView>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
