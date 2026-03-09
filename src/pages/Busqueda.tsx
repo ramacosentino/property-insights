@@ -384,6 +384,7 @@ const Busqueda = () => {
   const properties = data?.properties ?? [];
   const { toggle, isSelected } = usePreselection();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
@@ -398,6 +399,14 @@ const Busqueda = () => {
   const neighborhoodStats = data?.neighborhoodStats ?? new Map();
   const onboardingFilters = useOnboardingFilters();
   const [onboardingApplied, setOnboardingApplied] = useState(false);
+
+  // Auto-go to configuring if coming from post-onboarding tour
+  useEffect(() => {
+    if (searchParams.get("firstSearch") === "true" && onboardingApplied && status === "idle") {
+      setStatus("configuring");
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, onboardingApplied, status, setSearchParams]);
 
   // Apply onboarding preferences (re-apply when revision changes from Settings)
   useEffect(() => {
