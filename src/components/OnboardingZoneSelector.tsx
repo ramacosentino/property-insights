@@ -83,14 +83,33 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
   // Fetch zone data
   useEffect(() => {
     const fetchZones = async () => {
-      const { data: cabaData } = await supabase
-        .from("properties")
-        .select("neighborhood")
-        .eq("norm_province", "Autonomous City of Buenos Aires")
-        .not("neighborhood", "is", null);
+      // Fetch ALL neighborhoods/localities using pagination to avoid 1000-row limit
+      const fetchAll = async (query: any) => {
+        const allRows: any[] = [];
+        const PAGE = 1000;
+        let from = 0;
+        let done = false;
+        while (!done) {
+          const { data } = await query.range(from, from + PAGE - 1);
+          if (!data || data.length === 0) { done = true; break; }
+          allRows.push(...data);
+          if (data.length < PAGE) done = true;
+          from += PAGE;
+        }
+        return allRows;
+      };
+
+      const cabaData = await fetchAll(
+        supabase
+          .from("properties")
+          .select("neighborhood")
+          .eq("norm_province", "Autonomous City of Buenos Aires")
+          .eq("status", "active")
+          .not("neighborhood", "is", null)
+      );
 
       const cabaCounts: Record<string, number> = {};
-      cabaData?.forEach((p) => {
+      cabaData.forEach((p: any) => {
         const n = p.neighborhood!;
         cabaCounts[n] = (cabaCounts[n] || 0) + 1;
       });
@@ -99,14 +118,17 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
         .map(([name, count]) => ({ name, count, type: "neighborhood" as const }))
         .sort((a, b) => b.count - a.count);
 
-      const { data: gbaData } = await supabase
-        .from("properties")
-        .select("norm_locality")
-        .eq("norm_province", "Buenos Aires")
-        .not("norm_locality", "is", null);
+      const gbaData = await fetchAll(
+        supabase
+          .from("properties")
+          .select("norm_locality")
+          .eq("norm_province", "Buenos Aires")
+          .eq("status", "active")
+          .not("norm_locality", "is", null)
+      );
 
       const gbaCounts: Record<string, number> = {};
-      gbaData?.forEach((p) => {
+      gbaData.forEach((p: any) => {
         const n = p.norm_locality!;
         gbaCounts[n] = (gbaCounts[n] || 0) + 1;
       });
