@@ -629,7 +629,7 @@ const GeneralSettingsSection = () => {
         onClick={() => setOpen(!open)}
         className="w-full px-5 py-4 flex items-center gap-2 text-left hover:bg-secondary/30 transition-all"
       >
-        <Settings className="h-5 w-5 text-primary" />
+        <SettingsIcon className="h-5 w-5 text-primary" />
         <div className="flex-1">
           <h3 className="text-base font-semibold">General</h3>
           <p className="text-xs text-muted-foreground">Apariencia, métricas y carga de datos</p>
