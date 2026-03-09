@@ -46,7 +46,6 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const tour = useTour();
-  const tour = useTour();
   const { unreadCount } = useNotifications();
 
   // Track route-based checklist completions
