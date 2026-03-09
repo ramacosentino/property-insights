@@ -132,10 +132,27 @@ export default function GuidedTour({ onComplete, onSkip }: GuidedTourProps) {
     return () => window.removeEventListener("resize", positionTooltip);
   }, [positionTooltip]);
 
-  // Scroll target into view
+  // Elevate target element above overlay so it's not blurred
   useEffect(() => {
-    const el = document.querySelector(currentStep.target);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const el = document.querySelector(currentStep.target) as HTMLElement | null;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const prev = {
+      zIndex: el.style.zIndex,
+      position: el.style.position,
+      background: el.style.background,
+      borderRadius: el.style.borderRadius,
+    };
+    el.style.position = "relative";
+    el.style.zIndex = "10001";
+    el.style.background = "hsl(var(--sidebar-background, var(--background)))";
+    el.style.borderRadius = "8px";
+    return () => {
+      el.style.zIndex = prev.zIndex;
+      el.style.position = prev.position;
+      el.style.background = prev.background;
+      el.style.borderRadius = prev.borderRadius;
+    };
   }, [currentStep.target]);
 
   const handleNext = () => {
@@ -153,7 +170,7 @@ export default function GuidedTour({ onComplete, onSkip }: GuidedTourProps) {
   return createPortal(
     <div className="fixed inset-0 z-[10000]">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" onClick={onSkip} />
+      <div className="absolute inset-0 bg-black/50" onClick={onSkip} />
 
       {/* Highlight ring */}
       <div
