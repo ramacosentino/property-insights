@@ -156,6 +156,9 @@ export function usePreselection() {
           const discarded = new Set((data ?? []).filter((r: any) => r.discarded_at).map((r: any) => r.property_id));
           setDiscardedIds(discarded);
           _discardedIds = discarded;
+          const dates: Record<string, string> = {};
+          (data ?? []).forEach((r: any) => { dates[r.property_id] = r.created_at; });
+          setSavedDates(dates);
         });
     };
     window.addEventListener(CHANGE_EVENT, handler);
