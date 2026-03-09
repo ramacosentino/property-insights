@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { ONBOARDING_FILTERS_UPDATED } from "@/hooks/useOnboardingFilters";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
-import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target, ShieldCheck, Check } from "lucide-react";
+import CsvUploadButton from "@/components/CsvUploadButton";
+import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target, ShieldCheck, Check, Sun, Moon, Ruler, Upload, Settings as SettingsIcon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -615,6 +618,92 @@ const GeocodingSection = () => {
   );
 };
 
+const GeneralSettingsSection = () => {
+  const { isDark, toggle } = useTheme();
+  const { surfaceType, toggle: toggleSurface } = useSurfacePreference();
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="glass-card rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-4 flex items-center gap-2 text-left hover:bg-secondary/30 transition-all"
+      >
+        <SettingsIcon className="h-5 w-5 text-primary" />
+        <div className="flex-1">
+          <h3 className="text-base font-semibold">General</h3>
+          <p className="text-xs text-muted-foreground">Apariencia, métricas y carga de datos</p>
+        </div>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="px-5 pb-5 space-y-3">
+          {/* Theme toggle */}
+          <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30">
+            <div className="flex items-center gap-3">
+              {isDark ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
+              <div>
+                <span className="text-sm font-medium">Modo {isDark ? "oscuro" : "claro"}</span>
+                <p className="text-xs text-muted-foreground">Cambiar apariencia de la plataforma</p>
+              </div>
+            </div>
+            <button
+              onClick={toggle}
+              className="relative w-10 h-5 rounded-full transition-all bg-primary/20 hover:bg-primary/30"
+            >
+              <span className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full bg-primary transition-transform ${isDark ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+
+          {/* Surface preference toggle */}
+          <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30">
+            <div className="flex items-center gap-3">
+              <Ruler className="h-4 w-4 text-primary" />
+              <div>
+                <span className="text-sm font-medium">Métrica de superficie</span>
+                <p className="text-xs text-muted-foreground">
+                  Usando: <strong>{surfaceType === "total" ? "USD/m² total" : "USD/m² cubierto"}</strong>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-0.5 rounded-full border border-border p-0.5">
+              <button
+                onClick={() => surfaceType !== "total" && toggleSurface()}
+                className={`px-2.5 py-1 text-xs font-medium rounded-full transition-all ${
+                  surfaceType === "total" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Total
+              </button>
+              <button
+                onClick={() => surfaceType !== "covered" && toggleSurface()}
+                className={`px-2.5 py-1 text-xs font-medium rounded-full transition-all ${
+                  surfaceType === "covered" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Cubierto
+              </button>
+            </div>
+          </div>
+
+          {/* CSV Upload */}
+          <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30">
+            <div className="flex items-center gap-3">
+              <Upload className="h-4 w-4 text-primary" />
+              <div>
+                <span className="text-sm font-medium">Cargar propiedades</span>
+                <p className="text-xs text-muted-foreground">Importar datos desde un archivo CSV</p>
+              </div>
+            </div>
+            <CsvUploadButton />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Settings = () => {
   const [logs, setLogs] = useState<UploadLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -653,6 +742,9 @@ const Settings = () => {
             <p className="text-sm text-muted-foreground">Ajustes de análisis e historial de cargas</p>
           </div>
         </div>
+
+        {/* General settings: theme, surface, CSV */}
+        <GeneralSettingsSection />
 
         {/* Search preferences */}
         <PreferencesSection />

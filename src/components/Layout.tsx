@@ -1,16 +1,13 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Map, List, Star, Search, Settings, Sun, Moon, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock, Ruler, HelpCircle } from "lucide-react";
+import { Map, List, Star, Search, Settings, LogOut, User, Bell, Menu, X, Upload, Calculator, TrendingUp, ChevronLeft, ChevronRight, CreditCard, Lock, HelpCircle } from "lucide-react";
 import UrbbanLogo, { UrbannaIcon } from "./UrbbanLogo";
-import CsvUploadButton from "./CsvUploadButton";
-import { useTheme } from "@/hooks/useTheme";
-import { usePreselection } from "@/hooks/usePreselection";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
+import { usePreselection } from "@/hooks/usePreselection";
 import { useTour } from "@/hooks/useTour";
 import { useNotifications } from "@/hooks/useNotifications";
 import GuidedTour from "@/components/GuidedTour";
@@ -41,7 +38,6 @@ const bottomItems = [
 const Layout = ({ children, headerContent }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isDark, toggle } = useTheme();
   const { count: preselectionCount } = usePreselection();
   const { user, signOut } = useAuth();
   const { isPremium } = useSubscription();
@@ -49,7 +45,6 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { surfaceType, toggle: toggleSurface } = useSurfacePreference();
   const tour = useTour();
   const { unreadCount } = useNotifications();
 
@@ -153,52 +148,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
       {/* Bottom section */}
       <div className="p-2 space-y-0.5 border-t border-sidebar-border">
-        {!isCollapsed && (
-          <div className="px-1 mb-1">
-            <CsvUploadButton />
-          </div>
-        )}
         {bottomItems.map((item) => renderNavItem(item, isCollapsed))}
-
-        {/* Surface type toggle */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={toggleSurface}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
-              title={surfaceType === "total" ? "Cambiar a m² cubierto" : "Cambiar a m² total"}
-            >
-              <Ruler className="h-4 w-4 flex-shrink-0" />
-              {!isCollapsed && (
-                <span className="flex items-center gap-2">
-                  <span>m²</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold leading-none ${
-                    surfaceType === "total" 
-                      ? "bg-primary/20 text-primary" 
-                      : "bg-accent text-accent-foreground"
-                  }`}>
-                    {surfaceType === "total" ? "TOT" : "CUB"}
-                  </span>
-                </span>
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p className="text-xs">
-              Métrica: {surfaceType === "total" ? "USD/m² total" : "USD/m² cubierto"}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Theme toggle */}
-        <button
-          onClick={toggle}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
-          title={isDark ? "Modo claro" : "Modo oscuro"}
-        >
-          {isDark ? <Sun className="h-4 w-4 flex-shrink-0" /> : <Moon className="h-4 w-4 flex-shrink-0" />}
-          {!isCollapsed && <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>}
-        </button>
 
         {/* Tour help button */}
         <button
