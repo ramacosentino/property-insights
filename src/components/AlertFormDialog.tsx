@@ -18,7 +18,7 @@ interface AlertFormDialogProps {
 }
 
 const PROPERTY_TYPE_OPTIONS = [
-  { value: "departamento", label: "Departamento" },
+  { value: "departamento", label: "Depto" },
   { value: "casa", label: "Casa" },
   { value: "ph", label: "PH" },
   { value: "terreno", label: "Terreno" },
@@ -38,10 +38,8 @@ export default function AlertFormDialog({ open, onOpenChange, alert, onSubmit }:
   const [inAppEnabled, setInAppEnabled] = useState(true);
   const [emailFrequency, setEmailFrequency] = useState("daily");
 
-  // Pre-fill from editing alert or onboarding
   useEffect(() => {
     if (!open) return;
-
     if (alert) {
       const f = alert.filters as AlertFilters;
       setName(alert.name);
@@ -74,7 +72,6 @@ export default function AlertFormDialog({ open, onOpenChange, alert, onSubmit }:
       price_max: priceMax ? Number(priceMax) : undefined,
       price_currency: priceCurrency,
     };
-
     onSubmit({
       name: name.trim() || "Mi alerta",
       filters,
@@ -91,120 +88,125 @@ export default function AlertFormDialog({ open, onOpenChange, alert, onSubmit }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar alerta" : "Nueva alerta"}</DialogTitle>
+          <DialogTitle className="text-base">{isEditing ? "Editar alerta" : "Nueva alerta"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="alert-name">Nombre</Label>
-            <Input
-              id="alert-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Palermo < 100k"
-              maxLength={60}
-            />
-          </div>
+        {/* Two-column grid on desktop, single column on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+          {/* Left column */}
+          <div className="space-y-3">
+            {/* Name */}
+            <div className="space-y-1">
+              <Label htmlFor="alert-name" className="text-xs">Nombre</Label>
+              <Input
+                id="alert-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Palermo < 100k"
+                maxLength={60}
+                className="h-8 text-sm"
+              />
+            </div>
 
-          {/* Zones */}
-          <div className="space-y-1.5">
-            <Label>Zonas (del onboarding)</Label>
-            {zones.length > 0 ? (
+            {/* Property types */}
+            <div className="space-y-1">
+              <Label className="text-xs">Tipo de propiedad</Label>
               <div className="flex flex-wrap gap-1.5">
-                {zones.map((z) => (
-                  <Badge key={z} variant="secondary" className="gap-1 text-xs">
-                    {z}
-                    <button onClick={() => removeZone(z)} className="ml-0.5 hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
+                {PROPERTY_TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => toggleType(opt.value)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-all ${
+                      propertyTypes.includes(opt.value)
+                        ? "bg-primary/15 border-primary/40 text-primary"
+                        : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
                 ))}
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">Sin zonas — se evaluará contra todas.</p>
-            )}
-          </div>
+            </div>
 
-          {/* Property types */}
-          <div className="space-y-1.5">
-            <Label>Tipos de propiedad</Label>
-            <div className="flex flex-wrap gap-2">
-              {PROPERTY_TYPE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => toggleType(opt.value)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${
-                    propertyTypes.includes(opt.value)
-                      ? "bg-primary/15 border-primary/40 text-primary"
-                      : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            {/* Price range */}
+            <div className="space-y-1">
+              <Label className="text-xs">Rango de precio</Label>
+              <div className="flex items-center gap-1.5">
+                <Select value={priceCurrency} onValueChange={setPriceCurrency}>
+                  <SelectTrigger className="w-[68px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="ARS">ARS</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  placeholder="Mín"
+                  value={priceMin}
+                  onChange={(e) => setPriceMin(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <span className="text-muted-foreground text-xs">—</span>
+                <Input
+                  type="number"
+                  placeholder="Máx"
+                  value={priceMax}
+                  onChange={(e) => setPriceMax(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Zones */}
+            <div className="space-y-1">
+              <Label className="text-xs">Zonas (del onboarding)</Label>
+              {zones.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {zones.map((z) => (
+                    <Badge key={z} variant="secondary" className="gap-1 text-[10px] py-0.5">
+                      {z}
+                      <button onClick={() => removeZone(z)} className="ml-0.5 hover:text-destructive">
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">Sin zonas — se evaluará contra todas.</p>
+              )}
             </div>
           </div>
 
-          {/* Price range */}
-          <div className="space-y-1.5">
-            <Label>Rango de precio</Label>
-            <div className="flex items-center gap-2">
-              <Select value={priceCurrency} onValueChange={setPriceCurrency}>
-                <SelectTrigger className="w-20 h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="ARS">ARS</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                placeholder="Mín"
-                value={priceMin}
-                onChange={(e) => setPriceMin(e.target.value)}
-                className="h-9"
-              />
-              <span className="text-muted-foreground">—</span>
-              <Input
-                type="number"
-                placeholder="Máx"
-                value={priceMax}
-                onChange={(e) => setPriceMax(e.target.value)}
-                className="h-9"
-              />
-            </div>
-          </div>
+          {/* Right column - Channels */}
+          <div className="space-y-3 sm:border-l sm:pl-6 border-t sm:border-t-0 pt-3 sm:pt-0">
+            <Label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">Canales de notificación</Label>
 
-          {/* Channels */}
-          <div className="space-y-3 border-t pt-4">
-            <Label className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Canales</Label>
-
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium">In-app</p>
-                <p className="text-xs text-muted-foreground">Notificaciones dentro de Urbanna</p>
+                <p className="text-[11px] text-muted-foreground">Dentro de Urbanna</p>
               </div>
               <Switch checked={inAppEnabled} onCheckedChange={setInAppEnabled} />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium">Email</p>
-                <p className="text-xs text-muted-foreground">Recibir resúmenes por correo</p>
+                <p className="text-[11px] text-muted-foreground">Resúmenes por correo</p>
               </div>
               <Switch checked={emailEnabled} onCheckedChange={setEmailEnabled} />
             </div>
 
             {emailEnabled && (
-              <div className="pl-4 space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs">Frecuencia</Label>
                 <Select value={emailFrequency} onValueChange={setEmailFrequency}>
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -218,11 +220,11 @@ export default function AlertFormDialog({ open, onOpenChange, alert, onSubmit }:
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="mt-1">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button size="sm" onClick={handleSubmit}>
             {isEditing ? "Guardar cambios" : "Crear alerta"}
           </Button>
         </DialogFooter>
