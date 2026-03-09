@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
 
 import Layout from "@/components/Layout";
