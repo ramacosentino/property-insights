@@ -318,7 +318,7 @@ const Landing = () => {
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="rounded-full px-8 text-base h-12 shadow-lg shadow-primary/25">
-              <Link to="/auth">
+              <Link to="/auth?mode=register">
                 Empezar gratis
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
