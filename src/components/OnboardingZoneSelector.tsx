@@ -104,15 +104,15 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
       const cabaData = await fetchAll(
         supabase
           .from("properties")
-          .select("neighborhood")
+          .select("norm_neighborhood")
           .or("norm_province.eq.Ciudad Autónoma de Buenos Aires,norm_province.eq.Autonomous City of Buenos Aires")
           .eq("status", "active")
-          .not("neighborhood", "is", null)
+          .not("norm_neighborhood", "is", null)
       );
 
       const cabaCounts: Record<string, number> = {};
       cabaData.forEach((p: any) => {
-        const n = p.neighborhood!;
+        const n = p.norm_neighborhood!;
         cabaCounts[n] = (cabaCounts[n] || 0) + 1;
       });
 
