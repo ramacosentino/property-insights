@@ -704,7 +704,7 @@ const GeneralSettingsSection = () => {
   );
 };
 
-
+const Settings = () => {
   const [logs, setLogs] = useState<UploadLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
