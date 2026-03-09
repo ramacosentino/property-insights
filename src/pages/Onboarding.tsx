@@ -412,6 +412,14 @@ const Onboarding = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm text-foreground">{plan.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
+                      {plan.priceMonthly ? (
+                        <div className="mt-1.5 flex items-baseline gap-2">
+                          <span className="text-sm font-semibold text-foreground">{plan.priceMonthly}<span className="text-xs font-normal text-muted-foreground">/mes</span></span>
+                          <span className="text-xs text-muted-foreground">o {plan.priceYearly}/año</span>
+                        </div>
+                      ) : (
+                        <p className="mt-1.5 text-sm font-semibold text-foreground">Gratis</p>
+                      )}
                       <ul className="mt-2 space-y-1">
                         {plan.highlights.map((h) => (
                           <li key={h} className="flex items-center gap-1.5 text-xs text-muted-foreground">
