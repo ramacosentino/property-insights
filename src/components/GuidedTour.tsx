@@ -170,7 +170,7 @@ export default function GuidedTour({ onComplete, onSkip }: GuidedTourProps) {
   return createPortal(
     <div className="fixed inset-0 z-[10000]">
       {/* Overlay */}
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" onClick={onSkip} />
+      <div className="absolute inset-0 bg-black/50" onClick={onSkip} />
 
       {/* Highlight ring */}
       <div
