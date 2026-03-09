@@ -107,9 +107,9 @@ const ROISimulator = ({ property, valorPotencialTotal, renovCostEstimate }: ROIS
             </div>
             <Slider
               min={0}
-              max={Math.max(200000, renovCost * 2)}
+              max={200000}
               step={1000}
-              value={[renovCost]}
+              value={[Math.min(renovCost, 200000)]}
               onValueChange={(v) => setRenovCost(v[0])}
               className="w-full"
             />
