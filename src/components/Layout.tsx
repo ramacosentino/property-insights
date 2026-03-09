@@ -39,7 +39,6 @@ const bottomItems = [
 const Layout = ({ children, headerContent }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isDark, toggle } = useTheme();
   const { count: preselectionCount } = usePreselection();
   const { user, signOut } = useAuth();
   const { isPremium } = useSubscription();
