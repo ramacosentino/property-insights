@@ -3,7 +3,7 @@ import { ONBOARDING_FILTERS_UPDATED } from "@/hooks/useOnboardingFilters";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import CsvUploadButton from "@/components/CsvUploadButton";
-import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target, ShieldCheck, Check, Sun, Moon, Ruler, Upload } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, Loader2, ArrowLeft, Download, Wrench, Save, ChevronDown, Info, MapPin as MapPinIcon, DollarSign, Layers, Target, ShieldCheck, Check, Sun, Moon, Ruler, Upload, Settings as SettingsIcon } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useSurfacePreference } from "@/contexts/SurfacePreferenceContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
