@@ -657,6 +657,9 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* General settings: theme, surface, CSV */}
+        <GeneralSettingsSection />
+
         {/* Search preferences */}
         <PreferencesSection />
 

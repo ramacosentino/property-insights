@@ -150,52 +150,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
       {/* Bottom section */}
       <div className="p-2 space-y-0.5 border-t border-sidebar-border">
-        {!isCollapsed && (
-          <div className="px-1 mb-1">
-            <CsvUploadButton />
-          </div>
-        )}
         {bottomItems.map((item) => renderNavItem(item, isCollapsed))}
-
-        {/* Surface type toggle */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={toggleSurface}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
-              title={surfaceType === "total" ? "Cambiar a m² cubierto" : "Cambiar a m² total"}
-            >
-              <Ruler className="h-4 w-4 flex-shrink-0" />
-              {!isCollapsed && (
-                <span className="flex items-center gap-2">
-                  <span>m²</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold leading-none ${
-                    surfaceType === "total" 
-                      ? "bg-primary/20 text-primary" 
-                      : "bg-accent text-accent-foreground"
-                  }`}>
-                    {surfaceType === "total" ? "TOT" : "CUB"}
-                  </span>
-                </span>
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p className="text-xs">
-              Métrica: {surfaceType === "total" ? "USD/m² total" : "USD/m² cubierto"}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Theme toggle */}
-        <button
-          onClick={toggle}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full ${isCollapsed ? "justify-center" : ""}`}
-          title={isDark ? "Modo claro" : "Modo oscuro"}
-        >
-          {isDark ? <Sun className="h-4 w-4 flex-shrink-0" /> : <Moon className="h-4 w-4 flex-shrink-0" />}
-          {!isCollapsed && <span>{isDark ? "Modo claro" : "Modo oscuro"}</span>}
-        </button>
 
         {/* Tour help button */}
         <button
