@@ -278,7 +278,7 @@ const Landing = () => {
                   <Link to="/auth">Iniciar sesión</Link>
                 </Button>
                 <Button asChild size="sm" className="rounded-full px-5">
-                  <Link to="/auth">Empezar gratis</Link>
+                  <Link to="/auth?mode=register">Empezar gratis</Link>
                 </Button>
               </>
             )}
@@ -318,7 +318,7 @@ const Landing = () => {
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="rounded-full px-8 text-base h-12 shadow-lg shadow-primary/25">
-              <Link to="/auth">
+              <Link to="/auth?mode=register">
                 Empezar gratis
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -761,7 +761,7 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp}>
             <Button asChild size="lg" className="rounded-full px-10 text-base h-14 shadow-xl shadow-primary/30">
-              <Link to="/auth">
+              <Link to="/auth?mode=register">
                 Crear cuenta gratis
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
