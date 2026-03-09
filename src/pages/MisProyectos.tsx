@@ -16,7 +16,7 @@ import Comparador from "@/pages/Comparador";
 
 
 const MisProyectos = () => {
-  const { selectedIds, clear, count } = usePreselection();
+  const { selectedIds, discardedIds: preselectionDiscardedIds, savedDates, clear, count } = usePreselection();
   const { properties, isLoading } = usePropertiesByIds(selectedIds);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -27,9 +27,13 @@ const MisProyectos = () => {
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<string>("guardado");
   const [sortAsc, setSortAsc] = useState(false);
-  const [savedDates, setSavedDates] = useState<Record<string, string>>({});
 
-  // Fetch user-specific analyses (oportunidad_neta, valor_potencial_median_m2) and discarded state
+  // Sync discardedIds from preselection hook
+  useEffect(() => {
+    setDiscardedIds(preselectionDiscardedIds);
+  }, [preselectionDiscardedIds]);
+
+  // Fetch user-specific analyses — independent of properties loading
   useEffect(() => {
     if (!user) return;
 
@@ -40,39 +44,23 @@ const MisProyectos = () => {
       .then(({ data: analyses }) => {
         const map: Record<string, UserAnalysis> = {};
         (analyses ?? []).forEach((a: any) => {
-          // Find the property to merge: prefer user_property_analysis data, fallback to properties table
-          const prop = properties.find(p => p.id === a.property_id);
-          const hasUpaHighlights = a.highlights && a.highlights.length > 0;
-          const hasUpaLowlights = a.lowlights && a.lowlights.length > 0;
           map[a.property_id] = {
-            score_multiplicador: a.score_multiplicador ?? prop?.score_multiplicador ?? null,
-            informe_breve: a.informe_breve || prop?.informe_breve || null,
-            highlights: hasUpaHighlights ? a.highlights : (prop?.highlights ?? null),
-            lowlights: hasUpaLowlights ? a.lowlights : (prop?.lowlights ?? null),
-            estado_general: a.estado_general || prop?.estado_general || null,
-            valor_potencial_m2: a.valor_potencial_m2 ?? prop?.valor_potencial_m2 ?? null,
-            valor_potencial_total: a.valor_potencial_total ?? prop?.valor_potencial_total ?? null,
+            score_multiplicador: a.score_multiplicador ?? null,
+            informe_breve: a.informe_breve || null,
+            highlights: (a.highlights && a.highlights.length > 0) ? a.highlights : null,
+            lowlights: (a.lowlights && a.lowlights.length > 0) ? a.lowlights : null,
+            estado_general: a.estado_general || null,
+            valor_potencial_m2: a.valor_potencial_m2 ?? null,
+            valor_potencial_total: a.valor_potencial_total ?? null,
             valor_potencial_median_m2: a.valor_potencial_median_m2 ?? null,
-            comparables_count: a.comparables_count ?? prop?.comparables_count ?? null,
-            oportunidad_ajustada: a.oportunidad_ajustada ?? prop?.oportunidad_ajustada ?? null,
+            comparables_count: a.comparables_count ?? null,
+            oportunidad_ajustada: a.oportunidad_ajustada ?? null,
             oportunidad_neta: a.oportunidad_neta,
           };
         });
         setUserAnalyses(map);
       });
-
-    supabase
-      .from("saved_projects")
-      .select("property_id, discarded_at, created_at")
-      .eq("user_id", user.id)
-      .then(({ data: saved }) => {
-        setDiscardedIds(new Set((saved ?? []).filter((d: any) => d.discarded_at).map((d: any) => d.property_id)));
-        const dates: Record<string, string> = {};
-        (saved ?? []).forEach((d: any) => { dates[d.property_id] = d.created_at; });
-        setSavedDates(dates);
-      });
-  }, [user, properties]);
-
+  }, [user]);
 
   const preselected = properties.filter((p) => selectedIds.has(p.id));
   const activeProjects = preselected.filter((p) => !discardedIds.has(p.id));
@@ -305,20 +293,36 @@ const MisProyectos = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
-                {displayProjects.map((p) => (
-                  <AnalysisCard
-                    key={p.id}
-                    property={p}
-                    analysis={userAnalyses[p.id] || null}
-                    onAnalyze={handleAnalyze}
-                    isAnalyzing={analyzingIds.has(p.id)}
-                    allProperties={properties}
-                    neighborhoodStats={new Map()}
-                    onDiscard={handleDiscard}
-                    onRestore={handleRestore}
-                    isDiscarded={tab === "discarded"}
-                  />
-                ))}
+                {displayProjects.map((p) => {
+                  const ua = userAnalyses[p.id];
+                  // Merge: prefer user analysis, fallback to property-level data
+                  const merged: UserAnalysis | null = ua ? {
+                    ...ua,
+                    score_multiplicador: ua.score_multiplicador ?? p.score_multiplicador ?? null,
+                    highlights: (ua.highlights && ua.highlights.length > 0) ? ua.highlights : (p.highlights ?? null),
+                    lowlights: (ua.lowlights && ua.lowlights.length > 0) ? ua.lowlights : (p.lowlights ?? null),
+                    estado_general: ua.estado_general || p.estado_general || null,
+                    informe_breve: ua.informe_breve || p.informe_breve || null,
+                    valor_potencial_m2: ua.valor_potencial_m2 ?? p.valor_potencial_m2 ?? null,
+                    valor_potencial_total: ua.valor_potencial_total ?? p.valor_potencial_total ?? null,
+                    comparables_count: ua.comparables_count ?? p.comparables_count ?? null,
+                    oportunidad_ajustada: ua.oportunidad_ajustada ?? p.oportunidad_ajustada ?? null,
+                  } : null;
+                  return (
+                    <AnalysisCard
+                      key={p.id}
+                      property={p}
+                      analysis={merged}
+                      onAnalyze={handleAnalyze}
+                      isAnalyzing={analyzingIds.has(p.id)}
+                      allProperties={properties}
+                      neighborhoodStats={new Map()}
+                      onDiscard={handleDiscard}
+                      onRestore={handleRestore}
+                      isDiscarded={tab === "discarded"}
+                    />
+                  );
+                })}
               </div>
             )}
           </>

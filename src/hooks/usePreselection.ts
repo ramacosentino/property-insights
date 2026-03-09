@@ -51,6 +51,7 @@ let _discardedIds: Set<string> = new Set();
 export function usePreselection() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
+  const [savedDates, setSavedDates] = useState<Record<string, string>>({});
   const [userId, setUserId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -83,8 +84,11 @@ export function usePreselection() {
           .eq("user_id", userId);
         const allIds = new Set((data ?? []).map((r: any) => r.property_id));
         const discarded = new Set((data ?? []).filter((r: any) => r.discarded_at).map((r: any) => r.property_id));
+        const dates: Record<string, string> = {};
+        (data ?? []).forEach((r: any) => { dates[r.property_id] = r.created_at; });
         setSelectedIds(allIds);
         setDiscardedIds(discarded);
+        setSavedDates(dates);
         _discardedIds = discarded;
         setLoaded(true);
       })();
@@ -152,6 +156,9 @@ export function usePreselection() {
           const discarded = new Set((data ?? []).filter((r: any) => r.discarded_at).map((r: any) => r.property_id));
           setDiscardedIds(discarded);
           _discardedIds = discarded;
+          const dates: Record<string, string> = {};
+          (data ?? []).forEach((r: any) => { dates[r.property_id] = r.created_at; });
+          setSavedDates(dates);
         });
     };
     window.addEventListener(CHANGE_EVENT, handler);
@@ -181,7 +188,7 @@ export function usePreselection() {
     [discardedIds]
   );
 
-  return { selectedIds, discardedIds, toggle, isSelected, isDiscarded, count: selectedIds.size, clear };
+  return { selectedIds, discardedIds, savedDates, toggle, isSelected, isDiscarded, count: selectedIds.size, clear };
 }
 
 // Standalone functions for use in raw HTML popups (auth-aware)
