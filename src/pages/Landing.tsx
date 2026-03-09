@@ -724,7 +724,7 @@ const Landing = () => {
                       } disabled:opacity-60`}
                     >
                       {subscribing === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {isCurrent ? "Plan actual" : isCorporate ? "Contactar Ventas" : plan.id === "free" ? "Gratis para siempre" : "Suscribirse"}
+                      {isCurrent ? "Plan actual" : isCorporate ? "Contactar Ventas" : plan.id === "free" ? "Gratuito" : "Suscribirse"}
                     </button>
                   </div>
                 </motion.div>
