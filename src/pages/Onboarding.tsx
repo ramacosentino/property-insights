@@ -74,16 +74,20 @@ const INVESTMENT_GOALS = [
 const ONBOARDING_PLANS = [
   {
     id: "free" as PlanId,
-    name: "Free",
+    name: "Gratuito",
     icon: Star,
     description: "Para explorar la plataforma",
+    priceMonthly: null,
+    priceYearly: null,
     highlights: ["5 análisis IA / mes", "3 búsquedas / mes", "1 alerta activa"],
   },
   {
     id: "pro" as PlanId,
     name: "Pro",
     icon: Zap,
-    description: "Para inversores activos",
+    description: "Ideal para buscar tu próxima propiedad",
+    priceMonthly: "$20.000",
+    priceYearly: "$200.000",
     highlights: ["50 análisis IA / mes", "30 búsquedas / mes", "Exportar datos"],
     popular: true,
   },
@@ -91,7 +95,9 @@ const ONBOARDING_PLANS = [
     id: "premium" as PlanId,
     name: "Premium",
     icon: Crown,
-    description: "Acceso total sin límites",
+    description: "Ideal si buscás una inversión",
+    priceMonthly: "$100.000",
+    priceYearly: "$1.000.000",
     highlights: ["Análisis ilimitados", "Tasación automática", "Inteligencia de precios"],
   },
 ];
