@@ -256,7 +256,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
 
       {/* Guided Tour */}
       {tour.showTour && !tour.loading && (
-        <GuidedTour onComplete={tour.completeTour} onSkip={tour.completeTour} />
+        <GuidedTour onComplete={() => { tour.completeTour(); navigate("/busqueda?firstSearch=true"); }} onSkip={tour.completeTour} />
       )}
 
       {/* Discovery Checklist */}
