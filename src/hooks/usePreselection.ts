@@ -188,7 +188,7 @@ export function usePreselection() {
     [discardedIds]
   );
 
-  return { selectedIds, discardedIds, toggle, isSelected, isDiscarded, count: selectedIds.size, clear };
+  return { selectedIds, discardedIds, savedDates, toggle, isSelected, isDiscarded, count: selectedIds.size, clear };
 }
 
 // Standalone functions for use in raw HTML popups (auth-aware)
