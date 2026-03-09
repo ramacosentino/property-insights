@@ -293,20 +293,36 @@ const MisProyectos = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
-                {displayProjects.map((p) => (
-                  <AnalysisCard
-                    key={p.id}
-                    property={p}
-                    analysis={userAnalyses[p.id] || null}
-                    onAnalyze={handleAnalyze}
-                    isAnalyzing={analyzingIds.has(p.id)}
-                    allProperties={properties}
-                    neighborhoodStats={new Map()}
-                    onDiscard={handleDiscard}
-                    onRestore={handleRestore}
-                    isDiscarded={tab === "discarded"}
-                  />
-                ))}
+                {displayProjects.map((p) => {
+                  const ua = userAnalyses[p.id];
+                  // Merge: prefer user analysis, fallback to property-level data
+                  const merged: UserAnalysis | null = ua ? {
+                    ...ua,
+                    score_multiplicador: ua.score_multiplicador ?? p.score_multiplicador ?? null,
+                    highlights: (ua.highlights && ua.highlights.length > 0) ? ua.highlights : (p.highlights ?? null),
+                    lowlights: (ua.lowlights && ua.lowlights.length > 0) ? ua.lowlights : (p.lowlights ?? null),
+                    estado_general: ua.estado_general || p.estado_general || null,
+                    informe_breve: ua.informe_breve || p.informe_breve || null,
+                    valor_potencial_m2: ua.valor_potencial_m2 ?? p.valor_potencial_m2 ?? null,
+                    valor_potencial_total: ua.valor_potencial_total ?? p.valor_potencial_total ?? null,
+                    comparables_count: ua.comparables_count ?? p.comparables_count ?? null,
+                    oportunidad_ajustada: ua.oportunidad_ajustada ?? p.oportunidad_ajustada ?? null,
+                  } : null;
+                  return (
+                    <AnalysisCard
+                      key={p.id}
+                      property={p}
+                      analysis={merged}
+                      onAnalyze={handleAnalyze}
+                      isAnalyzing={analyzingIds.has(p.id)}
+                      allProperties={properties}
+                      neighborhoodStats={new Map()}
+                      onDiscard={handleDiscard}
+                      onRestore={handleRestore}
+                      isDiscarded={tab === "discarded"}
+                    />
+                  );
+                })}
               </div>
             )}
           </>
