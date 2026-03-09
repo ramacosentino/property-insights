@@ -46,7 +46,7 @@ const Layout = ({ children, headerContent }: LayoutProps) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { surfaceType, toggle: toggleSurface } = useSurfacePreference();
+  const tour = useTour();
   const tour = useTour();
   const { unreadCount } = useNotifications();
 
