@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronRight, MapPin, Search, X, Check, Pentagon, List } from "lucide-react";
+import { MapPin, Search, X, Check, Pentagon, List, ChevronDown } from "lucide-react";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
@@ -71,7 +71,7 @@ function isPointInPolygon(lat: number, lng: number, polygon: L.LatLng[]): boolea
 export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelectorProps) {
   const [zones, setZones] = useState<Record<string, ZoneItem[]>>({});
   const [loading, setLoading] = useState(true);
-  const [expandedMacro, setExpandedMacro] = useState<string | null>(null);
+  const [expandedMacros, setExpandedMacros] = useState<Set<string>>(new Set(["caba"]));
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"list" | "map">("list");
   const drawMapRef = useRef<HTMLDivElement>(null);
@@ -184,7 +184,6 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     featureGroup.addTo(map);
     drawnLayerRef.current = featureGroup;
 
-    // Property dots
     propertyCoords.forEach((c) => {
       L.circleMarker([c.lat, c.lng], {
         radius: 3,
@@ -234,12 +233,25 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     else onChange([...selected, ...names.filter((n) => !selected.includes(n))]);
   };
 
+  const toggleExpand = (key: string) => {
+    setExpandedMacros((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const isSearching = query.length > 0;
+
   const filteredZones = useMemo(() => {
     if (!query) return zones;
     const q = query.toLowerCase();
     const result: Record<string, ZoneItem[]> = {};
     for (const [key, items] of Object.entries(zones)) {
-      const filtered = items.filter((i) => i.name.toLowerCase().includes(q));
+      // Also match macro zone label
+      const macroMatch = MACRO_ZONES[key]?.label.toLowerCase().includes(q);
+      const filtered = macroMatch ? items : items.filter((i) => i.name.toLowerCase().includes(q));
       if (filtered.length > 0) result[key] = filtered;
     }
     return result;
@@ -281,15 +293,21 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
 
       {/* Selected badges */}
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
-          {selected.map((z) => (
-            <Badge key={z} variant="secondary" className="gap-1 pr-1 text-xs">
-              {z}
-              <button onClick={() => toggle(z)} className="ml-0.5 rounded-full hover:bg-foreground/10 p-0.5">
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{selected.length} zona{selected.length !== 1 ? "s" : ""} seleccionada{selected.length !== 1 ? "s" : ""}</span>
+            <button onClick={() => onChange([])} className="text-[11px] text-destructive hover:underline">Limpiar</button>
+          </div>
+          <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+            {selected.map((z) => (
+              <Badge key={z} variant="secondary" className="gap-1 pr-1 text-xs">
+                {z}
+                <button onClick={() => toggle(z)} className="ml-0.5 rounded-full hover:bg-foreground/10 p-0.5">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
 
@@ -303,9 +321,14 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
               onChange={(e) => setQuery(e.target.value)}
               className="pl-9 h-9 text-sm"
             />
+            {query && (
+              <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="border border-border rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {loading ? (
               <div className="p-4 text-center text-sm text-muted-foreground">Cargando zonas...</div>
             ) : (
@@ -313,46 +336,59 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                 const items = filteredZones[key] || [];
                 if (items.length === 0) return null;
                 const macro = MACRO_ZONES[key];
-                const isExpanded = expandedMacro === key || !!query;
+                const isExpanded = expandedMacros.has(key) || isSearching;
                 const allSelected = items.length > 0 && items.every((i) => selected.includes(i.name));
                 const selectedCount = items.filter((i) => selected.includes(i.name)).length;
 
                 return (
-                  <div key={key}>
-                    <div className="flex items-center border-b border-border bg-muted/50 sticky top-0 z-10">
+                  <div key={key} className="rounded-lg border border-border overflow-hidden">
+                    {/* Macro header */}
+                    <div className="flex items-center bg-muted/40">
                       <button
-                        onClick={() => setExpandedMacro(isExpanded && !query ? null : key)}
-                        className="flex items-center gap-2 flex-1 px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/80 transition-colors text-left"
+                        onClick={() => toggleExpand(key)}
+                        className="flex items-center gap-2 flex-1 px-3 py-2.5 text-left transition-colors hover:bg-muted/60"
                       >
-                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                        <span>{macro.label}</span>
+                        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${!isExpanded ? "-rotate-90" : ""}`} />
+                        <span className="text-sm font-semibold text-foreground">{macro.label}</span>
                         <span className="text-xs text-muted-foreground font-normal">({items.length})</span>
-                        {selectedCount > 0 && <span className="ml-auto text-xs text-primary font-medium">{selectedCount} sel.</span>}
+                        {selectedCount > 0 && (
+                          <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20">
+                            {selectedCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => toggleMacro(key)}
-                        className={`px-3 py-2 text-xs font-medium transition-colors ${allSelected ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap ${allSelected ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        {allSelected ? "Quitar todos" : "Todos"}
+                        {allSelected ? "Quitar" : "Seleccionar todos"}
                       </button>
                     </div>
+
+                    {/* Zone items */}
                     {isExpanded && (
-                      <div className="grid grid-cols-2">
+                      <div className="grid grid-cols-2 gap-px bg-border/30">
                         {items.map((item) => {
-                          const isSelected = selected.includes(item.name);
+                          const isItemSelected = selected.includes(item.name);
                           return (
                             <button
                               key={item.name}
                               onClick={() => toggle(item.name)}
-                              className={`flex items-center justify-between px-3 py-1.5 text-xs text-left border-b border-r border-border/50 transition-colors ${
-                                isSelected ? "bg-primary/5 text-primary font-medium" : "text-foreground hover:bg-muted/50"
+                              className={`flex items-center gap-2 px-3 py-2 text-left transition-all ${
+                                isItemSelected
+                                  ? "bg-primary/8 text-foreground"
+                                  : "bg-card hover:bg-muted/30 text-foreground"
                               }`}
                             >
-                              <span className="truncate">{item.name}</span>
-                              <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-                                <span className="text-[10px] text-muted-foreground">{item.count}</span>
-                                {isSelected && <Check className="h-3 w-3 text-primary" />}
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                                isItemSelected
+                                  ? "border-primary bg-primary"
+                                  : "border-muted-foreground/30 bg-background"
+                              }`}>
+                                {isItemSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
                               </div>
+                              <span className="text-xs truncate flex-1">{item.name}</span>
+                              <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.count}</span>
                             </button>
                           );
                         })}
@@ -361,6 +397,11 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                   </div>
                 );
               })
+            )}
+            {!loading && Object.keys(filteredZones).length === 0 && query && (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                No se encontraron zonas para "{query}"
+              </div>
             )}
           </div>
         </>
