@@ -349,6 +349,26 @@ Deno.serve(async (req) => {
       await supabase.from("upload_logs").insert(logData);
     }
 
+    // Trigger opportunity score recalculation after upload
+    if (inserted > 0) {
+      try {
+        console.log("Triggering opportunity score recalculation...");
+        const scoreRes = await fetch(`${supabaseUrl}/functions/v1/compute-opportunity-scores`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({}),
+        });
+        const scoreResult = await scoreRes.json();
+        console.log("Opportunity scores recalculated:", scoreResult);
+      } catch (e) {
+        console.error("Failed to trigger opportunity score recalculation:", e);
+        // Non-blocking — upload still succeeded
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
