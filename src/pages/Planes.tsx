@@ -307,7 +307,7 @@ const Planes = () => {
                     : isDowngrade
                     ? "Plan inferior"
                     : plan.id === "free"
-                    ? "Plan gratuito"
+                    ? "Gratuito"
                     : plan.cta}
                 </button>
               </div>
