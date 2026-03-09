@@ -51,6 +51,7 @@ let _discardedIds: Set<string> = new Set();
 export function usePreselection() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [discardedIds, setDiscardedIds] = useState<Set<string>>(new Set());
+  const [savedDates, setSavedDates] = useState<Record<string, string>>({});
   const [userId, setUserId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
