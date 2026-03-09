@@ -761,7 +761,7 @@ const Landing = () => {
           </motion.p>
           <motion.div variants={fadeUp}>
             <Button asChild size="lg" className="rounded-full px-10 text-base h-14 shadow-xl shadow-primary/30">
-              <Link to="/auth">
+              <Link to="/auth?mode=register">
                 Crear cuenta gratis
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
