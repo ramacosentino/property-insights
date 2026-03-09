@@ -331,9 +331,6 @@ const Onboarding = () => {
                       {selected && <Check className="h-3 w-3 text-primary-foreground" />}
                     </div>
                     <span>{tier.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {tier.minScore >= 1 ? "≥ 1.0" : `${tier.minScore} – ${tier.maxScore}`}
-                    </span>
                   </button>
                 );
               })}
