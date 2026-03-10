@@ -8,7 +8,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 
-// Canonical CABA barrios (48 official + commonly used sub-names)
+// Canonical CABA barrios (48 official)
 const CABA_CANONICAL_BARRIOS = new Set([
   "Agronomía", "Almagro", "Balvanera", "Barracas", "Belgrano", "Boedo",
   "Caballito", "Chacarita", "Coghlan", "Colegiales", "Constitución",
@@ -21,14 +21,25 @@ const CABA_CANONICAL_BARRIOS = new Set([
   "Villa General Mitre", "Villa Lugano", "Villa Luro", "Villa Ortúzar",
   "Villa Pueyrredón", "Villa Real", "Villa Riachuelo", "Villa Santa Rita",
   "Villa Soldati", "Villa Urquiza",
-  // Commonly used sub-barrios that people recognize
-  "Barrio Norte", "Palermo Hollywood", "Palermo Chico", "Belgrano Residencial",
-  "Bajo Flores",
 ]);
 
-// Map Google's non-standard names to canonical barrios
+// Sub-barrios that nest under a parent barrio
+const CABA_SUB_BARRIOS: Record<string, string[]> = {
+  "Palermo": ["Palermo Hollywood", "Palermo Chico", "Palermo Soho", "Palermo Viejo"],
+  "Belgrano": ["Belgrano Residencial", "Barrio Chino"],
+  "Balvanera": ["Once", "Abasto"],
+  "San Nicolás": ["Centro", "Microcentro", "Tribunales"],
+  "Recoleta": ["Barrio Norte"],
+};
+
+// All recognized names (official + sub-barrios)
+const CABA_ALL_RECOGNIZED = new Set([
+  ...CABA_CANONICAL_BARRIOS,
+  ...Object.values(CABA_SUB_BARRIOS).flat(),
+]);
+
+// Map Google's non-standard names to canonical barrios (only ones NOT in sub-barrios)
 const CABA_BARRIO_ALIASES: Record<string, string> = {
-  "Barrio Chino": "Belgrano",
   "Barrio Catalinas Sur": "La Boca",
   "Barrio Olímpico": "Villa Soldati",
   "Barrio Piedrabuena": "Villa Lugano",
@@ -40,16 +51,11 @@ const CABA_BARRIO_ALIASES: Record<string, string> = {
   "Barrio 20": "Villa Lugano",
   "Barrio Castex": "Retiro",
   "Complejo de Edificios Donizetti y Rivadavia": "Caballito",
-  "Palermo Soho": "Palermo",
-  "Palermo Viejo": "Palermo",
+  "Palermo Soho": "Palermo Soho",
+  "Palermo Viejo": "Palermo Viejo",
   "Recoleta chica": "Recoleta",
   "Barrio Parque": "Recoleta",
-  "Once": "Balvanera",
-  "Abasto": "Balvanera",
   "Congreso": "Monserrat",
-  "Centro": "San Nicolás",
-  "Microcentro": "San Nicolás",
-  "Tribunales": "San Nicolás",
 };
 // Map Google's non-standard locality names to canonical ones
 const GBA_LOCALITY_ALIASES: Record<string, string> = {
@@ -128,6 +134,13 @@ interface ZoneItem {
   name: string;
   count: number;
   type: "neighborhood" | "locality";
+  children?: ZoneItem[];
+}
+
+// Reverse map: sub-barrio name → parent barrio
+const SUB_TO_PARENT: Record<string, string> = {};
+for (const [parent, subs] of Object.entries(CABA_SUB_BARRIOS)) {
+  for (const sub of subs) SUB_TO_PARENT[sub] = parent;
 }
 
 interface ZoneSelectorProps {
@@ -191,15 +204,41 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
       const cabaCounts: Record<string, number> = {};
       cabaData.forEach((p: any) => {
         let n = p.norm_neighborhood as string;
-        // Map aliases to canonical names
+        // Map aliases to canonical/sub-barrio names
         if (CABA_BARRIO_ALIASES[n]) n = CABA_BARRIO_ALIASES[n];
-        // Only include if it's a recognized barrio
-        if (!CABA_CANONICAL_BARRIOS.has(n)) return;
+        // Only include if it's a recognized name (official or sub-barrio)
+        if (!CABA_ALL_RECOGNIZED.has(n)) return;
         cabaCounts[n] = (cabaCounts[n] || 0) + 1;
       });
 
-      const cabaZones: ZoneItem[] = Object.entries(cabaCounts)
-        .map(([name, count]) => ({ name, count, type: "neighborhood" as const }))
+      // Build nested structure: parent barrios with children
+      const parentItems: Map<string, ZoneItem> = new Map();
+      
+      // First, create all parent barrios
+      for (const name of CABA_CANONICAL_BARRIOS) {
+        if (cabaCounts[name] || CABA_SUB_BARRIOS[name]) {
+          const children: ZoneItem[] = [];
+          if (CABA_SUB_BARRIOS[name]) {
+            for (const sub of CABA_SUB_BARRIOS[name]) {
+              if (cabaCounts[sub]) {
+                children.push({ name: sub, count: cabaCounts[sub], type: "neighborhood" });
+              }
+            }
+            children.sort((a, b) => b.count - a.count);
+          }
+          const parentCount = cabaCounts[name] || 0;
+          if (parentCount > 0 || children.length > 0) {
+            parentItems.set(name, {
+              name,
+              count: parentCount,
+              type: "neighborhood",
+              children: children.length > 0 ? children : undefined,
+            });
+          }
+        }
+      }
+
+      const cabaZones: ZoneItem[] = [...parentItems.values()]
         .sort((a, b) => b.count - a.count);
 
       const gbaData = await fetchAll(
@@ -332,9 +371,18 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     onChange(selected.includes(zone) ? selected.filter((z) => z !== zone) : [...selected, zone]);
   };
 
+  const getAllNames = (items: ZoneItem[]) => {
+    const names: string[] = [];
+    items.forEach((i) => {
+      names.push(i.name);
+      if (i.children) i.children.forEach((c) => names.push(c.name));
+    });
+    return names;
+  };
+
   const toggleMacro = (macroKey: string) => {
     const items = zones[macroKey] || [];
-    const names = items.map((i) => i.name);
+    const names = getAllNames(items);
     const allSelected = names.every((n) => selected.includes(n));
     if (allSelected) onChange(selected.filter((s) => !names.includes(s)));
     else onChange([...selected, ...names.filter((n) => !selected.includes(n))]);
@@ -356,10 +404,16 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     const q = query.toLowerCase();
     const result: Record<string, ZoneItem[]> = {};
     for (const [key, items] of Object.entries(zones)) {
-      // Also match macro zone label
       const macroMatch = MACRO_ZONES[key]?.label.toLowerCase().includes(q);
-      const filtered = macroMatch ? items : items.filter((i) => i.name.toLowerCase().includes(q));
-      if (filtered.length > 0) result[key] = filtered;
+      if (macroMatch) {
+        result[key] = items;
+      } else {
+        const filtered = items.filter((i) =>
+          i.name.toLowerCase().includes(q) ||
+          i.children?.some((c) => c.name.toLowerCase().includes(q))
+        );
+        if (filtered.length > 0) result[key] = filtered;
+      }
     }
     return result;
   }, [zones, query]);
@@ -444,8 +498,9 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                 if (items.length === 0) return null;
                 const macro = MACRO_ZONES[key];
                 const isExpanded = expandedMacros.has(key) || isSearching;
-                const allSelected = items.length > 0 && items.every((i) => selected.includes(i.name));
-                const selectedCount = items.filter((i) => selected.includes(i.name)).length;
+                const allNames = getAllNames(items);
+                const allSelected = allNames.length > 0 && allNames.every((n) => selected.includes(n));
+                const selectedCount = allNames.filter((n) => selected.includes(n)).length;
 
                 return (
                   <div key={key} className="rounded-lg border border-border overflow-hidden">
@@ -477,26 +532,52 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                       <div className="grid grid-cols-2 gap-px bg-border/30">
                         {items.map((item) => {
                           const isItemSelected = selected.includes(item.name);
+                          const hasChildren = item.children && item.children.length > 0;
                           return (
-                            <button
-                              key={item.name}
-                              onClick={() => toggle(item.name)}
-                              className={`flex items-center gap-2 px-3 py-2 text-left transition-all ${
-                                isItemSelected
-                                  ? "bg-primary/8 text-foreground"
-                                  : "bg-card hover:bg-muted/30 text-foreground"
-                              }`}
-                            >
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
-                                isItemSelected
-                                  ? "border-primary bg-primary"
-                                  : "border-muted-foreground/30 bg-background"
-                              }`}>
-                                {isItemSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
-                              </div>
-                              <span className="text-xs truncate flex-1">{item.name}</span>
-                              <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.count}</span>
-                            </button>
+                            <div key={item.name} className={hasChildren ? "col-span-2 grid grid-cols-2 gap-px" : ""}>
+                              <button
+                                onClick={() => toggle(item.name)}
+                                className={`flex items-center gap-2 px-3 py-2 text-left transition-all ${hasChildren ? "col-span-2" : ""} ${
+                                  isItemSelected
+                                    ? "bg-primary/8 text-foreground"
+                                    : "bg-card hover:bg-muted/30 text-foreground"
+                                }`}
+                              >
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                                  isItemSelected
+                                    ? "border-primary bg-primary"
+                                    : "border-muted-foreground/30 bg-background"
+                                }`}>
+                                  {isItemSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                                </div>
+                                <span className="text-xs truncate flex-1 font-medium">{item.name}</span>
+                                <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.count}</span>
+                              </button>
+                              {hasChildren && item.children!.map((child) => {
+                                const isChildSelected = selected.includes(child.name);
+                                return (
+                                  <button
+                                    key={child.name}
+                                    onClick={() => toggle(child.name)}
+                                    className={`flex items-center gap-2 pl-7 pr-3 py-1.5 text-left transition-all ${
+                                      isChildSelected
+                                        ? "bg-primary/8 text-foreground"
+                                        : "bg-card hover:bg-muted/30 text-foreground"
+                                    }`}
+                                  >
+                                    <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                                      isChildSelected
+                                        ? "border-primary bg-primary"
+                                        : "border-muted-foreground/30 bg-background"
+                                    }`}>
+                                      {isChildSelected && <Check className="h-2 w-2 text-primary-foreground" />}
+                                    </div>
+                                    <span className="text-[11px] truncate flex-1 text-muted-foreground">{child.name}</span>
+                                    <span className="text-[10px] text-muted-foreground flex-shrink-0">{child.count}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           );
                         })}
                       </div>
