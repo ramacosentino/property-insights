@@ -2,18 +2,34 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { createFilterState, FilterState } from "@/components/MultiFilter";
-
-export interface ProvinceGroup {
-  province: string;
-  totalCount: number;
-  neighborhoods: { value: string; label: string; count: number }[];
-}
+import { NeighborhoodItem } from "@/lib/neighborhoodGroups";
+export type { ProvinceGroup } from "@/lib/neighborhoodGroups";
 
 interface NeighborhoodDropdownProps {
-  groups: ProvinceGroup[];
+  groups: import("@/lib/neighborhoodGroups").ProvinceGroup[];
   state: FilterState;
   onChange: (s: FilterState) => void;
   compact?: boolean;
+}
+
+/** Get all values in a neighborhood family (parent + children) */
+function getFamilyValues(item: NeighborhoodItem): string[] {
+  const vals = [item.value];
+  if (item.children) item.children.forEach((c) => vals.push(c.value));
+  return vals;
+}
+
+/** Find the parent item that contains a given value */
+function findParentItem(
+  groups: import("@/lib/neighborhoodGroups").ProvinceGroup[],
+  value: string
+): NeighborhoodItem | null {
+  for (const g of groups) {
+    for (const n of g.neighborhoods) {
+      if (n.value === value && n.children && n.children.length > 0) return n;
+    }
+  }
+  return null;
 }
 
 const NeighborhoodDropdown = ({
@@ -36,6 +52,13 @@ const NeighborhoodDropdown = ({
   }, []);
 
   const handleClick = (value: string) => {
+    // Check if this is a parent with children
+    const parentItem = findParentItem(groups, value);
+    if (parentItem) {
+      handleParentToggle(parentItem);
+      return;
+    }
+
     const next: FilterState = {
       included: new Set(state.included),
       excluded: new Set(state.excluded),
@@ -51,8 +74,42 @@ const NeighborhoodDropdown = ({
     onChange(next);
   };
 
-  const handleProvinceToggle = (group: ProvinceGroup) => {
-    const allValues = group.neighborhoods.map((n) => n.value);
+  /** Toggle a parent barrio: cycles all family members together */
+  const handleParentToggle = (item: NeighborhoodItem) => {
+    const family = getFamilyValues(item);
+    const next: FilterState = {
+      included: new Set(state.included),
+      excluded: new Set(state.excluded),
+    };
+
+    const allIncluded = family.every((v) => next.included.has(v));
+    const anyIncluded = family.some((v) => next.included.has(v));
+
+    if (allIncluded) {
+      // All included → exclude all
+      family.forEach((v) => {
+        next.included.delete(v);
+        next.excluded.add(v);
+      });
+    } else if (!anyIncluded && family.every((v) => next.excluded.has(v))) {
+      // All excluded → clear all
+      family.forEach((v) => next.excluded.delete(v));
+    } else {
+      // Partial or none → include all
+      family.forEach((v) => {
+        next.excluded.delete(v);
+        next.included.add(v);
+      });
+    }
+    onChange(next);
+  };
+
+  const handleProvinceToggle = (group: import("@/lib/neighborhoodGroups").ProvinceGroup) => {
+    const allValues: string[] = [];
+    group.neighborhoods.forEach((n) => {
+      allValues.push(n.value);
+      if (n.children) n.children.forEach((c) => allValues.push(c.value));
+    });
     const allIncluded = allValues.every((v) => state.included.has(v));
     const next: FilterState = {
       included: new Set(state.included),
@@ -77,9 +134,18 @@ const NeighborhoodDropdown = ({
     return groups
       .map((g) => ({
         ...g,
-        neighborhoods: g.neighborhoods.filter(
-          (n) => n.value.toLowerCase().includes(q) || g.province.toLowerCase().includes(q)
-        ),
+        neighborhoods: g.neighborhoods
+          .map((n) => {
+            const parentMatch = n.value.toLowerCase().includes(q) || g.province.toLowerCase().includes(q);
+            if (parentMatch) return n; // show parent + all children
+            // Check children
+            if (n.children) {
+              const filteredChildren = n.children.filter((c) => c.value.toLowerCase().includes(q));
+              if (filteredChildren.length > 0) return { ...n, children: filteredChildren };
+            }
+            return null;
+          })
+          .filter(Boolean) as NeighborhoodItem[],
       }))
       .filter((g) => g.neighborhoods.length > 0);
   }, [groups, query]);
@@ -105,7 +171,11 @@ const NeighborhoodDropdown = ({
           {Array.from(state.included).map((v) => (
             <span
               key={v}
-              onClick={() => handleClick(v)}
+              onClick={() => {
+                const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
+                next.included.delete(v);
+                onChange(next);
+              }}
               className={`cursor-pointer px-2 py-0.5 rounded-full ${textSize} font-medium bg-primary/20 text-primary border border-primary/30`}
             >
               {v} ×
@@ -114,7 +184,11 @@ const NeighborhoodDropdown = ({
           {Array.from(state.excluded).map((v) => (
             <span
               key={v}
-              onClick={() => handleClick(v)}
+              onClick={() => {
+                const next: FilterState = { included: new Set(state.included), excluded: new Set(state.excluded) };
+                next.excluded.delete(v);
+                onChange(next);
+              }}
               className={`cursor-pointer px-2 py-0.5 rounded-full ${textSize} font-medium bg-destructive/10 text-destructive border border-destructive/30 line-through`}
             >
               ✕ {v} ×
@@ -144,7 +218,12 @@ const NeighborhoodDropdown = ({
           </div>
           <div className="overflow-y-auto max-h-64">
             {filteredGroups.map((group) => {
-              const allIncluded = group.neighborhoods.every((n) => state.included.has(n.value));
+              const allGroupValues: string[] = [];
+              group.neighborhoods.forEach((n) => {
+                allGroupValues.push(n.value);
+                if (n.children) n.children.forEach((c) => allGroupValues.push(c.value));
+              });
+              const allIncluded = allGroupValues.every((v) => state.included.has(v));
               const isCollapsed = collapsed.has(group.province) && !query;
               return (
                 <div key={group.province}>
@@ -171,24 +250,75 @@ const NeighborhoodDropdown = ({
                     </button>
                   </div>
                   {!isCollapsed && group.neighborhoods.map((opt) => {
-                    const isIncluded = state.included.has(opt.value);
-                    const isExcluded = state.excluded.has(opt.value);
+                    const hasChildren = opt.children && opt.children.length > 0;
+                    const familyValues = getFamilyValues(opt);
+                    const isParentIncluded = hasChildren
+                      ? familyValues.every((v) => state.included.has(v))
+                      : state.included.has(opt.value);
+                    const isParentExcluded = hasChildren
+                      ? familyValues.every((v) => state.excluded.has(v))
+                      : state.excluded.has(opt.value);
+                    const someIncluded = hasChildren && !isParentIncluded && familyValues.some((v) => state.included.has(v));
+
                     return (
-                      <button
-                        key={opt.value}
-                        onClick={() => handleClick(opt.value)}
-                        className={`w-full text-left pl-6 pr-3 py-1 ${textSize} transition-colors flex items-center justify-between ${
-                          isIncluded
-                            ? "bg-primary/5 text-primary"
-                            : isExcluded
-                            ? "bg-destructive/5 text-destructive line-through"
-                            : "text-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        {isIncluded && <span className="text-primary">✓</span>}
-                        {isExcluded && <span className="text-destructive">✕</span>}
-                      </button>
+                      <div key={opt.value}>
+                        <button
+                          onClick={() => handleClick(opt.value)}
+                          className={`w-full text-left pl-6 pr-3 py-1 ${textSize} transition-colors flex items-center justify-between ${
+                            isParentIncluded
+                              ? "bg-primary/5 text-primary font-medium"
+                              : isParentExcluded
+                              ? "bg-destructive/5 text-destructive line-through"
+                              : someIncluded
+                              ? "bg-primary/5 text-primary/70"
+                              : "text-foreground hover:bg-secondary"
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          <span>
+                            {isParentIncluded && <span className="text-primary">✓</span>}
+                            {isParentExcluded && <span className="text-destructive">✕</span>}
+                            {someIncluded && <span className="text-primary/50">—</span>}
+                          </span>
+                        </button>
+                        {/* Render children indented */}
+                        {hasChildren && opt.children!.map((child) => {
+                          const isChildIncluded = state.included.has(child.value);
+                          const isChildExcluded = state.excluded.has(child.value);
+                          return (
+                            <button
+                              key={child.value}
+                              onClick={() => {
+                                // Individual child toggle (not family)
+                                const next: FilterState = {
+                                  included: new Set(state.included),
+                                  excluded: new Set(state.excluded),
+                                };
+                                if (next.included.has(child.value)) {
+                                  next.included.delete(child.value);
+                                  next.excluded.add(child.value);
+                                } else if (next.excluded.has(child.value)) {
+                                  next.excluded.delete(child.value);
+                                } else {
+                                  next.included.add(child.value);
+                                }
+                                onChange(next);
+                              }}
+                              className={`w-full text-left pl-10 pr-3 py-0.5 ${textSize} transition-colors flex items-center justify-between ${
+                                isChildIncluded
+                                  ? "bg-primary/5 text-primary"
+                                  : isChildExcluded
+                                  ? "bg-destructive/5 text-destructive line-through"
+                                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                              }`}
+                            >
+                              <span>{child.label}</span>
+                              {isChildIncluded && <span className="text-primary">✓</span>}
+                              {isChildExcluded && <span className="text-destructive">✕</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>

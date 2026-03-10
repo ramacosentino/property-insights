@@ -23,14 +23,7 @@ const CABA_CANONICAL_BARRIOS = new Set([
   "Villa Soldati", "Villa Urquiza",
 ]);
 
-// Sub-barrios that nest under a parent barrio
-const CABA_SUB_BARRIOS: Record<string, string[]> = {
-  "Palermo": ["Palermo Hollywood", "Palermo Chico", "Palermo Soho", "Palermo Viejo"],
-  "Belgrano": ["Belgrano Residencial", "Barrio Chino"],
-  "Balvanera": ["Once", "Abasto"],
-  "San Nicolás": ["Centro", "Microcentro", "Tribunales"],
-  "Recoleta": ["Barrio Norte"],
-};
+import { CABA_SUB_BARRIOS, SUB_TO_PARENT } from "@/lib/cabaZones";
 
 // All recognized names (official + sub-barrios)
 const CABA_ALL_RECOGNIZED = new Set([
@@ -137,11 +130,7 @@ interface ZoneItem {
   children?: ZoneItem[];
 }
 
-// Reverse map: sub-barrio name → parent barrio
-const SUB_TO_PARENT: Record<string, string> = {};
-for (const [parent, subs] of Object.entries(CABA_SUB_BARRIOS)) {
-  for (const sub of subs) SUB_TO_PARENT[sub] = parent;
-}
+// SUB_TO_PARENT imported from cabaZones
 
 interface ZoneSelectorProps {
   selected: string[];
