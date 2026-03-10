@@ -80,51 +80,18 @@ const Auth = () => {
   };
 
   const handleGoogle = async () => {
-    const isCustomDomain =
-      !window.location.hostname.includes("lovable.app") &&
-      !window.location.hostname.includes("lovableproject.com");
-
-    if (isCustomDomain) {
-      // Bypass Lovable auth-bridge for custom domain (urbanna.co)
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/mapa`,
-          skipBrowserRedirect: true,
-        },
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/mapa",
+      extraParams: {
+        prompt: "select_account",
+      },
+    });
+    if (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo iniciar sesión con Google",
+        variant: "destructive",
       });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "No se pudo iniciar sesión con Google",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data?.url) {
-        const oauthUrl = new URL(data.url);
-        const allowedHosts = ["accounts.google.com", "supabase.co"];
-        if (allowedHosts.some((host) => oauthUrl.hostname === host || oauthUrl.hostname.endsWith(`.${host}`))) {
-          window.location.href = data.url;
-        }
-      }
-    } else {
-      // For lovable.app preview domains, use managed OAuth
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/mapa",
-        extraParams: {
-          prompt: "select_account",
-        },
-      });
-      if (error) {
-        toast({
-          title: "Error",
-          description: "No se pudo iniciar sesión con Google",
-          variant: "destructive",
-        });
-      }
     }
   };
 
