@@ -492,8 +492,9 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                 if (items.length === 0) return null;
                 const macro = MACRO_ZONES[key];
                 const isExpanded = expandedMacros.has(key) || isSearching;
-                const allSelected = items.length > 0 && items.every((i) => selected.includes(i.name));
-                const selectedCount = items.filter((i) => selected.includes(i.name)).length;
+                const allNames = getAllNames(items);
+                const allSelected = allNames.length > 0 && allNames.every((n) => selected.includes(n));
+                const selectedCount = allNames.filter((n) => selected.includes(n)).length;
 
                 return (
                   <div key={key} className="rounded-lg border border-border overflow-hidden">
