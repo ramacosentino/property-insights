@@ -32,8 +32,6 @@ export function buildNeighborhoodGroups(
     if (hood === "Sin barrio") continue;
     const sample = properties.find((pp) => pp.neighborhood === hood);
     const prov = sample?.city || "Sin ciudad";
-    // Skip neighborhoods that are identical to their parent group (avoids San Isidro → San Isidro)
-    if (hood === prov) continue;
     if (!provMap.has(prov)) provMap.set(prov, []);
     provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
   }
