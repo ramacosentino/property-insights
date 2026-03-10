@@ -516,26 +516,52 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                       <div className="grid grid-cols-2 gap-px bg-border/30">
                         {items.map((item) => {
                           const isItemSelected = selected.includes(item.name);
+                          const hasChildren = item.children && item.children.length > 0;
                           return (
-                            <button
-                              key={item.name}
-                              onClick={() => toggle(item.name)}
-                              className={`flex items-center gap-2 px-3 py-2 text-left transition-all ${
-                                isItemSelected
-                                  ? "bg-primary/8 text-foreground"
-                                  : "bg-card hover:bg-muted/30 text-foreground"
-                              }`}
-                            >
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
-                                isItemSelected
-                                  ? "border-primary bg-primary"
-                                  : "border-muted-foreground/30 bg-background"
-                              }`}>
-                                {isItemSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
-                              </div>
-                              <span className="text-xs truncate flex-1">{item.name}</span>
-                              <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.count}</span>
-                            </button>
+                            <div key={item.name} className={hasChildren ? "col-span-2 grid grid-cols-2 gap-px" : ""}>
+                              <button
+                                onClick={() => toggle(item.name)}
+                                className={`flex items-center gap-2 px-3 py-2 text-left transition-all ${hasChildren ? "col-span-2" : ""} ${
+                                  isItemSelected
+                                    ? "bg-primary/8 text-foreground"
+                                    : "bg-card hover:bg-muted/30 text-foreground"
+                                }`}
+                              >
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                                  isItemSelected
+                                    ? "border-primary bg-primary"
+                                    : "border-muted-foreground/30 bg-background"
+                                }`}>
+                                  {isItemSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                                </div>
+                                <span className="text-xs truncate flex-1 font-medium">{item.name}</span>
+                                <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.count}</span>
+                              </button>
+                              {hasChildren && item.children!.map((child) => {
+                                const isChildSelected = selected.includes(child.name);
+                                return (
+                                  <button
+                                    key={child.name}
+                                    onClick={() => toggle(child.name)}
+                                    className={`flex items-center gap-2 pl-7 pr-3 py-1.5 text-left transition-all ${
+                                      isChildSelected
+                                        ? "bg-primary/8 text-foreground"
+                                        : "bg-card hover:bg-muted/30 text-foreground"
+                                    }`}
+                                  >
+                                    <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                                      isChildSelected
+                                        ? "border-primary bg-primary"
+                                        : "border-muted-foreground/30 bg-background"
+                                    }`}>
+                                      {isChildSelected && <Check className="h-2 w-2 text-primary-foreground" />}
+                                    </div>
+                                    <span className="text-[11px] truncate flex-1 text-muted-foreground">{child.name}</span>
+                                    <span className="text-[10px] text-muted-foreground flex-shrink-0">{child.count}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           );
                         })}
                       </div>
