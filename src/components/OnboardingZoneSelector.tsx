@@ -130,11 +130,7 @@ interface ZoneItem {
   children?: ZoneItem[];
 }
 
-// Reverse map: sub-barrio name → parent barrio
-const SUB_TO_PARENT: Record<string, string> = {};
-for (const [parent, subs] of Object.entries(CABA_SUB_BARRIOS)) {
-  for (const sub of subs) SUB_TO_PARENT[sub] = parent;
-}
+// SUB_TO_PARENT imported from cabaZones
 
 interface ZoneSelectorProps {
   selected: string[];
