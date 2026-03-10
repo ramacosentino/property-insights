@@ -39,25 +39,7 @@ const Ranking = () => {
   const [onboardingApplied, setOnboardingApplied] = useState(false);
 
   // Build neighborhood groups
-  const neighborhoodsByProvince = useMemo(() => {
-    const hoodCounts = new Map<string, number>();
-    const provCounts = new Map<string, number>();
-    const provMap = new Map<string, { value: string; label: string; count: number }[]>();
-    for (const p of properties) {
-      hoodCounts.set(p.neighborhood, (hoodCounts.get(p.neighborhood) || 0) + 1);
-      const prov = p.city || "Sin ciudad";
-      provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
-    }
-    for (const [hood, count] of hoodCounts.entries()) {
-      const sample = properties.find((pp) => pp.neighborhood === hood);
-      const prov = sample?.city || "Sin ciudad";
-      if (!provMap.has(prov)) provMap.set(prov, []);
-      provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
-    }
-    return Array.from(provMap.entries())
-      .map(([prov, hoods]) => ({ province: prov, totalCount: provCounts.get(prov) || 0, neighborhoods: hoods.sort((a, b) => a.value.localeCompare(b.value)) }))
-      .sort((a, b) => b.totalCount - a.totalCount);
-  }, [properties]);
+  const neighborhoodsByProvince = useMemo(() => buildNeighborhoodGroups(properties), [properties]);
 
   const ranked = useMemo(() => {
     let result = properties.filter((p) => p.price > 0 && p.pricePerM2Total && p.pricePerM2Total > 0 && p.opportunityScore > 0);
