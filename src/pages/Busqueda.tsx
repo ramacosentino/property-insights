@@ -323,7 +323,7 @@ const ResultsStep = ({
         </div>
         <h2 className="text-2xl font-bold">Top {resultProperties.length} proyectos</h2>
         <p className="text-sm text-muted-foreground">
-          Ordenados por mayor ganancia neta estimada. Guardá los que te interesen.
+          Ordenados por mayor valor agregado estimado. Guardá los que te interesen.
         </p>
       </div>
 
