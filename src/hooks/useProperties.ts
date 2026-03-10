@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
+import { normalizePropertyZone } from "@/lib/cabaZones";
 import { useSurfacePreference, SurfaceType } from "@/contexts/SurfacePreferenceContext";
 import { useMemo } from "react";
 
@@ -86,10 +87,16 @@ function mapRowsWithScores(rows: DBPropertyRow[], surfaceType: SurfaceType): {
         ? (r.opportunity_score_covered ?? 0)
         : (r.opportunity_score_total ?? 0);
 
-      // Build consistent location from normalized fields
-      const normHood = r.norm_neighborhood || r.neighborhood || "Sin barrio";
-      const normCity = r.norm_locality || r.norm_province || r.city || "Sin ciudad";
-      // For the display location: prefer normalized neighborhood + city
+      // Apply centralized zone normalization (aliases, whitelists)
+      const zone = normalizePropertyZone({
+        norm_neighborhood: r.norm_neighborhood,
+        norm_locality: r.norm_locality,
+        norm_province: r.norm_province,
+        neighborhood: r.neighborhood,
+        city: r.city,
+      });
+      const normHood = zone.neighborhood;
+      const normCity = zone.city;
       const displayLocation = normHood !== "Sin barrio"
         ? `${normHood}, ${normCity}`
         : r.location || normCity;
