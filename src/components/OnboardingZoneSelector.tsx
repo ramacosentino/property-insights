@@ -404,10 +404,16 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     const q = query.toLowerCase();
     const result: Record<string, ZoneItem[]> = {};
     for (const [key, items] of Object.entries(zones)) {
-      // Also match macro zone label
       const macroMatch = MACRO_ZONES[key]?.label.toLowerCase().includes(q);
-      const filtered = macroMatch ? items : items.filter((i) => i.name.toLowerCase().includes(q));
-      if (filtered.length > 0) result[key] = filtered;
+      if (macroMatch) {
+        result[key] = items;
+      } else {
+        const filtered = items.filter((i) =>
+          i.name.toLowerCase().includes(q) ||
+          i.children?.some((c) => c.name.toLowerCase().includes(q))
+        );
+        if (filtered.length > 0) result[key] = filtered;
+      }
     }
     return result;
   }, [zones, query]);
