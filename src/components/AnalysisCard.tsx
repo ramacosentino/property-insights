@@ -191,12 +191,13 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
                 const precio = property.price || 0;
                 const valorPot = raw.valor_potencial_total || 0;
                 const renovCost = Math.round(valorPot - precio - raw.oportunidad_neta);
+                const inversionTotal = precio + renovCost;
 
                 return (
                 <div className="rounded-lg border border-border bg-secondary/50 p-2.5">
                   <div className="flex items-center gap-1 mb-1">
                     <Wrench className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground font-medium">Ganancia Neta Est.</span>
+                    <span className="text-[10px] text-muted-foreground font-medium">Valor Agregado Est.</span>
                   </div>
                   <span className={`text-base font-bold font-mono ${
                     raw.oportunidad_neta > 0 ? "text-green-500" : "text-red-500"
@@ -208,13 +209,17 @@ const AnalysisCard = ({ property, analysis, onAnalyze, isAnalyzing, allPropertie
                       <span>Potencial</span>
                       <span className="text-foreground/70">USD {valorPot.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Precio</span>
-                      <span className="text-foreground/70">− USD {precio.toLocaleString()}</span>
+                    <div className="flex justify-between text-muted-foreground border-b border-border/50 pb-1">
+                      <span>Inversión Total</span>
+                      <span className="text-foreground/70 font-semibold">− USD {inversionTotal.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-muted-foreground">
+                    <div className="flex justify-between text-muted-foreground/70 pl-2">
+                      <span>Precio</span>
+                      <span>USD {precio.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground/70 pl-2">
                       <span>Renovación</span>
-                      <span className="text-foreground/70">− USD {renovCost.toLocaleString()}</span>
+                      <span>USD {renovCost.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
