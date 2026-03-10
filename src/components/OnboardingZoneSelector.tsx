@@ -204,15 +204,41 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
       const cabaCounts: Record<string, number> = {};
       cabaData.forEach((p: any) => {
         let n = p.norm_neighborhood as string;
-        // Map aliases to canonical names
+        // Map aliases to canonical/sub-barrio names
         if (CABA_BARRIO_ALIASES[n]) n = CABA_BARRIO_ALIASES[n];
-        // Only include if it's a recognized barrio
-        if (!CABA_CANONICAL_BARRIOS.has(n)) return;
+        // Only include if it's a recognized name (official or sub-barrio)
+        if (!CABA_ALL_RECOGNIZED.has(n)) return;
         cabaCounts[n] = (cabaCounts[n] || 0) + 1;
       });
 
-      const cabaZones: ZoneItem[] = Object.entries(cabaCounts)
-        .map(([name, count]) => ({ name, count, type: "neighborhood" as const }))
+      // Build nested structure: parent barrios with children
+      const parentItems: Map<string, ZoneItem> = new Map();
+      
+      // First, create all parent barrios
+      for (const name of CABA_CANONICAL_BARRIOS) {
+        if (cabaCounts[name] || CABA_SUB_BARRIOS[name]) {
+          const children: ZoneItem[] = [];
+          if (CABA_SUB_BARRIOS[name]) {
+            for (const sub of CABA_SUB_BARRIOS[name]) {
+              if (cabaCounts[sub]) {
+                children.push({ name: sub, count: cabaCounts[sub], type: "neighborhood" });
+              }
+            }
+            children.sort((a, b) => b.count - a.count);
+          }
+          const parentCount = cabaCounts[name] || 0;
+          if (parentCount > 0 || children.length > 0) {
+            parentItems.set(name, {
+              name,
+              count: parentCount,
+              type: "neighborhood",
+              children: children.length > 0 ? children : undefined,
+            });
+          }
+        }
+      }
+
+      const cabaZones: ZoneItem[] = [...parentItems.values()]
         .sort((a, b) => b.count - a.count);
 
       const gbaData = await fetchAll(
