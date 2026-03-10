@@ -549,8 +549,12 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                     {isExpanded && (
                       <div className="grid grid-cols-2 gap-px bg-border/30">
                         {items.map((item) => {
-                          const isItemSelected = selected.includes(item.name);
                           const hasChildren = item.children && item.children.length > 0;
+                          const familyNames = hasChildren ? [item.name, ...item.children!.map(c => c.name)] : [item.name];
+                          const allFamilySelected = familyNames.every(n => selected.includes(n));
+                          const someFamilySelected = !allFamilySelected && familyNames.some(n => selected.includes(n));
+                          const isItemSelected = hasChildren ? allFamilySelected : selected.includes(item.name);
+                          const totalCount = item.count + (item.children?.reduce((s, c) => s + c.count, 0) || 0);
                           return (
                             <div key={item.name} className={hasChildren ? "col-span-2 grid grid-cols-2 gap-px" : ""}>
                               <button
