@@ -21,7 +21,7 @@ interface ZoneItem {
   children?: ZoneItem[];
 }
 
-// SUB_TO_PARENT imported from cabaZones
+
 
 interface ZoneSelectorProps {
   selected: string[];
