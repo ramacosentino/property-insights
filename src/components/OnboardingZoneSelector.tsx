@@ -38,9 +38,8 @@ const CABA_ALL_RECOGNIZED = new Set([
   ...Object.values(CABA_SUB_BARRIOS).flat(),
 ]);
 
-// Map Google's non-standard names to canonical barrios
+// Map Google's non-standard names to canonical barrios (only ones NOT in sub-barrios)
 const CABA_BARRIO_ALIASES: Record<string, string> = {
-  "Barrio Chino": "Belgrano",
   "Barrio Catalinas Sur": "La Boca",
   "Barrio Olímpico": "Villa Soldati",
   "Barrio Piedrabuena": "Villa Lugano",
@@ -52,16 +51,11 @@ const CABA_BARRIO_ALIASES: Record<string, string> = {
   "Barrio 20": "Villa Lugano",
   "Barrio Castex": "Retiro",
   "Complejo de Edificios Donizetti y Rivadavia": "Caballito",
-  "Palermo Soho": "Palermo",
-  "Palermo Viejo": "Palermo",
+  "Palermo Soho": "Palermo Soho",
+  "Palermo Viejo": "Palermo Viejo",
   "Recoleta chica": "Recoleta",
   "Barrio Parque": "Recoleta",
-  "Once": "Balvanera",
-  "Abasto": "Balvanera",
   "Congreso": "Monserrat",
-  "Centro": "San Nicolás",
-  "Microcentro": "San Nicolás",
-  "Tribunales": "San Nicolás",
 };
 // Map Google's non-standard locality names to canonical ones
 const GBA_LOCALITY_ALIASES: Record<string, string> = {
