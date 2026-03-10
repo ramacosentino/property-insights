@@ -134,6 +134,13 @@ interface ZoneItem {
   name: string;
   count: number;
   type: "neighborhood" | "locality";
+  children?: ZoneItem[];
+}
+
+// Reverse map: sub-barrio name → parent barrio
+const SUB_TO_PARENT: Record<string, string> = {};
+for (const [parent, subs] of Object.entries(CABA_SUB_BARRIOS)) {
+  for (const sub of subs) SUB_TO_PARENT[sub] = parent;
 }
 
 interface ZoneSelectorProps {
