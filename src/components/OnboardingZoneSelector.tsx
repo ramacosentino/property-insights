@@ -368,7 +368,25 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
   }, []);
 
   const toggle = (zone: string) => {
-    onChange(selected.includes(zone) ? selected.filter((z) => z !== zone) : [...selected, zone]);
+    // Find if this zone is a parent with children
+    let allItems: ZoneItem[] = [];
+    for (const items of Object.values(zones)) {
+      allItems = allItems.concat(items);
+    }
+    const parentItem = allItems.find((i) => i.name === zone && i.children && i.children.length > 0);
+    
+    if (parentItem && parentItem.children) {
+      // Toggle parent + all children together
+      const familyNames = [zone, ...parentItem.children.map((c) => c.name)];
+      const allSelected = familyNames.every((n) => selected.includes(n));
+      if (allSelected) {
+        onChange(selected.filter((s) => !familyNames.includes(s)));
+      } else {
+        onChange([...selected, ...familyNames.filter((n) => !selected.includes(n))]);
+      }
+    } else {
+      onChange(selected.includes(zone) ? selected.filter((z) => z !== zone) : [...selected, zone]);
+    }
   };
 
   const getAllNames = (items: ZoneItem[]) => {
@@ -531,8 +549,12 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                     {isExpanded && (
                       <div className="grid grid-cols-2 gap-px bg-border/30">
                         {items.map((item) => {
-                          const isItemSelected = selected.includes(item.name);
                           const hasChildren = item.children && item.children.length > 0;
+                          const familyNames = hasChildren ? [item.name, ...item.children!.map(c => c.name)] : [item.name];
+                          const allFamilySelected = familyNames.every(n => selected.includes(n));
+                          const someFamilySelected = !allFamilySelected && familyNames.some(n => selected.includes(n));
+                          const isItemSelected = hasChildren ? allFamilySelected : selected.includes(item.name);
+                          const totalCount = item.count + (item.children?.reduce((s, c) => s + c.count, 0) || 0);
                           return (
                             <div key={item.name} className={hasChildren ? "col-span-2 grid grid-cols-2 gap-px" : ""}>
                               <button
@@ -546,12 +568,15 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                                 <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
                                   isItemSelected
                                     ? "border-primary bg-primary"
+                                    : someFamilySelected
+                                    ? "border-primary bg-primary/50"
                                     : "border-muted-foreground/30 bg-background"
                                 }`}>
                                   {isItemSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                                  {someFamilySelected && !isItemSelected && <div className="w-2 h-0.5 bg-primary-foreground rounded-full" />}
                                 </div>
                                 <span className="text-xs truncate flex-1 font-medium">{item.name}</span>
-                                <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.count}</span>
+                                <span className="text-[10px] text-muted-foreground flex-shrink-0">{totalCount}</span>
                               </button>
                               {hasChildren && item.children!.map((child) => {
                                 const isChildSelected = selected.includes(child.name);
