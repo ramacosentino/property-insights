@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Property, NeighborhoodStats } from "@/lib/propertyData";
+import { normalizePropertyZone } from "@/lib/cabaZones";
 import { useSurfacePreference, SurfaceType } from "@/contexts/SurfacePreferenceContext";
 import { useMemo } from "react";
 
