@@ -251,7 +251,7 @@ const MisProyectos = () => {
                 >
                   <option value="none">Sin ordenar</option>
                   <option value="guardado">Últimos guardados</option>
-                  <option value="ganancia">Ganancia Neta Est.</option>
+                  <option value="ganancia">Valor Agregado Est.</option>
                   <option value="oportunidad">Oportunidad</option>
                   <option value="precio">Precio</option>
                   <option value="usdm2">USD/m²</option>
