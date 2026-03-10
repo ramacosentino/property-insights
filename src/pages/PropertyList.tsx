@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal, TrendingDown, Star, X, Trophy, ChevronDown, ChevronUp, EyeOff, RotateCcw } from "lucide-react";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import { buildNeighborhoodGroups } from "@/lib/neighborhoodGroups";
 import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 
 import {
@@ -173,30 +174,10 @@ const PropertyList = () => {
   const orientationOptions = useMemo(() => buildOptionsWithCounts(ORIENTATION_KEYS, counts.orientations), [counts.orientations]);
 
   // Group neighborhoods by province
-  const neighborhoodsByProvince = useMemo(() => {
-    const provMap = new Map<string, { value: string; label: string; count: number }[]>();
-    const provCounts = new Map<string, number>();
-
-    for (const p of properties) {
-      const prov = p.city || "Sin ciudad";
-      provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
-    }
-
-    for (const [hood, count] of counts.neighborhoods.entries()) {
-      const sample = properties.find((p) => p.neighborhood === hood);
-      const prov = sample?.city || "Sin ciudad";
-      if (!provMap.has(prov)) provMap.set(prov, []);
-      provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
-    }
-
-    return Array.from(provMap.entries())
-      .map(([prov, hoods]) => ({
-        province: prov,
-        totalCount: provCounts.get(prov) || 0,
-        neighborhoods: hoods.sort((a, b) => a.value.localeCompare(b.value)),
-      }))
-      .sort((a, b) => b.totalCount - a.totalCount);
-  }, [properties, counts.neighborhoods]);
+  const neighborhoodsByProvince = useMemo(
+    () => buildNeighborhoodGroups(properties, counts.neighborhoods),
+    [properties, counts.neighborhoods]
+  );
 
   const neighborhoods = useMemo(() => {
     return Array.from(neighborhoodStats.values())

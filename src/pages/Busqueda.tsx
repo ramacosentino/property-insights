@@ -14,6 +14,7 @@ import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
 import { Search, Loader2, CheckCircle, AlertCircle, RotateCcw, ChevronRight, Filter, Sparkles, History, Trash2, Star, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NeighborhoodDropdown, { ProvinceGroup } from "@/components/NeighborhoodDropdown";
+import { buildNeighborhoodGroups } from "@/lib/neighborhoodGroups";
 import { createFilterState, FilterState } from "@/components/MultiFilter";
 import AnalysisCard, { UserAnalysis } from "@/components/AnalysisCard";
 
@@ -437,31 +438,7 @@ const Busqueda = () => {
   const availableTypes = [...new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])].sort();
 
   // Group neighborhoods by province using normalized data
-  const neighborhoodGroups = useMemo(() => {
-    const neighborhoodCounts = new Map<string, number>();
-    const provCounts = new Map<string, number>();
-    for (const p of properties) {
-      const hood = p.normNeighborhood || p.neighborhood;
-      const prov = p.normLocality || p.normProvince || p.city || "Sin ciudad";
-      neighborhoodCounts.set(hood, (neighborhoodCounts.get(hood) || 0) + 1);
-      provCounts.set(prov, (provCounts.get(prov) || 0) + 1);
-    }
-    const provMap = new Map<string, { value: string; label: string; count: number }[]>();
-    for (const [hood, count] of neighborhoodCounts.entries()) {
-      if (hood === "Sin barrio") continue;
-      const sample = properties.find((p) => (p.normNeighborhood || p.neighborhood) === hood);
-      const prov = sample?.normLocality || sample?.normProvince || sample?.city || "Sin ciudad";
-      if (!provMap.has(prov)) provMap.set(prov, []);
-      provMap.get(prov)!.push({ value: hood, label: `${hood} (${count})`, count });
-    }
-    return Array.from(provMap.entries())
-      .map(([prov, hoods]) => ({
-        province: prov,
-        totalCount: provCounts.get(prov) || 0,
-        neighborhoods: hoods.sort((a, b) => a.value.localeCompare(b.value)),
-      }))
-      .sort((a, b) => b.totalCount - a.totalCount);
-  }, [properties]);
+  const neighborhoodGroups = useMemo(() => buildNeighborhoodGroups(properties), [properties]);
 
   // Load past searches
   useEffect(() => {

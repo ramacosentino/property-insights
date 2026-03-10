@@ -86,6 +86,14 @@ function mapRowsWithScores(rows: DBPropertyRow[], surfaceType: SurfaceType): {
         ? (r.opportunity_score_covered ?? 0)
         : (r.opportunity_score_total ?? 0);
 
+      // Build consistent location from normalized fields
+      const normHood = r.norm_neighborhood || r.neighborhood || "Sin barrio";
+      const normCity = r.norm_locality || r.norm_province || r.city || "Sin ciudad";
+      // For the display location: prefer normalized neighborhood + city
+      const displayLocation = normHood !== "Sin barrio"
+        ? `${normHood}, ${normCity}`
+        : r.location || normCity;
+
       return {
         id: r.id,
         externalId: r.external_id,
@@ -94,9 +102,9 @@ function mapRowsWithScores(rows: DBPropertyRow[], surfaceType: SurfaceType): {
         url: r.url || "",
         price: r.price!,
         currency: r.currency || "USD",
-        location: r.location || "",
-        neighborhood: r.norm_neighborhood || r.neighborhood || "Sin barrio",
-        city: r.norm_locality || r.norm_province || r.city || "Sin ciudad",
+        location: displayLocation,
+        neighborhood: normHood,
+        city: normCity,
         normNeighborhood: r.norm_neighborhood,
         normLocality: r.norm_locality,
         normProvince: r.norm_province,
