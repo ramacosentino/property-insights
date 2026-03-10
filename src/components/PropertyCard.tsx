@@ -40,12 +40,14 @@ const PropertyCard = ({ property, compact = false, onDiscard, onRestore, isDisca
             {property.isTopOpportunity && (
               <Star className="h-3.5 w-3.5 text-primary fill-primary flex-shrink-0" />
             )}
-            <h3 className="text-sm font-semibold truncate">{property.location}</h3>
+            <h3 className="text-sm font-semibold truncate">
+              {property.neighborhood !== "Sin barrio" ? property.neighborhood : property.location}
+            </h3>
           </div>
           <p className="text-[11px] text-muted-foreground truncate">
             {[
               property.propertyType ? property.propertyType.charAt(0).toUpperCase() + property.propertyType.slice(1) : "",
-              [property.street || property.location || "", property.neighborhood].filter(Boolean).join(", ")
+              [property.street, property.city].filter(Boolean).join(", ")
             ].filter(Boolean).join(" · ")}
           </p>
         </div>
