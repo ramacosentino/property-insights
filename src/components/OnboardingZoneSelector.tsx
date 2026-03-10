@@ -568,12 +568,15 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
                                 <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
                                   isItemSelected
                                     ? "border-primary bg-primary"
+                                    : someFamilySelected
+                                    ? "border-primary bg-primary/50"
                                     : "border-muted-foreground/30 bg-background"
                                 }`}>
                                   {isItemSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                                  {someFamilySelected && !isItemSelected && <div className="w-2 h-0.5 bg-primary-foreground rounded-full" />}
                                 </div>
                                 <span className="text-xs truncate flex-1 font-medium">{item.name}</span>
-                                <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.count}</span>
+                                <span className="text-[10px] text-muted-foreground flex-shrink-0">{totalCount}</span>
                               </button>
                               {hasChildren && item.children!.map((child) => {
                                 const isChildSelected = selected.includes(child.name);
