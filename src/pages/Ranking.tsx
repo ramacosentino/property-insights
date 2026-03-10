@@ -6,6 +6,7 @@ import { getOpportunityLabel, getOpportunityBadgeClasses } from "@/lib/opportuni
 import { useOnboardingFilters } from "@/hooks/useOnboardingFilters";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import { buildNeighborhoodGroups } from "@/lib/neighborhoodGroups";
 import RangeSliderFilter from "@/components/RangeSliderFilter";
 import { Badge } from "@/components/ui/badge";
 import { usePreselection } from "@/hooks/usePreselection";

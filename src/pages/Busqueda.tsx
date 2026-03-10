@@ -14,6 +14,7 @@ import { CONDITION_TIERS, ALL_CONDITION_VALUES } from "@/lib/filterUtils";
 import { Search, Loader2, CheckCircle, AlertCircle, RotateCcw, ChevronRight, Filter, Sparkles, History, Trash2, Star, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NeighborhoodDropdown, { ProvinceGroup } from "@/components/NeighborhoodDropdown";
+import { buildNeighborhoodGroups } from "@/lib/neighborhoodGroups";
 import { createFilterState, FilterState } from "@/components/MultiFilter";
 import AnalysisCard, { UserAnalysis } from "@/components/AnalysisCard";
 

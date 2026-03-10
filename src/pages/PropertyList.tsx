@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal, TrendingDown, Star, X, Trophy, ChevronDown, ChevronUp, EyeOff, RotateCcw } from "lucide-react";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import { buildNeighborhoodGroups } from "@/lib/neighborhoodGroups";
 import { useIgnoredOpportunities } from "@/hooks/useIgnoredOpportunities";
 
 import {

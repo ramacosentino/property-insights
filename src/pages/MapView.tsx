@@ -12,6 +12,7 @@ import { fetchCachedCoordinates, CachedGeoData } from "@/lib/geocoding";
 import { createFilterState, applyFilter, FilterState } from "@/components/MultiFilter";
 import { MultiSelectChip, ConditionChip, RangeChip, SelectChip, NeighborhoodChip } from "@/components/FilterChipPopover";
 import NeighborhoodDropdown from "@/components/NeighborhoodDropdown";
+import { buildNeighborhoodGroups } from "@/lib/neighborhoodGroups";
 import PoiFilter, { PoiFilterState, haversineDistance } from "@/components/PoiFilter";
 import { Slider } from "@/components/ui/slider";
 import { useTheme } from "@/hooks/useTheme";
