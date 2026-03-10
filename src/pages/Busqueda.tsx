@@ -431,7 +431,7 @@ const Busqueda = () => {
     }
     setOnboardingApplied(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onboardingFilters.revision]);
+  }, [onboardingFilters.loaded, onboardingFilters.revision]);
 
   // Derive available filter values from properties
   const availableTypes = [...new Set(properties.map((p) => p.propertyType).filter(Boolean) as string[])].sort();
