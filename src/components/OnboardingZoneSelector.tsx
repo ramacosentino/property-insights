@@ -371,9 +371,18 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
     onChange(selected.includes(zone) ? selected.filter((z) => z !== zone) : [...selected, zone]);
   };
 
+  const getAllNames = (items: ZoneItem[]) => {
+    const names: string[] = [];
+    items.forEach((i) => {
+      names.push(i.name);
+      if (i.children) i.children.forEach((c) => names.push(c.name));
+    });
+    return names;
+  };
+
   const toggleMacro = (macroKey: string) => {
     const items = zones[macroKey] || [];
-    const names = items.map((i) => i.name);
+    const names = getAllNames(items);
     const allSelected = names.every((n) => selected.includes(n));
     if (allSelected) onChange(selected.filter((s) => !names.includes(s)));
     else onChange([...selected, ...names.filter((n) => !selected.includes(n))]);
