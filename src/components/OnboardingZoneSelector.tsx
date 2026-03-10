@@ -368,7 +368,25 @@ export default function OnboardingZoneSelector({ selected, onChange }: ZoneSelec
   }, []);
 
   const toggle = (zone: string) => {
-    onChange(selected.includes(zone) ? selected.filter((z) => z !== zone) : [...selected, zone]);
+    // Find if this zone is a parent with children
+    let allItems: ZoneItem[] = [];
+    for (const items of Object.values(zones)) {
+      allItems = allItems.concat(items);
+    }
+    const parentItem = allItems.find((i) => i.name === zone && i.children && i.children.length > 0);
+    
+    if (parentItem && parentItem.children) {
+      // Toggle parent + all children together
+      const familyNames = [zone, ...parentItem.children.map((c) => c.name)];
+      const allSelected = familyNames.every((n) => selected.includes(n));
+      if (allSelected) {
+        onChange(selected.filter((s) => !familyNames.includes(s)));
+      } else {
+        onChange([...selected, ...familyNames.filter((n) => !selected.includes(n))]);
+      }
+    } else {
+      onChange(selected.includes(zone) ? selected.filter((z) => z !== zone) : [...selected, zone]);
+    }
   };
 
   const getAllNames = (items: ZoneItem[]) => {
