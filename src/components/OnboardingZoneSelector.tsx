@@ -8,7 +8,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 
-// Canonical CABA barrios (48 official + commonly used sub-names)
+// Canonical CABA barrios (48 official)
 const CABA_CANONICAL_BARRIOS = new Set([
   "Agronomía", "Almagro", "Balvanera", "Barracas", "Belgrano", "Boedo",
   "Caballito", "Chacarita", "Coghlan", "Colegiales", "Constitución",
@@ -21,9 +21,21 @@ const CABA_CANONICAL_BARRIOS = new Set([
   "Villa General Mitre", "Villa Lugano", "Villa Luro", "Villa Ortúzar",
   "Villa Pueyrredón", "Villa Real", "Villa Riachuelo", "Villa Santa Rita",
   "Villa Soldati", "Villa Urquiza",
-  // Commonly used sub-barrios that people recognize
-  "Barrio Norte", "Palermo Hollywood", "Palermo Chico", "Belgrano Residencial",
-  "Bajo Flores",
+]);
+
+// Sub-barrios that nest under a parent barrio
+const CABA_SUB_BARRIOS: Record<string, string[]> = {
+  "Palermo": ["Palermo Hollywood", "Palermo Chico", "Palermo Soho", "Palermo Viejo"],
+  "Belgrano": ["Belgrano Residencial", "Barrio Chino"],
+  "Balvanera": ["Once", "Abasto"],
+  "San Nicolás": ["Centro", "Microcentro", "Tribunales"],
+  "Recoleta": ["Barrio Norte"],
+};
+
+// All recognized names (official + sub-barrios)
+const CABA_ALL_RECOGNIZED = new Set([
+  ...CABA_CANONICAL_BARRIOS,
+  ...Object.values(CABA_SUB_BARRIOS).flat(),
 ]);
 
 // Map Google's non-standard names to canonical barrios
