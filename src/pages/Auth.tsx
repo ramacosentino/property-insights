@@ -105,8 +105,8 @@ const Auth = () => {
 
       if (data?.url) {
         const oauthUrl = new URL(data.url);
-        const allowedHosts = ["accounts.google.com"];
-        if (allowedHosts.some((host) => oauthUrl.hostname === host)) {
+        const allowedHosts = ["accounts.google.com", "supabase.co"];
+        if (allowedHosts.some((host) => oauthUrl.hostname === host || oauthUrl.hostname.endsWith(`.${host}`))) {
           window.location.href = data.url;
         }
       }
