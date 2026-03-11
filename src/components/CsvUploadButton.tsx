@@ -83,7 +83,8 @@ const CsvUploadButton = () => {
       });
 
       if (totalProcessed > 0) {
-        queryClient.invalidateQueries({ queryKey: ["properties"] });
+        resetPropertiesCache();
+        queryClient.invalidateQueries({ queryKey: ["properties-raw"] });
       }
     } catch (e) {
       setResult({ success: false, error: e instanceof Error ? e.message : "Error desconocido" });
