@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { resetPropertiesCache } from "@/hooks/useProperties";
 
 interface UploadResult {
   success: boolean;
