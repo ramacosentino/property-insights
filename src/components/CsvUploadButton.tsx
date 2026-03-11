@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { resetPropertiesCache } from "@/hooks/useProperties";
 
 interface UploadResult {
   success: boolean;
@@ -82,7 +83,8 @@ const CsvUploadButton = () => {
       });
 
       if (totalProcessed > 0) {
-        queryClient.invalidateQueries({ queryKey: ["properties"] });
+        resetPropertiesCache();
+        queryClient.invalidateQueries({ queryKey: ["properties-raw"] });
       }
     } catch (e) {
       setResult({ success: false, error: e instanceof Error ? e.message : "Error desconocido" });
