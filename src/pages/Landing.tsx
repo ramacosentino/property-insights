@@ -780,6 +780,7 @@ const Landing = () => {
             <a href="#features" className="hover:text-landing-fg transition-colors">Funcionalidades</a>
             <a href="#profiles" className="hover:text-landing-fg transition-colors">¿Para quién es?</a>
             <a href="#pricing" className="hover:text-landing-fg transition-colors">Pricing</a>
+            <Link to="/privacidad" className="hover:text-landing-fg transition-colors">Privacidad</Link>
           </div>
           <p className="text-xs text-landing-muted/50">
             © {new Date().getFullYear()} Urbanna. Todos los derechos reservados.
