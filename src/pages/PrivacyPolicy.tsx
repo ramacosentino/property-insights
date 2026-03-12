@@ -90,7 +90,7 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">6. Cookies</h2>
+          <h2 className="text-xl font-semibold">7. Cookies</h2>
           <p className="text-muted-foreground leading-relaxed">
             Utilizamos cookies esenciales para el funcionamiento de la plataforma (autenticación y preferencias de sesión). No utilizamos cookies de rastreo publicitario de terceros.
           </p>
