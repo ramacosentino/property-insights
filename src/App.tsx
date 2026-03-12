@@ -83,6 +83,7 @@ const App = () => (
             <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
             <Route path="/planes" element={<RequireOnboarding><Planes /></RequireOnboarding>} />
             <Route path="/logo-preview" element={<LogoPreview />} />
+            <Route path="/privacidad" element={<PrivacyPolicy />} />
             <Route path="/icon-export" element={<IconExport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
