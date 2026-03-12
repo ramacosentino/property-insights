@@ -32,6 +32,7 @@ const PrivacyPolicy = () => {
           <p className="text-muted-foreground leading-relaxed">Recopilamos los siguientes tipos de información:</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-2 pl-2">
             <li><strong className="text-foreground">Información de cuenta:</strong> nombre, dirección de correo electrónico y datos de autenticación al registrarse.</li>
+            <li><strong className="text-foreground">Datos obtenidos de Google:</strong> al iniciar sesión con Google, accedemos únicamente a su nombre, dirección de correo electrónico y foto de perfil (scopes: <code>email</code>, <code>profile</code>, <code>openid</code>). No accedemos, almacenamos ni compartimos ningún otro dato de su cuenta de Google.</li>
             <li><strong className="text-foreground">Datos de uso:</strong> interacciones con la plataforma, búsquedas realizadas, propiedades guardadas y preferencias de filtros.</li>
             <li><strong className="text-foreground">Información de suscripción:</strong> datos relacionados con su plan y estado de pago (procesados a través de terceros).</li>
             <li><strong className="text-foreground">Datos técnicos:</strong> dirección IP, tipo de navegador, sistema operativo y datos de cookies.</li>
