@@ -47,32 +47,32 @@ const stagger: Variants = {
 const features = [
   {
     title: "Mapa interactivo",
-    desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
+    desc: "Todas las propiedades de CABA y GBA geolocalizadas. Cada pin muestra precio, USD/m² y score de oportunidad al instante.",
     illustrationKey: "map",
   },
   {
     title: "Búsqueda inteligente",
-    desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
+    desc: "No busques por barrio y precio como en cualquier portal. Filtrá por oportunidad neta, USD/m² vs. mediana de zona y potencial de revalorización.",
     illustrationKey: "search",
   },
   {
     title: "Tasación automática",
-    desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
+    desc: "¿El precio publicado es justo? Urbanna lo compara con propiedades similares reales y te dice cuánto debería valer.",
     illustrationKey: "valuation",
   },
   {
     title: "Inteligencia de precios",
-    desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
+    desc: "Evolución del USD/m² por barrio y tipología. Detectá zonas que suben, barrios que se estancan y tendencias antes que el resto.",
     illustrationKey: "priceIntel",
   },
   {
     title: "Mis Proyectos",
-    desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
+    desc: "Tu shortlist privada. Guardá las propiedades que te interesan, anotá observaciones y compará side-by-side.",
     illustrationKey: "projects",
   },
   {
-    title: "Alertas",
-    desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
+    title: "Alertas personalizadas",
+    desc: "Definí tus criterios una vez. Cuando aparezca una propiedad que matchea, te avisamos antes que a nadie.",
     illustrationKey: "alerts",
   },
 ];
@@ -80,64 +80,64 @@ const features = [
 const solutionPillars = [
   {
     icon: BarChart2,
-    title: "Análisis automático",
-    desc: "Cada propiedad evaluada con algoritmos de mercado.",
+    title: "Valuación automática",
+    desc: "Cada propiedad comparada contra el mercado real de su zona.",
   },
   {
     icon: Search,
-    title: "Comparables reales",
-    desc: "Propiedades similares por zona y características.",
+    title: "Comparables verificados",
+    desc: "Propiedades similares por ubicación, m² y tipología — no estimaciones genéricas.",
   },
   {
     icon: TrendingUp,
     title: "Score de oportunidad",
-    desc: "Un número claro para priorizar tu búsqueda.",
+    desc: "Un número que te dice cuánto está por debajo (o arriba) del precio justo.",
   },
   {
     icon: Bell,
-    title: "Alertas inteligentes",
-    desc: "Enterate primero de nuevas oportunidades.",
+    title: "Alertas en tiempo real",
+    desc: "Las mejores oportunidades duran horas. Enterate primero.",
   },
 ];
 
 const userProfiles = [
   {
     title: "Comprador",
-    subtitle: "Tomá decisiones informadas",
+    subtitle: "No pagues de más",
     points: [
-      "Sabé si el precio publicado es justo o inflado",
-      "Compará con propiedades similares en la zona",
-      "No te sobreprecien: tené los datos del mercado",
-      "Ahorrá tiempo filtrando solo lo que vale la pena",
+      "Sabé al instante si un precio es justo o inflado vs. la zona",
+      "Compará con propiedades reales similares, no con promedios",
+      "Filtrá solo lo que vale la pena: ahorrá semanas de búsqueda",
+      "Tené los datos que tu escribano o asesor no tiene",
     ],
   },
   {
     title: "Inversor",
-    subtitle: "Encontrá oportunidades primero",
+    subtitle: "Detectá oportunidades antes que el mercado",
     points: [
-      "Detectá propiedades subvaluadas con alto potencial",
-      "Score de oportunidad automático en cada propiedad",
-      "Análisis de rentabilidad por zona y USD/m²",
-      "Alertas para no perder las mejores ofertas",
+      "Score automático que rankea cada propiedad por potencial de ganancia",
+      "Encontrá propiedades subvaluadas que otros no ven",
+      "Análisis de USD/m² por zona para comparar rentabilidad",
+      "Alertas para actuar rápido cuando aparece una oportunidad real",
     ],
   },
   {
     title: "Inmobiliaria",
-    subtitle: "Datos para ganar clientes",
+    subtitle: "Datos que te diferencian",
     points: [
-      "Fijá precios competitivos con datos reales",
-      "Reportes de mercado para tus clientes",
-      "Entendé tendencias por barrio para asesorar mejor",
-      "Diferenciarte con analítica profesional",
+      "Fijá precios competitivos basados en el mercado real, no en intuición",
+      "Mostrá a tus clientes análisis profesionales de cada propiedad",
+      "Entendé tendencias por barrio antes que tu competencia",
+      "Posicionate como la inmobiliaria que opera con datos",
     ],
   },
 ];
 
 const stats = [
   { value: "50K+", label: "Propiedades analizadas" },
-  { value: "100+", label: "Barrios cubiertos" },
+  { value: "100+", label: "Barrios en CABA y GBA" },
   { value: "USD/m²", label: "Métrica central" },
-  { value: "24/7", label: "Datos actualizados" },
+  { value: "Diario", label: "Actualización de datos" },
 ];
 
 const PRICING = {
@@ -300,7 +300,7 @@ const Landing = () => {
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-8">
             <UrbbanLogo size="md" className="text-primary" showIcon />
-            Analítica inmobiliaria basada en datos
+            Inteligencia de mercado inmobiliario
           </motion.div>
 
           <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[0.95] mb-6">
@@ -311,9 +311,9 @@ const Landing = () => {
           </motion.h1>
 
           <motion.p variants={fadeUp} className="text-lg md:text-xl text-landing-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-            Miles de propiedades, una sola decisión. Tomala con datos.
+            Analizamos miles de propiedades en CABA y GBA para mostrarte
             <br className="hidden md:block" />
-            Todo el universo inmobiliario centralizado, comparado y analizado para vos.
+            cuáles están por debajo del precio de mercado — y por cuánto.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -379,14 +379,14 @@ const Landing = () => {
             <span className="text-white/60">opera a ciegas</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-            Propiedades dispersas en decenas de portales. Sin comparación objetiva. Sin datos de valor real.
-            La mayoría de las decisiones de compra se toman con intuición — no con información.
+            Propiedades dispersas en decenas de portales. Precios publicados sin contexto.
+            La mayoría de las decisiones de compra e inversión se toman con intuición — no con datos comparativos reales.
           </motion.p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
-              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
-              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
+              { title: "Precios sin referencia", desc: "¿Está caro o barato? Sin comparar contra propiedades similares de la zona, es imposible saberlo." },
+              { title: "Información dispersa", desc: "Cada portal muestra una parte. Nadie te da el mercado completo, normalizado y comparable." },
+              { title: "Oportunidades que se pierden", desc: "Las propiedades subvaluadas se venden en días. Sin alertas, te enterás cuando ya es tarde." },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -431,12 +431,12 @@ const Landing = () => {
             La solución
           </motion.div>
           <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight mb-6 text-foreground">
-            Todo el universo de propiedades,
+            Cada propiedad analizada,
             <br />
-            <span className="text-primary">centralizado y comparado</span>
+            <span className="text-primary">comparada y rankeada</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-14">
-            Urbanna reúne, normaliza y analiza el mercado inmobiliario para que tomes decisiones con datos reales — no con corazonadas.
+            Urbanna cruza datos de todo el mercado, calcula el valor real por zona y te muestra exactamente dónde están las oportunidades.
           </motion.p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
             {solutionPillars.map((pillar, i) => (
@@ -477,9 +477,9 @@ const Landing = () => {
               Funcionalidades
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight">
-              Cada herramienta que
+              Todo lo que necesitás
               <br />
-              <span className="landing-gradient-text">necesitás</span>
+              <span className="landing-gradient-text">en un solo lugar</span>
             </motion.h2>
           </motion.div>
 
@@ -535,8 +535,8 @@ const Landing = () => {
               Para cada perfil
             </div>
             <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
-              Valor real para{" "}
-              <span className="text-primary">cada usuario</span>
+              Diseñado para{" "}
+              <span className="text-primary">cada perfil</span>
             </h2>
           </motion.div>
 
@@ -752,12 +752,12 @@ const Landing = () => {
           variants={stagger}
         >
           <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-medium tracking-tight mb-6">
-            Dejá de buscar
+            Cada día sin datos
             <br />
-            <span className="landing-gradient-text">a ciegas</span>
+            <span className="landing-gradient-text">es plata que perdés</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-landing-muted max-w-xl mx-auto mb-10">
-            Cada día que pasa sin datos, es una oportunidad que otro aprovecha. Empezá hoy — es gratis.
+            Las mejores oportunidades no esperan. Empezá hoy — es gratis y en 2 minutos estás adentro.
           </motion.p>
           <motion.div variants={fadeUp}>
             <Button asChild size="lg" className="rounded-full px-10 text-base h-14 shadow-xl shadow-primary/30">

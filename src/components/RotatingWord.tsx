@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-const words = ["invertís", "comprás", "alquilás", "te mudás", "buscás"];
+const words = ["invertís", "comprás", "vendés", "tasás"];
 
 const RotatingWord = () => {
   const [index, setIndex] = useState(0);
@@ -16,7 +16,7 @@ const RotatingWord = () => {
   return (
     <span className="inline-block relative align-baseline">
       {/* Invisible longest word to reserve space */}
-      <span className="invisible">te mudás</span>
+      <span className="invisible">invertís</span>
       <AnimatePresence mode="wait">
         <motion.span
           key={words[index]}
