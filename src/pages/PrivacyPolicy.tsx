@@ -112,7 +112,7 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">8. Retención de datos</h2>
+          <h2 className="text-xl font-semibold">9. Retención de datos</h2>
           <p className="text-muted-foreground leading-relaxed">
             Conservamos sus datos personales mientras mantenga una cuenta activa o según sea necesario para prestarle servicios. Puede solicitar la eliminación de su cuenta en cualquier momento desde la sección de Configuración.
           </p>
