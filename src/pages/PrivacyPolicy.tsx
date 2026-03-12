@@ -52,7 +52,27 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">4. Compartición de datos</h2>
+          <h2 className="text-xl font-semibold">4. Uso de datos de Google</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Cuando inicia sesión con Google, Urbanna accede únicamente a su nombre, correo electrónico y foto de perfil para crear y gestionar su cuenta. Estos datos:
+          </p>
+          <ul className="list-disc list-inside text-muted-foreground space-y-2 pl-2">
+            <li><strong className="text-foreground">Acceso:</strong> se obtienen una única vez durante el inicio de sesión.</li>
+            <li><strong className="text-foreground">Uso:</strong> se utilizan exclusivamente para identificarlo dentro de la plataforma y personalizar su experiencia.</li>
+            <li><strong className="text-foreground">Almacenamiento:</strong> se almacenan de forma segura en nuestros servidores con cifrado en tránsito y en reposo.</li>
+            <li><strong className="text-foreground">Compartición:</strong> no se comparten, venden ni transfieren a terceros bajo ninguna circunstancia.</li>
+          </ul>
+          <p className="text-muted-foreground leading-relaxed">
+            El uso de datos recibidos de APIs de Google se adhiere a la{" "}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">
+              Política de Uso Limitado de Google API Services
+            </a>
+            . No utilizamos datos de Google para publicidad, perfilado de terceros ni ningún propósito fuera de los descritos en esta política.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">5. Compartición de datos</h2>
           <p className="text-muted-foreground leading-relaxed">
             No vendemos ni compartimos su información personal con terceros con fines comerciales. Podemos compartir datos con:
           </p>
