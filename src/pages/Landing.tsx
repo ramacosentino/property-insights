@@ -379,14 +379,14 @@ const Landing = () => {
             <span className="text-white/60">opera a ciegas</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-            Propiedades dispersas en decenas de portales. Sin comparación objetiva. Sin datos de valor real.
-            La mayoría de las decisiones de compra se toman con intuición — no con información.
+            Propiedades dispersas en decenas de portales. Precios publicados sin contexto.
+            La mayoría de las decisiones de compra e inversión se toman con intuición — no con datos comparativos reales.
           </motion.p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
             {[
-              { title: "Precios opacos", desc: "Sin referencia de valor real, pagás más de lo que deberías." },
-              { title: "Información fragmentada", desc: "Cada portal muestra una parte. Ninguno te da la foto completa." },
-              { title: "Oportunidades perdidas", desc: "Las mejores propiedades se venden antes de que las descubras." },
+              { title: "Precios sin referencia", desc: "¿Está caro o barato? Sin comparar contra propiedades similares de la zona, es imposible saberlo." },
+              { title: "Información dispersa", desc: "Cada portal muestra una parte. Nadie te da el mercado completo, normalizado y comparable." },
+              { title: "Oportunidades que se pierden", desc: "Las propiedades subvaluadas se venden en días. Sin alertas, te enterás cuando ya es tarde." },
             ].map((item, i) => (
               <motion.div
                 key={i}
