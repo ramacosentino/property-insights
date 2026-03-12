@@ -126,7 +126,7 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">10. Contacto</h2>
+          <h2 className="text-xl font-semibold">11. Contacto</h2>
           <p className="text-muted-foreground leading-relaxed">
             Para consultas sobre esta política o para ejercer sus derechos, contáctenos en:
           </p>
