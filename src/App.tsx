@@ -26,6 +26,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import LogoPreview from "./pages/LogoPreview";
 import IconExport from "./pages/IconExport";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/configuracion" element={<RequireOnboarding><Settings /></RequireOnboarding>} />
             <Route path="/planes" element={<RequireOnboarding><Planes /></RequireOnboarding>} />
             <Route path="/logo-preview" element={<LogoPreview />} />
+            <Route path="/privacidad" element={<PrivacyPolicy />} />
             <Route path="/icon-export" element={<IconExport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
