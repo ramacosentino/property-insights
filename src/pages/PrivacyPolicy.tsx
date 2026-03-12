@@ -119,7 +119,7 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">9. Cambios a esta política</h2>
+          <h2 className="text-xl font-semibold">10. Cambios a esta política</h2>
           <p className="text-muted-foreground leading-relaxed">
             Nos reservamos el derecho de modificar esta Política de Privacidad. Notificaremos cambios significativos por correo electrónico o mediante un aviso en la plataforma. El uso continuado tras la notificación constituye aceptación de los cambios.
           </p>
