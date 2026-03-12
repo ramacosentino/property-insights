@@ -83,7 +83,7 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">5. Almacenamiento y seguridad</h2>
+          <h2 className="text-xl font-semibold">6. Almacenamiento y seguridad</h2>
           <p className="text-muted-foreground leading-relaxed">
             Su información se almacena en servidores seguros con cifrado en tránsito y en reposo. Implementamos medidas de seguridad técnicas y organizativas para proteger sus datos contra acceso no autorizado, alteración o destrucción.
           </p>
