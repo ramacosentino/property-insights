@@ -300,7 +300,7 @@ const Landing = () => {
         >
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-landing-card-border bg-landing-card/50 text-sm text-landing-muted mb-8">
             <UrbbanLogo size="md" className="text-primary" showIcon />
-            Analítica inmobiliaria basada en datos
+            Inteligencia de mercado inmobiliario
           </motion.div>
 
           <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[0.95] mb-6">
@@ -311,9 +311,9 @@ const Landing = () => {
           </motion.h1>
 
           <motion.p variants={fadeUp} className="text-lg md:text-xl text-landing-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-            Miles de propiedades, una sola decisión. Tomala con datos.
+            Analizamos miles de propiedades en CABA y GBA para mostrarte
             <br className="hidden md:block" />
-            Todo el universo inmobiliario centralizado, comparado y analizado para vos.
+            cuáles están por debajo del precio de mercado — y por cuánto.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">

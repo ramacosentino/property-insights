@@ -16,7 +16,7 @@ const RotatingWord = () => {
   return (
     <span className="inline-block relative align-baseline">
       {/* Invisible longest word to reserve space */}
-      <span className="invisible">te mudás</span>
+      <span className="invisible">invertís</span>
       <AnimatePresence mode="wait">
         <motion.span
           key={words[index]}
