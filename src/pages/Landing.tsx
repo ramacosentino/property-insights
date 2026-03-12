@@ -535,8 +535,8 @@ const Landing = () => {
               Para cada perfil
             </div>
             <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white">
-              Valor real para{" "}
-              <span className="text-primary">cada usuario</span>
+              Diseñado para{" "}
+              <span className="text-primary">cada perfil</span>
             </h2>
           </motion.div>
 
