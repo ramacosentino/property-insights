@@ -452,6 +452,13 @@ const Onboarding = () => {
             {!isLastStep() && <ChevronRight className="h-4 w-4 ml-1" />}
           </Button>
         </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          Al continuar, aceptás nuestra{" "}
+          <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">
+            Política de Privacidad
+          </a>
+        </p>
       </div>
     </div>
   );
