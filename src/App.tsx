@@ -26,6 +26,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import LogoPreview from "./pages/LogoPreview";
 import IconExport from "./pages/IconExport";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
