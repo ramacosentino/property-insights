@@ -47,32 +47,32 @@ const stagger: Variants = {
 const features = [
   {
     title: "Mapa interactivo",
-    desc: "Visualizá todo el mercado por zonas. Cada propiedad geolocalizada con su score de oportunidad en tiempo real.",
+    desc: "Todas las propiedades de CABA y GBA geolocalizadas. Cada pin muestra precio, USD/m² y score de oportunidad al instante.",
     illustrationKey: "map",
   },
   {
     title: "Búsqueda inteligente",
-    desc: "Filtrá por los criterios que realmente importan: USD/m², oportunidad neta, potencial de revalorización.",
+    desc: "No busques por barrio y precio como en cualquier portal. Filtrá por oportunidad neta, USD/m² vs. mediana de zona y potencial de revalorización.",
     illustrationKey: "search",
   },
   {
     title: "Tasación automática",
-    desc: "Compará el precio publicado contra el valor potencial calculado con comparables reales del mercado.",
+    desc: "¿El precio publicado es justo? Urbanna lo compara con propiedades similares reales y te dice cuánto debería valer.",
     illustrationKey: "valuation",
   },
   {
     title: "Inteligencia de precios",
-    desc: "Tendencias de USD/m² por barrio, tipo de propiedad y período. Entendé hacia dónde va el mercado.",
+    desc: "Evolución del USD/m² por barrio y tipología. Detectá zonas que suben, barrios que se estancan y tendencias antes que el resto.",
     illustrationKey: "priceIntel",
   },
   {
     title: "Mis Proyectos",
-    desc: "Tu shortlist personal de oportunidades. Guardá, anotá y compará las propiedades que te interesan.",
+    desc: "Tu shortlist privada. Guardá las propiedades que te interesan, anotá observaciones y compará side-by-side.",
     illustrationKey: "projects",
   },
   {
-    title: "Alertas",
-    desc: "Configurá alertas y enterate antes que nadie cuando aparezca una propiedad que matchea tus criterios.",
+    title: "Alertas personalizadas",
+    desc: "Definí tus criterios una vez. Cuando aparezca una propiedad que matchea, te avisamos antes que a nadie.",
     illustrationKey: "alerts",
   },
 ];
@@ -80,23 +80,23 @@ const features = [
 const solutionPillars = [
   {
     icon: BarChart2,
-    title: "Análisis automático",
-    desc: "Cada propiedad evaluada con algoritmos de mercado.",
+    title: "Valuación automática",
+    desc: "Cada propiedad comparada contra el mercado real de su zona.",
   },
   {
     icon: Search,
-    title: "Comparables reales",
-    desc: "Propiedades similares por zona y características.",
+    title: "Comparables verificados",
+    desc: "Propiedades similares por ubicación, m² y tipología — no estimaciones genéricas.",
   },
   {
     icon: TrendingUp,
     title: "Score de oportunidad",
-    desc: "Un número claro para priorizar tu búsqueda.",
+    desc: "Un número que te dice cuánto está por debajo (o arriba) del precio justo.",
   },
   {
     icon: Bell,
-    title: "Alertas inteligentes",
-    desc: "Enterate primero de nuevas oportunidades.",
+    title: "Alertas en tiempo real",
+    desc: "Las mejores oportunidades duran horas. Enterate primero.",
   },
 ];
 
