@@ -32,6 +32,7 @@ const PrivacyPolicy = () => {
           <p className="text-muted-foreground leading-relaxed">Recopilamos los siguientes tipos de información:</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-2 pl-2">
             <li><strong className="text-foreground">Información de cuenta:</strong> nombre, dirección de correo electrónico y datos de autenticación al registrarse.</li>
+            <li><strong className="text-foreground">Datos obtenidos de Google:</strong> al iniciar sesión con Google, accedemos únicamente a su nombre, dirección de correo electrónico y foto de perfil (scopes: <code>email</code>, <code>profile</code>, <code>openid</code>). No accedemos, almacenamos ni compartimos ningún otro dato de su cuenta de Google.</li>
             <li><strong className="text-foreground">Datos de uso:</strong> interacciones con la plataforma, búsquedas realizadas, propiedades guardadas y preferencias de filtros.</li>
             <li><strong className="text-foreground">Información de suscripción:</strong> datos relacionados con su plan y estado de pago (procesados a través de terceros).</li>
             <li><strong className="text-foreground">Datos técnicos:</strong> dirección IP, tipo de navegador, sistema operativo y datos de cookies.</li>
@@ -51,7 +52,27 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">4. Compartición de datos</h2>
+          <h2 className="text-xl font-semibold">4. Uso de datos de Google</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Cuando inicia sesión con Google, Urbanna accede únicamente a su nombre, correo electrónico y foto de perfil para crear y gestionar su cuenta. Estos datos:
+          </p>
+          <ul className="list-disc list-inside text-muted-foreground space-y-2 pl-2">
+            <li><strong className="text-foreground">Acceso:</strong> se obtienen una única vez durante el inicio de sesión.</li>
+            <li><strong className="text-foreground">Uso:</strong> se utilizan exclusivamente para identificarlo dentro de la plataforma y personalizar su experiencia.</li>
+            <li><strong className="text-foreground">Almacenamiento:</strong> se almacenan de forma segura en nuestros servidores con cifrado en tránsito y en reposo.</li>
+            <li><strong className="text-foreground">Compartición:</strong> no se comparten, venden ni transfieren a terceros bajo ninguna circunstancia.</li>
+          </ul>
+          <p className="text-muted-foreground leading-relaxed">
+            El uso de datos recibidos de APIs de Google se adhiere a la{" "}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">
+              Política de Uso Limitado de Google API Services
+            </a>
+            . No utilizamos datos de Google para publicidad, perfilado de terceros ni ningún propósito fuera de los descritos en esta política.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">5. Compartición de datos</h2>
           <p className="text-muted-foreground leading-relaxed">
             No vendemos ni compartimos su información personal con terceros con fines comerciales. Podemos compartir datos con:
           </p>
@@ -62,21 +83,21 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">5. Almacenamiento y seguridad</h2>
+          <h2 className="text-xl font-semibold">6. Almacenamiento y seguridad</h2>
           <p className="text-muted-foreground leading-relaxed">
             Su información se almacena en servidores seguros con cifrado en tránsito y en reposo. Implementamos medidas de seguridad técnicas y organizativas para proteger sus datos contra acceso no autorizado, alteración o destrucción.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">6. Cookies</h2>
+          <h2 className="text-xl font-semibold">7. Cookies</h2>
           <p className="text-muted-foreground leading-relaxed">
             Utilizamos cookies esenciales para el funcionamiento de la plataforma (autenticación y preferencias de sesión). No utilizamos cookies de rastreo publicitario de terceros.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">7. Sus derechos</h2>
+          <h2 className="text-xl font-semibold">8. Sus derechos</h2>
           <p className="text-muted-foreground leading-relaxed">Usted tiene derecho a:</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-2 pl-2">
             <li>Acceder a sus datos personales.</li>
@@ -91,21 +112,21 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">8. Retención de datos</h2>
+          <h2 className="text-xl font-semibold">9. Retención de datos</h2>
           <p className="text-muted-foreground leading-relaxed">
             Conservamos sus datos personales mientras mantenga una cuenta activa o según sea necesario para prestarle servicios. Puede solicitar la eliminación de su cuenta en cualquier momento desde la sección de Configuración.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">9. Cambios a esta política</h2>
+          <h2 className="text-xl font-semibold">10. Cambios a esta política</h2>
           <p className="text-muted-foreground leading-relaxed">
             Nos reservamos el derecho de modificar esta Política de Privacidad. Notificaremos cambios significativos por correo electrónico o mediante un aviso en la plataforma. El uso continuado tras la notificación constituye aceptación de los cambios.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">10. Contacto</h2>
+          <h2 className="text-xl font-semibold">11. Contacto</h2>
           <p className="text-muted-foreground leading-relaxed">
             Para consultas sobre esta política o para ejercer sus derechos, contáctenos en:
           </p>
