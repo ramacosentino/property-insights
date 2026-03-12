@@ -757,7 +757,7 @@ const Landing = () => {
             <span className="landing-gradient-text">es plata que perdés</span>
           </motion.h2>
           <motion.p variants={fadeUp} className="text-lg text-landing-muted max-w-xl mx-auto mb-10">
-            Las mejores oportunidades no esperan. Empezá hoy — es gratis y en 2 minutos estás adentro.
+            Analizá miles de propiedades en CABA y GBA, detectá las subvaluadas y tomá decisiones con datos reales. Gratis, sin tarjeta, en 2 minutos.
           </motion.p>
           <motion.div variants={fadeUp}>
             <Button asChild size="lg" className="rounded-full px-10 text-base h-14 shadow-xl shadow-primary/30">
