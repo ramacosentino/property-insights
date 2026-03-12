@@ -33,6 +33,7 @@ const navItems = [
 const bottomItems = [
   { path: "/planes", label: "Planes", icon: CreditCard },
   { path: "/configuracion", label: "Configuración", icon: Settings },
+  { path: "/privacidad", label: "Privacidad", icon: Lock },
 ];
 
 const Layout = ({ children, headerContent }: LayoutProps) => {
