@@ -97,7 +97,7 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">7. Sus derechos</h2>
+          <h2 className="text-xl font-semibold">8. Sus derechos</h2>
           <p className="text-muted-foreground leading-relaxed">Usted tiene derecho a:</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-2 pl-2">
             <li>Acceder a sus datos personales.</li>
