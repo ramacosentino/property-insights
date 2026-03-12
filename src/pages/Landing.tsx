@@ -103,41 +103,41 @@ const solutionPillars = [
 const userProfiles = [
   {
     title: "Comprador",
-    subtitle: "Tomá decisiones informadas",
+    subtitle: "No pagues de más",
     points: [
-      "Sabé si el precio publicado es justo o inflado",
-      "Compará con propiedades similares en la zona",
-      "No te sobreprecien: tené los datos del mercado",
-      "Ahorrá tiempo filtrando solo lo que vale la pena",
+      "Sabé al instante si un precio es justo o inflado vs. la zona",
+      "Compará con propiedades reales similares, no con promedios",
+      "Filtrá solo lo que vale la pena: ahorrá semanas de búsqueda",
+      "Tené los datos que tu escribano o asesor no tiene",
     ],
   },
   {
     title: "Inversor",
-    subtitle: "Encontrá oportunidades primero",
+    subtitle: "Detectá oportunidades antes que el mercado",
     points: [
-      "Detectá propiedades subvaluadas con alto potencial",
-      "Score de oportunidad automático en cada propiedad",
-      "Análisis de rentabilidad por zona y USD/m²",
-      "Alertas para no perder las mejores ofertas",
+      "Score automático que rankea cada propiedad por potencial de ganancia",
+      "Encontrá propiedades subvaluadas que otros no ven",
+      "Análisis de USD/m² por zona para comparar rentabilidad",
+      "Alertas para actuar rápido cuando aparece una oportunidad real",
     ],
   },
   {
     title: "Inmobiliaria",
-    subtitle: "Datos para ganar clientes",
+    subtitle: "Datos que te diferencian",
     points: [
-      "Fijá precios competitivos con datos reales",
-      "Reportes de mercado para tus clientes",
-      "Entendé tendencias por barrio para asesorar mejor",
-      "Diferenciarte con analítica profesional",
+      "Fijá precios competitivos basados en el mercado real, no en intuición",
+      "Mostrá a tus clientes análisis profesionales de cada propiedad",
+      "Entendé tendencias por barrio antes que tu competencia",
+      "Posicionate como la inmobiliaria que opera con datos",
     ],
   },
 ];
 
 const stats = [
   { value: "50K+", label: "Propiedades analizadas" },
-  { value: "100+", label: "Barrios cubiertos" },
+  { value: "100+", label: "Barrios en CABA y GBA" },
   { value: "USD/m²", label: "Métrica central" },
-  { value: "24/7", label: "Datos actualizados" },
+  { value: "Diario", label: "Actualización de datos" },
 ];
 
 const PRICING = {
