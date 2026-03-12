@@ -477,9 +477,9 @@ const Landing = () => {
               Funcionalidades
             </motion.div>
             <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-medium tracking-tight">
-              Cada herramienta que
+              Todo lo que necesitás
               <br />
-              <span className="landing-gradient-text">necesitás</span>
+              <span className="landing-gradient-text">en un solo lugar</span>
             </motion.h2>
           </motion.div>
 
